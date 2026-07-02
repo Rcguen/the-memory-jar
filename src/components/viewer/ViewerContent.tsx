@@ -1,6 +1,6 @@
-import { Memory } from "@/types/memory";
+import { Memory, MemoryAttachment } from "@/types/memory";
 import { format } from "date-fns";
-import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
 import { useMemoryViewer } from "@/providers/memory-viewer-provider";
 import { usePhysics } from "@/providers/physics-provider";
 import { AudioPlayer } from "./AudioPlayer";

@@ -6,7 +6,7 @@ const AttachmentSchema = z.object({
   memory_id: z.string().uuid(),
   file_type: z.enum(["photo", "voice", "video", "thumbnail"]),
   url: z.string(),
-  metadata: z.record(z.any()).optional().default({}),
+  metadata: z.record(z.string(), z.any()).optional().default({}),
   created_at: z.string()
 }).passthrough();
 

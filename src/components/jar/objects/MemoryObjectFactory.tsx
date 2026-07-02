@@ -27,9 +27,9 @@ export function MemoryObjectFactory({ state, onClick }: MemoryObjectFactoryProps
   const [isHovered, setIsHovered] = useState(false);
   const queryClient = useQueryClient();
 
-  const x = useMotionValue(`${state.x * 100}%`);
-  const y = useMotionValue(`${state.y * 100}%`);
-  const rotate = useMotionValue(`${state.rotation}rad`);
+  const x = useMotionValue<string | number>(`${state.x * 100}%`);
+  const y = useMotionValue<string | number>(`${state.y * 100}%`);
+  const rotate = useMotionValue<string | number>(`${state.rotation}rad`);
 
   useEffect(() => {
     registerMotionValues(state.id, x, y, rotate);

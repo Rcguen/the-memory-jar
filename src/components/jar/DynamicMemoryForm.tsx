@@ -230,7 +230,7 @@ export function DynamicMemoryForm({
           <div className="flex flex-col gap-1 w-1/2 pl-2 border-l border-zinc-200 dark:border-zinc-800">
             <label className="text-xs text-zinc-500 px-2 uppercase tracking-wider font-semibold">Time Capsule</label>
             <TimeCapsulePicker 
-              value={form.watch("unlock_at")} 
+              value={form.watch("unlock_at") ?? undefined} 
               onChange={(val) => form.setValue("unlock_at", val, { shouldValidate: true })} 
             />
           </div>
