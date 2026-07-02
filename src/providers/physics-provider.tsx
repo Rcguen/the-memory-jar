@@ -11,6 +11,7 @@ interface PhysicsContextType {
   setContainerRef: (node: HTMLDivElement | null) => void;
   dropMemory: (id: string, type: MemoryType, stateExt?: { status: NormalizedVisualState["status"], capsuleStyle: NormalizedVisualState["capsuleStyle"], unlockAt: string | null, isCollaborative: boolean }) => void;
   loadMemory: (id: string, type: MemoryType, state: NormalizedVisualState) => void;
+  removeMemory: (id: string) => void;
   pokeMemory: (id: string) => void;
   pauseEngine: () => void;
   resumeEngine: () => void;
@@ -123,6 +124,10 @@ export function PhysicsProvider({ children }: { children: ReactNode }) {
     engineRef.current?.loadMemory(id, type, state);
   }, []);
 
+  const removeMemory = useCallback((id: string) => {
+    engineRef.current?.removeMemory(id);
+  }, []);
+
   const pokeMemory = useCallback((id: string) => {
     engineRef.current?.pokeMemory(id);
   }, []);
@@ -140,12 +145,13 @@ export function PhysicsProvider({ children }: { children: ReactNode }) {
     setContainerRef: setContainerNode,
     dropMemory,
     loadMemory,
+    removeMemory,
     pokeMemory,
     pauseEngine,
     resumeEngine,
     registerMotionValues,
     unregisterMotionValues,
-  }), [states, setContainerNode, dropMemory, loadMemory, pokeMemory, pauseEngine, resumeEngine, registerMotionValues, unregisterMotionValues]);
+  }), [states, setContainerNode, dropMemory, loadMemory, removeMemory, pokeMemory, pauseEngine, resumeEngine, registerMotionValues, unregisterMotionValues]);
 
   return (
     <PhysicsContext.Provider value={contextValue}>

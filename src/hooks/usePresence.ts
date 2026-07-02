@@ -38,8 +38,11 @@ export function usePresence(relationshipId: string | null, userId: string | unde
 
     window.addEventListener(`presence-${channelName}`, handlePresenceSync);
 
-    // 2. Request subscription from the provider
-    subscribePresence(channelName);
+    // 2. Subscribe — track presence exactly when channel confirms SUBSCRIBED
+    const onChannelReady = () => {
+      trackPresence(channelName, { online_at: new Date().toISOString(), user: userId });
+    };
+    subscribePresence(channelName, onChannelReady);
 
     // 3. Track visibility
     const handleVisibilityChange = async () => {
@@ -49,9 +52,6 @@ export function usePresence(relationshipId: string | null, userId: string | unde
         await untrackPresence(channelName);
       }
     };
-
-    // Track initial presence
-    trackPresence(channelName, { online_at: new Date().toISOString(), user: userId });
 
     window.addEventListener("visibilitychange", handleVisibilityChange);
 

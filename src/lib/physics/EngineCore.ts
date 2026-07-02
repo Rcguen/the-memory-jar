@@ -240,6 +240,15 @@ export class EngineCore {
     }
   }
 
+  public removeMemory(id: string) {
+    const body = this.bodiesMap.get(id);
+    if (body) {
+      Matter.Composite.remove(this.engine.world, body);
+      this.bodiesMap.delete(id);
+      this.metaMap.delete(id);
+    }
+  }
+
   private handleUpdate() {
     if (!this.updateCallback) return;
     

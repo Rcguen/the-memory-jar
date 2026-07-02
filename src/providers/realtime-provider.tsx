@@ -12,7 +12,7 @@ interface ChannelEntry {
 }
 
 interface RealtimeContextType {
-  subscribePresence: (channelName: string) => void;
+  subscribePresence: (channelName: string, onReady?: () => void) => void;
   unsubscribePresence: (channelName: string) => void;
   trackPresence: (channelName: string, payload: any) => Promise<void>;
   untrackPresence: (channelName: string) => Promise<void>;
@@ -59,7 +59,7 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
     }, 150); // Debounce to survive React StrictMode unmount/remount
   };
 
-  const subscribePresence = (channelName: string) => {
+  const subscribePresence = (channelName: string, onReady?: () => void) => {
     const entry = getOrCreateChannel(channelName);
     if (entry.refs === 0) {
       entry.channel.on('presence', { event: 'sync' }, () => {
@@ -68,15 +68,31 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
         }));
       });
       if (entry.channel.state !== 'joined' && entry.channel.state !== 'joining') {
-        entry.channel.subscribe();
+        entry.channel.subscribe((status) => {
+          if (status === 'SUBSCRIBED' && onReady) {
+            onReady();
+          }
+        });
+      } else if (entry.channel.state === 'joined' && onReady) {
+        // Already joined — fire callback immediately
+        onReady();
+      } else if (entry.channel.state === 'joining' && onReady) {
+        // Will be joined soon — wait for it
+        const checkInterval = setInterval(() => {
+          if (entry.channel.state === 'joined') {
+            clearInterval(checkInterval);
+            onReady();
+          }
+        }, 100);
       }
     } else if (entry.channel.state === 'joined') {
-      // Dispatch immediately for the new subscriber if already joined
+      // Already joined, dispatch current state for new subscriber
       setTimeout(() => {
         window.dispatchEvent(new CustomEvent(`presence-${channelName}`, { 
           detail: entry.channel.presenceState() 
         }));
       }, 50);
+      if (onReady) onReady();
     }
     entry.refs += 1;
   };

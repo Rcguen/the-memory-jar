@@ -229,6 +229,21 @@ export const memoryService = {
     return data as import("@/types/memory").MemoryVisualState[];
   },
 
+  async getVisualState(memoryId: string): Promise<import("@/types/memory").MemoryVisualState | null> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("memory_visual_state")
+      .select("*")
+      .eq("memory_id", memoryId)
+      .maybeSingle();
+      
+    if (error) {
+      console.error("Failed to fetch visual state for memory:", memoryId, error);
+      return null;
+    }
+    return data as import("@/types/memory").MemoryVisualState | null;
+  },
+
   async initializeVisualState(memoryId: string): Promise<void> {
     const supabase = createClient();
     // Attempt an insert. If the row already exists (memory_id is unique), onConflict do nothing ensures no duplicates.
