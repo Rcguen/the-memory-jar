@@ -39,7 +39,7 @@ BEGIN
 END $$;
 
 -- 3. Ensure relationship_timezone has a sane default for any
---    existing or future rows that lack a value.
+--    existing or future rows that lack a value, and enforce NOT NULL.
 DO $$
 BEGIN
   IF EXISTS (
@@ -48,9 +48,17 @@ BEGIN
       AND table_name   = 'relationship_settings'
       AND column_name  = 'relationship_timezone'
   ) THEN
-    -- Only backfill NULL rows; do not touch explicitly set values.
+    -- Set default for any future rows
+    ALTER TABLE public.relationship_settings
+      ALTER COLUMN relationship_timezone SET DEFAULT 'UTC';
+
+    -- Backfill any existing NULL rows
     UPDATE public.relationship_settings
       SET relationship_timezone = 'UTC'
       WHERE relationship_timezone IS NULL;
+      
+    -- Now safe to enforce NOT NULL
+    ALTER TABLE public.relationship_settings
+      ALTER COLUMN relationship_timezone SET NOT NULL;
   END IF;
 END $$;

@@ -61,7 +61,7 @@ create table public.relationship_settings (
   anniversary_type text default 'yearly',
   -- Shared couple timezone for anniversary calculations.
   -- Renamed from 'timezone' by migration 20260703130000_timezone_architecture.sql
-  relationship_timezone text default 'UTC',
+  relationship_timezone text default 'UTC' not null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
