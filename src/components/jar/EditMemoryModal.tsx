@@ -72,7 +72,11 @@ export function EditMemoryModal({ memory, onClose }: EditMemoryModalProps) {
       }
 
       // Invalidate queries to reflect changes instantly
-      queryClient.invalidateQueries({ queryKey: ['memory', memory.id] });
+      // Fetch the full updated memory (with attachments) and set it directly in cache
+      const updatedMemory = await memoryService.getMemoryById(memory.id);
+      if (updatedMemory) {
+        queryClient.setQueryData(['memory', memory.id], updatedMemory);
+      }
       queryClient.invalidateQueries({ queryKey: ['memories'] });
       
       toast.success("Memory updated successfully", {

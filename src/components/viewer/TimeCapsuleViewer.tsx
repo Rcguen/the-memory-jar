@@ -6,16 +6,18 @@ import { format, differenceInDays } from "date-fns";
 import { Memory } from "@/types/memory";
 import { useUnlockScheduler } from "@/providers/unlock-scheduler";
 import { useAuth } from "@/providers/auth-provider";
-import { Lock, DoorOpen } from "lucide-react";
+import { Lock, DoorOpen, Pencil, Trash2 } from "lucide-react";
 import { useKnockState } from "@/hooks/useKnockState";
 import { createClient } from "@/lib/supabase/client";
 
 interface TimeCapsuleViewerProps {
   memory: Memory;
   onClose: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
-export function TimeCapsuleViewer({ memory, onClose }: TimeCapsuleViewerProps) {
+export function TimeCapsuleViewer({ memory, onClose, onEdit, onDelete }: TimeCapsuleViewerProps) {
   const { now } = useUnlockScheduler();
   const { profile } = useAuth();
   const { hasKnocked, partnerKnocked, knock } = useKnockState(memory.id, profile?.id);
@@ -109,6 +111,35 @@ export function TimeCapsuleViewer({ memory, onClose }: TimeCapsuleViewerProps) {
               {daysRemaining} {daysRemaining === 1 ? "day" : "days"} remaining
             </p>
           </div>
+        )}
+
+        {/* Creator-only actions — visible even while locked */}
+        {(onEdit || onDelete) && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.7, duration: 0.5 }}
+            className="flex gap-3 mt-8 justify-center"
+          >
+            {onEdit && (
+              <button
+                onClick={onEdit}
+                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-zinc-800/60 hover:bg-zinc-700/80 text-zinc-300 hover:text-white border border-zinc-700/50 transition-all"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                Edit
+              </button>
+            )}
+            {onDelete && (
+              <button
+                onClick={onDelete}
+                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-rose-950/60 hover:bg-rose-900/80 text-rose-400 hover:text-rose-200 border border-rose-800/50 transition-all"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Delete
+              </button>
+            )}
+          </motion.div>
         )}
 
         {!isLocked && memory.is_collaborative && (

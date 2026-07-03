@@ -8,7 +8,12 @@ import { usePhysics } from "@/providers/physics-provider";
 import { MemoryType, Memory } from "@/types/memory";
 import { ViewerAnimation } from "./ViewerAnimation";
 import { TimeCapsuleViewer } from "./TimeCapsuleViewer";
+import { EditMemoryModal } from "../jar/EditMemoryModal";
 import { useMemory } from "@/hooks/useMemoryData";
+import { useAuth } from "@/providers/auth-provider";
+import { useQueryClient } from "@tanstack/react-query";
+import { memoryService } from "@/services/memory";
+import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
 type ViewerState = 'LOADING' | 'LOCKED' | 'WAITING_PARTNER' | 'OPENING' | 'VIEWING' | 'ERROR';
@@ -16,6 +21,9 @@ type ViewerState = 'LOADING' | 'LOCKED' | 'WAITING_PARTNER' | 'OPENING' | 'VIEWI
 export function MemoryViewer() {
   const { viewingMemoryId, navigateDirection, closeViewer } = useMemoryViewer();
   const { states } = usePhysics();
+  const { profile } = useAuth();
+  const queryClient = useQueryClient();
+  const [isEditingCapsule, setIsEditingCapsule] = useState(false);
   
   // We need a stable reference to the type even when closing and viewingMemoryId is null
   const [activeMemoryState, setActiveMemoryState] = useState<{ id: string, type: MemoryType } | null>(null);
@@ -74,14 +82,38 @@ export function MemoryViewer() {
   }, [fullMemory, isLoading, isError]);
 
   const handleClose = () => {
-    // The closing animation is triggered by closeViewer setting viewingMemoryId to null.
-    // The AnimatePresence will handle the exit animation back to the layoutId.
     closeViewer();
   };
 
-  // The real-time updates are handled by the hooks now, which invalidate the query.
-  // The 'memory-opened' event can optionally be listened to if needed, 
-  // but TanStack Query handles the data sync.
+  // Force-close listener: fired by realtime DELETE handler
+  useEffect(() => {
+    const handleForceClose = (e: Event) => {
+      const event = e as CustomEvent<{ id: string }>;
+      if (viewingMemoryId && event.detail.id === viewingMemoryId) {
+        closeViewer();
+      }
+    };
+    window.addEventListener('viewer-force-close', handleForceClose);
+    return () => window.removeEventListener('viewer-force-close', handleForceClose);
+  }, [viewingMemoryId, closeViewer]);
+
+  // Creator check for locked capsule actions
+  const isCreator = !!profile && !!fullMemory && fullMemory.created_by === profile.id;
+
+  const handleCapsuleEdit = () => setIsEditingCapsule(true);
+
+  const handleCapsuleDelete = async () => {
+    if (!fullMemory) return;
+    try {
+      await memoryService.deleteMemory(fullMemory.id);
+      queryClient.invalidateQueries({ queryKey: ['memories'] });
+      queryClient.removeQueries({ queryKey: ['memory', fullMemory.id] });
+      closeViewer();
+      toast.success("Memory deleted.", { className: "font-cormorant text-lg bg-zinc-900 text-white border-zinc-800" });
+    } catch {
+      toast.error("Failed to delete memory.");
+    }
+  };
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -90,12 +122,12 @@ export function MemoryViewer() {
   }, []);
   if (!mounted) return null;
 
-  return createPortal(
+  const portal = createPortal(
     <AnimatePresence>
       {viewingMemoryId && activeMemoryState && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
           
-          {/* Background Overlay: Blurs and darkens the jar, adds warm spotlight */}
+          {/* Background Overlay */}
           <motion.div
             initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
             animate={{ opacity: 1, backdropFilter: "blur(12px)" }}
@@ -108,7 +140,7 @@ export function MemoryViewer() {
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(251,146,60,0.15)_0%,_transparent_70%)] pointer-events-none" />
           </motion.div>
 
-          {/* Center Stage for the Floating Object */}
+          {/* Center Stage */}
           <motion.div
             key={`memory-${activeMemoryState.id}`}
             layoutId={!navigateDirection ? `memory-${activeMemoryState.id}` : undefined}
@@ -120,15 +152,10 @@ export function MemoryViewer() {
                 rotate: 0,
                 scale: dir ? 0.8 : 1,
               }),
-              animate: {
-                x: 0,
-                opacity: 1,
-                rotate: 0,
-                scale: 1,
-              },
+              animate: { x: 0, opacity: 1, rotate: 0, scale: 1 },
               exit: (dir) => ({
                 x: dir === "next" ? -500 : dir === "prev" ? 500 : 0,
-                opacity: dir ? 0 : 1, // If closing (dir=null), we don't fade out here, layoutId takes over
+                opacity: dir ? 0 : 1,
                 scale: dir ? 0.8 : 1,
               })
             }}
@@ -136,12 +163,7 @@ export function MemoryViewer() {
             animate="animate"
             exit="exit"
             className="relative z-10 pointer-events-auto"
-            transition={{ 
-              type: "spring", 
-              damping: 25, 
-              stiffness: 120,
-              mass: 1
-            }}
+            transition={{ type: "spring", damping: 25, stiffness: 120, mass: 1 }}
           >
             {viewerState === 'LOADING' && (
               <div className="flex flex-col items-center justify-center p-12 bg-white/5 dark:bg-black/20 rounded-3xl backdrop-blur-md shadow-2xl">
@@ -160,7 +182,9 @@ export function MemoryViewer() {
             {(viewerState === 'LOCKED' || viewerState === 'WAITING_PARTNER') && fullMemory && (
               <TimeCapsuleViewer 
                 memory={fullMemory} 
-                onClose={handleClose} 
+                onClose={handleClose}
+                onEdit={isCreator ? handleCapsuleEdit : undefined}
+                onDelete={isCreator ? handleCapsuleDelete : undefined}
               />
             )}
 
@@ -179,5 +203,20 @@ export function MemoryViewer() {
       )}
     </AnimatePresence>,
     document.body
+  );
+
+  return (
+    <>
+      {portal}
+      {isEditingCapsule && fullMemory && (
+        <EditMemoryModal
+          memory={fullMemory}
+          onClose={() => {
+            setIsEditingCapsule(false);
+            queryClient.invalidateQueries({ queryKey: ['memory', fullMemory.id] });
+          }}
+        />
+      )}
+    </>
   );
 }

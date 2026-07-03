@@ -58,8 +58,10 @@ export function useRealtimeMemory(relationshipId: string | null) {
 
         if (deletedAt || status === 'archived' || status === 'draft' || status === 'pending_partner') {
           removeMemory(record.id);
+          queryClient.removeQueries({ queryKey: ['memory', record.id] });
+          window.dispatchEvent(new CustomEvent('viewer-force-close', { detail: { id: record.id } }));
         } else if (['sealed', 'unlocked', 'opening'].includes(status)) {
-          // Status transition into visible (e.g. partner sealed it) — refresh its physics state
+          // Status transition into visible — refresh physics meta but keep position
           const visualState = await memoryService.getVisualState(record.id).catch(() => null);
           loadMemory(record.id, record.type as MemoryType, {
             id: record.id,
@@ -79,9 +81,12 @@ export function useRealtimeMemory(relationshipId: string | null) {
         }
       }
 
-      // On DELETE: remove from physics
+      // On DELETE: remove from physics, close viewer if open, purge cache
       if (eventType === 'DELETE' && payload.old && payload.old.id) {
-        removeMemory(payload.old.id);
+        const deletedId = payload.old.id;
+        removeMemory(deletedId);
+        queryClient.removeQueries({ queryKey: ['memory', deletedId] });
+        window.dispatchEvent(new CustomEvent('viewer-force-close', { detail: { id: deletedId } }));
       }
     };
 
