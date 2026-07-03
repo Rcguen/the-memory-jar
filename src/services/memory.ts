@@ -105,19 +105,18 @@ export const memoryService = {
 
   async deleteMemory(id: string): Promise<void> {
     const supabase = createClient();
-    const { data, error } = await supabase
+    const { count, error } = await supabase
       .from("memories")
-      .update({ deleted_at: new Date().toISOString() })
+      .update({ deleted_at: new Date().toISOString() }, { count: "exact" })
       .eq("id", id)
-      .is("deleted_at", null)
-      .select("id");
+      .is("deleted_at", null);
 
     if (error) {
       console.error("Supabase Memory Delete Error:", error);
       throw new Error(error.message ?? JSON.stringify(error));
     }
 
-    if (!data || data.length === 0) {
+    if (count === 0) {
       console.error("deleteMemory: 0 rows updated for id", id);
       throw new Error("Delete failed: memory not found or you do not have permission.");
     }
