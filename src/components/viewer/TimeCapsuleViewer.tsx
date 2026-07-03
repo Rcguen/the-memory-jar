@@ -6,10 +6,10 @@ import { motion } from "framer-motion";
 import { Memory } from "@/types/memory";
 import { useUnlockScheduler } from "@/providers/unlock-scheduler";
 import { useAuth } from "@/providers/auth-provider";
-import { Lock, DoorOpen, Pencil, Trash2 } from "lucide-react";
+import { DoorOpen, KeyRound, Pencil, Trash2 } from "lucide-react";
 import { useKnockState } from "@/hooks/useKnockState";
 import { createClient } from "@/lib/supabase/client";
-import { formatInTimezone, daysUntil } from "@/lib/timezone";
+import { daysUntil, formatInTimezone, normalizeTimezone } from "@/lib/timezone";
 
 interface TimeCapsuleViewerProps {
   memory: Memory;
@@ -22,16 +22,26 @@ export function TimeCapsuleViewer({ memory, onClose, onEdit, onDelete }: TimeCap
   const { now } = useUnlockScheduler();
   const { profile } = useAuth();
   const { hasKnocked, partnerKnocked, knock } = useKnockState(memory.id, profile?.id);
-  // daysRemaining is derived from pure UTC comparison, not local time
-  const [daysRemaining, setDaysRemaining] = useState<number>(0);
   const [partnerName, setPartnerName] = useState<string>("your partner");
-  
+  const [relationshipTimezone, setRelationshipTimezone] = useState<string>("UTC");
+
+
   useEffect(() => {
-    if (memory.unlock_at) {
-      // daysUntil uses UTC millisecond math — timezone-safe
-      setDaysRemaining(daysUntil(memory.unlock_at));
+    if (!memory.relationship_id) return;
+
+    const supabase = createClient();
+    async function fetchRelationshipTimezone() {
+      const { data } = await supabase
+        .from("relationship_settings")
+        .select("relationship_timezone")
+        .eq("id", memory.relationship_id)
+        .single();
+
+      setRelationshipTimezone(normalizeTimezone((data as { relationship_timezone?: string } | null)?.relationship_timezone));
     }
-  }, [memory.unlock_at, now]); // `now` ticks every minute via UnlockScheduler
+
+    fetchRelationshipTimezone();
+  }, [memory.relationship_id]);
 
   useEffect(() => {
     if (!memory.is_collaborative || !profile) return;
@@ -43,7 +53,7 @@ export function TimeCapsuleViewer({ memory, onClose, onEdit, onDelete }: TimeCap
         .select("relationship_id")
         .eq("profile_id", profile!.id)
         .single();
-      
+
       if (memberData) {
         const { data: partnerData } = await supabase
           .from("relationship_members")
@@ -64,14 +74,16 @@ export function TimeCapsuleViewer({ memory, onClose, onEdit, onDelete }: TimeCap
 
   const handleOpenSolo = async () => {
     const supabase = createClient();
-    await supabase.from("memories").update({ status: 'opening' }).eq("id", memory.id);
-    window.dispatchEvent(new CustomEvent('memory-opened', { detail: { id: memory.id } }));
+    await supabase.from("memories").update({ status: "opening" }).eq("id", memory.id);
+    window.dispatchEvent(new CustomEvent("memory-opened", { detail: { id: memory.id } }));
   };
 
-  const isLocked = memory.status === 'sealed' && daysRemaining > 0;
+  const daysRemaining = memory.unlock_at ? daysUntil(memory.unlock_at) : 0;
+  const unlockAtMs = memory.unlock_at ? new Date(memory.unlock_at).getTime() : 0;
+  const isLocked = memory.status === "sealed" && !!memory.unlock_at && now.getTime() < unlockAtMs;
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
@@ -79,18 +91,17 @@ export function TimeCapsuleViewer({ memory, onClose, onEdit, onDelete }: TimeCap
       className="relative flex flex-col items-center justify-center p-12 max-w-sm w-full mx-4"
     >
       <div className="absolute inset-0 bg-zinc-900/40 backdrop-blur-3xl rounded-3xl border border-zinc-700/30 shadow-[0_0_50px_rgba(0,0,0,0.5)] -z-10" />
-      
-      {/* Decorative Key */}
-      <motion.div 
+
+      <motion.div
         initial={{ rotate: -15, y: 10 }}
         animate={{ rotate: 0, y: 0 }}
         transition={{ delay: 0.2, duration: 1, type: "spring" }}
-        className="text-amber-400 text-3xl mb-8 filter drop-shadow-[0_0_8px_rgba(251,191,36,0.4)]"
+        className="text-amber-400 mb-8 filter drop-shadow-[0_0_8px_rgba(251,191,36,0.4)]"
       >
-        🗝
+        <KeyRound className="h-8 w-8" />
       </motion.div>
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4, duration: 1 }}
@@ -107,7 +118,7 @@ export function TimeCapsuleViewer({ memory, onClose, onEdit, onDelete }: TimeCap
             <h3 className="text-2xl text-amber-50/90 tracking-wide">
               {formatInTimezone(
                 memory.unlock_at,
-                profile?.timezone || "UTC",
+                relationshipTimezone,
                 { day: "numeric", month: "long", year: "numeric" }
               )}
             </h3>
@@ -117,7 +128,6 @@ export function TimeCapsuleViewer({ memory, onClose, onEdit, onDelete }: TimeCap
           </div>
         )}
 
-        {/* Creator-only actions — visible even while locked */}
         {(onEdit || onDelete) && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
@@ -182,7 +192,6 @@ export function TimeCapsuleViewer({ memory, onClose, onEdit, onDelete }: TimeCap
         )}
       </motion.div>
 
-      {/* Optional button to close if clicking outside isn't enough */}
       <motion.button
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}

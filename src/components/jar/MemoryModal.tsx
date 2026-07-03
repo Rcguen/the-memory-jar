@@ -86,7 +86,12 @@ export function MemoryModal() {
     setTimeout(() => {
       // Trigger the physical drop if it's not pending partner
       if (memory.status !== 'pending_partner') {
-        dropMemory(memory.id, selectedType);
+        dropMemory(memory.id, selectedType, {
+          status: memory.status as import("@/lib/physics/EngineCore").NormalizedVisualState["status"],
+          capsuleStyle: memory.capsule_style,
+          unlockAt: memory.unlock_at,
+          isCollaborative: memory.is_collaborative,
+        });
       }
       
       handleCancel();

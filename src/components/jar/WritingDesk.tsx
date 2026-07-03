@@ -76,7 +76,12 @@ export function WritingDesk() {
     });
     
     setTimeout(() => {
-      dropMemory(memory.id, memory.type);
+      dropMemory(memory.id, memory.type, {
+        status: "sealed",
+        capsuleStyle: memory.capsule_style,
+        unlockAt: memory.unlock_at,
+        isCollaborative: memory.is_collaborative,
+      });
       window.dispatchEvent(new CustomEvent("memory-saved", { detail: { memory } }));
     }, 500);
   };

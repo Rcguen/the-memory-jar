@@ -1,24 +1,38 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { MemoryTypeSelector } from "./MemoryTypeSelector";
 import { DynamicMemoryForm, MemoryFormData } from "./DynamicMemoryForm";
-import { Memory, MemoryType, MemoryThemeType, DecorationID } from "@/types/memory";
+import { CapsuleStyle, DecorationID, Memory, MemoryThemeType } from "@/types/memory";
 import { memoryService } from "@/services/memory";
 import { useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
+import { usePhysics } from "@/providers/physics-provider";
+import { NormalizedVisualState } from "@/lib/physics/EngineCore";
 
 interface EditMemoryModalProps {
   memory: Memory;
   onClose: () => void;
 }
 
+const CAPSULE_STYLES: CapsuleStyle[] = [
+  "vintage_parcel",
+  "ribbon_box",
+  "wax_capsule",
+  "glass_capsule",
+  "wooden_box",
+  "silk_envelope",
+];
+
+function randomCapsuleStyle(): CapsuleStyle {
+  return CAPSULE_STYLES[Math.floor(Math.random() * CAPSULE_STYLES.length)];
+}
+
 export function EditMemoryModal({ memory, onClose }: EditMemoryModalProps) {
   const queryClient = useQueryClient();
+  const { updateMemoryMeta } = usePhysics();
   const [existingAttachments, setExistingAttachments] = useState(memory.attachments || []);
   const [removedAttachmentIds, setRemovedAttachmentIds] = useState<string[]>([]);
-  
-  // Lock body scroll
+
   useEffect(() => {
     document.body.style.overflow = "hidden";
     return () => {
@@ -27,30 +41,29 @@ export function EditMemoryModal({ memory, onClose }: EditMemoryModalProps) {
   }, []);
 
   const handleRemoveExisting = (id: string) => {
-    setExistingAttachments(prev => prev.filter(a => a.id !== id));
-    setRemovedAttachmentIds(prev => [...prev, id]);
+    setExistingAttachments((prev) => prev.filter((a) => a.id !== id));
+    setRemovedAttachmentIds((prev) => [...prev, id]);
   };
 
   const handleSave = async (data: MemoryFormData, files: File[]) => {
     try {
-      const isFutureUnlock = data.unlock_at && new Date(data.unlock_at).getTime() > Date.now();
-      
+      const hasUnlockAt = !!data.unlock_at;
+      const isFutureUnlock = hasUnlockAt && new Date(data.unlock_at!).getTime() > Date.now();
+
       let newStatus = memory.status;
-      if (isFutureUnlock) {
-        if (memory.status === 'unlocked' || memory.status === 'opening') {
-          newStatus = 'sealed';
-        }
+      if (!hasUnlockAt) {
+        newStatus = "unlocked";
+      } else if (isFutureUnlock && (memory.status === "unlocked" || memory.status === "opening")) {
+        newStatus = "sealed";
       }
 
       let newCapsuleStyle = memory.capsule_style;
-      if (data.unlock_at && !memory.capsule_style) {
-         const styles = ['vintage_parcel', 'ribbon_box', 'wax_capsule', 'glass_capsule', 'wooden_box', 'silk_envelope'];
-         newCapsuleStyle = styles[Math.floor(Math.random() * styles.length)] as any;
-      } else if (!data.unlock_at) {
-         newCapsuleStyle = null;
+      if (hasUnlockAt && !memory.capsule_style) {
+        newCapsuleStyle = randomCapsuleStyle();
+      } else if (!hasUnlockAt) {
+        newCapsuleStyle = null;
       }
 
-      // 1. Update memory
       await memoryService.updateMemory(memory.id, {
         title: data.title,
         content: data.content,
@@ -64,17 +77,10 @@ export function EditMemoryModal({ memory, onClose }: EditMemoryModalProps) {
         capsule_style: newCapsuleStyle,
       });
 
-      // 2. Remove deleted attachments
-      // Wait, memoryService needs a deleteAttachment helper or we can just delete from Supabase directly
-      // I'll assume we can create it or just do it. Let's do it directly here using createClient if needed, 
-      // but it's better to add a helper in memoryService.
       for (const attId of removedAttachmentIds) {
-        // Ideally: await memoryService.deleteAttachment(attId);
-        // We will implement this in memoryService shortly
         await memoryService.deleteAttachment(attId);
       }
 
-      // 3. Upload new files
       if (files.length > 0) {
         let fileIndex = existingAttachments.length;
         for (const file of files) {
@@ -90,21 +96,25 @@ export function EditMemoryModal({ memory, onClose }: EditMemoryModalProps) {
         }
       }
 
-      // Invalidate queries to reflect changes instantly
-      // Fetch the full updated memory (with attachments) and set it directly in cache
       const updatedMemory = await memoryService.getMemoryById(memory.id);
       if (updatedMemory) {
-        queryClient.setQueryData(['memory', memory.id], updatedMemory);
+        queryClient.setQueryData(["memory", memory.id], updatedMemory);
+        updateMemoryMeta(memory.id, {
+          status: updatedMemory.status as NormalizedVisualState["status"],
+          capsuleStyle: updatedMemory.capsule_style,
+          unlockAt: updatedMemory.unlock_at,
+          isCollaborative: updatedMemory.is_collaborative,
+        });
       }
-      queryClient.invalidateQueries({ queryKey: ['memories'] });
-      
+      queryClient.invalidateQueries({ queryKey: ["memories"] });
+
       toast.success("Memory updated successfully", {
         className: "font-cormorant text-lg bg-zinc-900 text-white border-zinc-800"
       });
       onClose();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to edit memory:", error);
-      toast.error(error.message || "Failed to update memory");
+      toast.error(error instanceof Error ? error.message : "Failed to update memory");
     }
   };
 
@@ -121,7 +131,7 @@ export function EditMemoryModal({ memory, onClose }: EditMemoryModalProps) {
           <h2 className="text-xl font-semibold font-cormorant text-zinc-800 dark:text-zinc-100">
             Edit Memory
           </h2>
-          <button 
+          <button
             onClick={onClose}
             className="p-2 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-500 transition-colors"
           >
@@ -130,10 +140,10 @@ export function EditMemoryModal({ memory, onClose }: EditMemoryModalProps) {
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar">
-          <DynamicMemoryForm 
-            type={memory.type} 
-            onSave={handleSave} 
-            onCancel={onClose} 
+          <DynamicMemoryForm
+            type={memory.type}
+            onSave={handleSave}
+            onCancel={onClose}
             initialData={memory as Partial<MemoryFormData>}
             isEditing={true}
             existingAttachments={existingAttachments}

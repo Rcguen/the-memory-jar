@@ -54,7 +54,7 @@ export function MemoryViewer() {
     }
     
     if (fullMemory.status === 'sealed') {
-      const isTimeCapsule = fullMemory.unlock_at && new Date(fullMemory.unlock_at) > new Date();
+      const isTimeCapsule = fullMemory.unlock_at ? Date.now() < new Date(fullMemory.unlock_at).getTime() : false;
       if (isTimeCapsule || fullMemory.is_collaborative) {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setViewerState('LOCKED');

@@ -1,6 +1,6 @@
 /**
  * Centralized timezone utilities.
- * Uses Intl.DateTimeFormat only — no external dependencies.
+ * Uses Intl.DateTimeFormat only - no external dependencies.
  */
 
 /**
@@ -27,6 +27,121 @@ export function detectTimezone(): string {
   }
 }
 
+export function isValidTimezone(tz: string | null | undefined): tz is string {
+  if (!tz) return false;
+
+  try {
+    Intl.DateTimeFormat("en", { timeZone: tz });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function normalizeTimezone(tz: string | null | undefined): string {
+  return isValidTimezone(tz) ? tz : "UTC";
+}
+
+function parseDateOnly(dateString: string): { year: number; month: number; day: number } {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString);
+  if (!match) {
+    throw new RangeError(`Expected date-only value in YYYY-MM-DD format, received "${dateString}"`);
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const utcDate = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    utcDate.getUTCFullYear() !== year ||
+    utcDate.getUTCMonth() !== month - 1 ||
+    utcDate.getUTCDate() !== day
+  ) {
+    throw new RangeError(`Invalid calendar date "${dateString}"`);
+  }
+
+  return { year, month, day };
+}
+
+function getTimezoneDateParts(date: Date, tz: string): {
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+  second: number;
+} {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+
+  const value = (type: Intl.DateTimeFormatPartTypes) => {
+    const part = parts.find((p) => p.type === type);
+    if (!part) throw new RangeError(`Missing ${type} while formatting timezone date`);
+    return Number(part.value);
+  };
+
+  return {
+    year: value("year"),
+    month: value("month"),
+    day: value("day"),
+    hour: value("hour"),
+    minute: value("minute"),
+    second: value("second"),
+  };
+}
+
+function formatDateOnlyFromParts(parts: { year: number; month: number; day: number }): string {
+  return [
+    String(parts.year).padStart(4, "0"),
+    String(parts.month).padStart(2, "0"),
+    String(parts.day).padStart(2, "0"),
+  ].join("-");
+}
+
+function localTimestampInTimezone(date: Date, tz: string): number {
+  const parts = getTimezoneDateParts(date, tz);
+  return Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
+}
+
+export function utcIsoToDateOnlyInTimezone(isoString: string, tz: string | null | undefined): string {
+  const safeTimezone = normalizeTimezone(tz);
+  return formatDateOnlyFromParts(getTimezoneDateParts(new Date(isoString), safeTimezone));
+}
+
+export function todayDateOnlyInTimezone(tz: string | null | undefined, now: Date = new Date()): string {
+  const safeTimezone = normalizeTimezone(tz);
+  return formatDateOnlyFromParts(getTimezoneDateParts(now, safeTimezone));
+}
+
+/**
+ * Convert a date-only selection to the exact UTC instant for 00:00:00
+ * at the start of that date in the supplied relationship timezone.
+ */
+export function dateOnlyInTimezoneToUtcIso(dateString: string, tz: string | null | undefined): string {
+  const { year, month, day } = parseDateOnly(dateString);
+  const safeTimezone = normalizeTimezone(tz);
+  const targetLocalMs = Date.UTC(year, month - 1, day, 0, 0, 0, 0);
+
+  let utcMs = targetLocalMs;
+  for (let i = 0; i < 4; i += 1) {
+    const localMs = localTimestampInTimezone(new Date(utcMs), safeTimezone);
+    const delta = localMs - targetLocalMs;
+    if (delta === 0) break;
+    utcMs -= delta;
+  }
+
+  return new Date(utcMs).toISOString();
+}
+
 /**
  * Format a UTC ISO string into a human-readable date string
  * using a specific IANA timezone. Uses Intl.DateTimeFormat so
@@ -45,18 +160,18 @@ export function formatInTimezone(
     day: "numeric",
   }
 ): string {
+  const safeTimezone = normalizeTimezone(tz);
   try {
-    const safeOptions: Intl.DateTimeFormatOptions = { ...options, timeZone: tz };
+    const safeOptions: Intl.DateTimeFormatOptions = { ...options, timeZone: safeTimezone };
     return new Intl.DateTimeFormat("en", safeOptions).format(new Date(isoString));
   } catch {
-    // Fallback to browser locale if tz is invalid
-    return new Intl.DateTimeFormat("en", options).format(new Date(isoString));
+    return new Intl.DateTimeFormat("en", { ...options, timeZone: "UTC" }).format(new Date(isoString));
   }
 }
 
 /**
  * Calculate the number of whole days remaining until an unlock date.
- * Comparison is purely in UTC milliseconds — never local time strings.
+ * Comparison is purely in UTC milliseconds - never local time strings.
  *
  * @param unlockAt  UTC ISO 8601 string
  * @returns  Positive integer, or 0 if already past
@@ -72,28 +187,19 @@ export function daysUntil(unlockAt: string): number {
  * return the next anniversary as a Date set to midnight (00:00:00)
  * in that relationship timezone.
  *
- * This ensures both partners — wherever they live — share the same
+ * This ensures both partners - wherever they live - share the same
  * anniversary date regardless of their personal local time.
  */
 export function getNextAnniversary(startDateIso: string, relationshipTimezone: string): Date {
-  const safeTimezone = (() => {
-    try {
-      Intl.DateTimeFormat("en", { timeZone: relationshipTimezone });
-      return relationshipTimezone;
-    } catch {
-      return "UTC";
-    }
-  })();
-
+  const safeTimezone = normalizeTimezone(relationshipTimezone);
   const startDate = new Date(startDateIso);
 
   // Extract month and day in the relationship timezone
   const monthFormatter = new Intl.DateTimeFormat("en", { month: "numeric", timeZone: safeTimezone });
-  const dayFormatter   = new Intl.DateTimeFormat("en", { day: "numeric",   timeZone: safeTimezone });
-  const yearFormatter  = new Intl.DateTimeFormat("en", { year: "numeric",  timeZone: safeTimezone });
+  const dayFormatter = new Intl.DateTimeFormat("en", { day: "numeric", timeZone: safeTimezone });
 
-  const month = parseInt(monthFormatter.format(startDate), 10); // 1-12
-  const day   = parseInt(dayFormatter.format(startDate), 10);
+  const month = parseInt(monthFormatter.format(startDate), 10);
+  const day = parseInt(dayFormatter.format(startDate), 10);
 
   // Today in the relationship timezone
   const todayStr = new Intl.DateTimeFormat("en", {
@@ -102,53 +208,22 @@ export function getNextAnniversary(startDateIso: string, relationshipTimezone: s
   }).format(new Date());
 
   const [todayMonthStr, todayDayStr, todayYearStr] = todayStr.split("/");
-  const todayYear  = parseInt(todayYearStr, 10);
+  const todayYear = parseInt(todayYearStr, 10);
   const todayMonth = parseInt(todayMonthStr, 10);
-  const todayDay   = parseInt(todayDayStr, 10);
+  const todayDay = parseInt(todayDayStr, 10);
 
-  // Try this year's anniversary at midnight relationship-timezone
   let anniversaryYear = todayYear;
-  const thisYearAnniversary = midnightInTimezone(anniversaryYear, month, day, safeTimezone);
+  const anniversaryDateOnly = `${anniversaryYear}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  const thisYearAnniversary = new Date(dateOnlyInTimezoneToUtcIso(anniversaryDateOnly, safeTimezone));
 
-  // If this year's anniversary is in the past (or today), use next year
-  const todayMidnight = midnightInTimezone(todayYear, todayMonth, todayDay, safeTimezone);
+  const todayDateOnly = `${todayYear}-${String(todayMonth).padStart(2, "0")}-${String(todayDay).padStart(2, "0")}`;
+  const todayMidnight = new Date(dateOnlyInTimezoneToUtcIso(todayDateOnly, safeTimezone));
   if (thisYearAnniversary < todayMidnight) {
     anniversaryYear = todayYear + 1;
   }
 
-  return midnightInTimezone(anniversaryYear, month, day, safeTimezone);
-}
-
-/**
- * Return a UTC Date that represents midnight (00:00:00) on a given
- * year/month/day in the specified IANA timezone.
- */
-function midnightInTimezone(year: number, month: number, day: number, tz: string): Date {
-  // Build an ISO-style string and parse it as if it were local to `tz`
-  // by using the Intl API to find the UTC offset at that point in time.
-  const paddedMonth = String(month).padStart(2, "0");
-  const paddedDay   = String(day).padStart(2, "0");
-  // Create a Date at noon UTC first (avoids DST edge cases at midnight)
-  const approxDate = new Date(`${year}-${paddedMonth}-${paddedDay}T12:00:00Z`);
-
-  // Find what "midnight" in that timezone maps to in UTC
-  // by computing the offset at noon (DST is never ambiguous at noon)
-  const noonUtcMs = approxDate.getTime();
-  const noonLocal = new Intl.DateTimeFormat("en", {
-    hour: "numeric", minute: "numeric", second: "numeric",
-    hour12: false,
-    timeZone: tz,
-  }).formatToParts(approxDate);
-
-  const h = parseInt(noonLocal.find(p => p.type === "hour")!.value, 10);
-  const m = parseInt(noonLocal.find(p => p.type === "minute")!.value, 10);
-  const s = parseInt(noonLocal.find(p => p.type === "second")!.value, 10);
-
-  // Offset in ms: noon local is hh:mm:ss local = 12:00:00 UTC - offset
-  const localNoonMs = (h * 3600 + m * 60 + s) * 1000;
-  const offsetMs    = (12 * 3600 * 1000) - localNoonMs;
-
-  // Midnight = 00:00:00 local = UTC midnight + offsetMs
-  const midnightUtcMs = Date.UTC(year, month - 1, day) + offsetMs;
-  return new Date(midnightUtcMs);
+  return new Date(dateOnlyInTimezoneToUtcIso(
+    `${anniversaryYear}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`,
+    safeTimezone
+  ));
 }
