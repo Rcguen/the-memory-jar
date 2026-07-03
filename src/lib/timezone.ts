@@ -10,9 +10,17 @@
 export function detectTimezone(): string {
   try {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    if (!tz) {
+      return "UTC";
+    }
+
     // Validate that the returned string is a real IANA timezone
     // by attempting to use it. Invalid names throw a RangeError.
-    Intl.DateTimeFormat("en", { timeZone: tz });
+    Intl.DateTimeFormat("en-US", {
+      timeZone: tz,
+    });
+
     return tz;
   } catch {
     return "UTC";

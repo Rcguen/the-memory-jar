@@ -41,7 +41,10 @@ export function AuthProvider({ children, initialProfile }: { children: React.Rea
   }, [initialProfile]);
 
   // Auto-detect and save timezone once when profile.timezone is NULL
-  useTimezoneDetection(profile);
+  useTimezoneDetection(profile, (detectedTz) => {
+    // Optimistically update the local React state without needing a full refreshProfile()
+    setProfile((prev) => (prev ? { ...prev, timezone: detectedTz } : null));
+  });
 
   return (
     <AuthContext.Provider value={{ profile, isLoading, refreshProfile }}>

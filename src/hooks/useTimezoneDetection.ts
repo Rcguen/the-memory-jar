@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { detectTimezone } from "@/lib/timezone";
 import { updateProfileTimezone } from "@/services/auth";
 import { UserProfile } from "@/types/memory";
@@ -20,16 +20,33 @@ import { UserProfile } from "@/types/memory";
  * - The update runs at most once per session (and once ever, since after
  *   saving the DB value is no longer NULL)
  */
-export function useTimezoneDetection(profile: UserProfile | null) {
+export function useTimezoneDetection(
+  profile: UserProfile | null,
+  onDetected: (tz: string) => void
+) {
+  const hasDetected = useRef(false);
+
   useEffect(() => {
+    // Prevent double-firing in Strict Mode or if component remounts
+    if (hasDetected.current) return;
+    
     if (!profile) return;
     // Only run when timezone has never been saved (IS NULL in DB)
     if (profile.timezone !== null) return;
 
+    hasDetected.current = true;
     const detected = detectTimezone();
+    
     // Save asynchronously — do not block rendering
-    updateProfileTimezone(profile.id, detected).catch((err) => {
-      console.warn("[useTimezoneDetection] Failed to save timezone:", err);
-    });
-  }, [profile?.id, profile?.timezone]); // re-check only when identity or timezone changes
+    updateProfileTimezone(profile.id, detected)
+      .then(() => {
+        // Synchronize local React state immediately after successful DB write
+        onDetected(detected);
+      })
+      .catch((err) => {
+        // If DB update fails, we might want to allow retrying on next mount,
+        // but for now, we leave hasDetected = true to avoid infinite retry loops if the DB is down.
+        console.warn("[useTimezoneDetection] Failed to save timezone:", err);
+      });
+  }, [profile?.id, profile?.timezone, onDetected]);
 }
