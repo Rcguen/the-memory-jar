@@ -20,7 +20,7 @@ type ViewerState = 'LOADING' | 'LOCKED' | 'WAITING_PARTNER' | 'OPENING' | 'VIEWI
 
 export function MemoryViewer() {
   const { viewingMemoryId, navigateDirection, closeViewer } = useMemoryViewer();
-  const { states } = usePhysics();
+  const { states, removeMemory } = usePhysics();
   const { profile } = useAuth();
   const queryClient = useQueryClient();
   const [isEditingCapsule, setIsEditingCapsule] = useState(false);
@@ -106,6 +106,7 @@ export function MemoryViewer() {
     if (!fullMemory) return;
     try {
       await memoryService.deleteMemory(fullMemory.id);
+      removeMemory(fullMemory.id); // Remove immediately from physics engine
       queryClient.invalidateQueries({ queryKey: ['memories'] });
       queryClient.removeQueries({ queryKey: ['memory', fullMemory.id] });
       closeViewer();

@@ -145,7 +145,9 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
                     <span className="text-zinc-600 dark:text-zinc-400">Are you sure?</span>
                     <div className="flex gap-2">
                       <button 
-                        onClick={async () => {
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
                           try {
                             await memoryService.deleteMemory(memoryId);
                             // Remove physics body immediately (realtime also does this, but ~200ms later)
@@ -180,7 +182,11 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
                       <Edit2 className="w-4 h-4" /> Edit Memory
                     </button>
                     <button 
-                      onClick={() => setIsDeleting(true)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setIsDeleting(true);
+                      }}
                       className="w-full text-left px-4 py-2 text-sm hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 flex items-center gap-2 transition-colors"
                     >
                       <Trash2 className="w-4 h-4" /> Delete Memory
