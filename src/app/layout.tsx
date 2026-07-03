@@ -9,6 +9,7 @@ import { UnlockSchedulerProvider } from "@/providers/unlock-scheduler";
 import { QueryProvider } from "@/providers/query-provider";
 import { RealtimeProvider } from "@/providers/realtime-provider";
 import { getProfile } from "@/services/auth";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const cormorantGaramond = Cormorant_Garamond({
@@ -62,6 +63,7 @@ export default async function RootLayout({
               </AuthProvider>
             </RealtimeProvider>
           </QueryProvider>
+          <Toaster richColors position="top-center" />
         </ThemeProvider>
       </body>
     </html>

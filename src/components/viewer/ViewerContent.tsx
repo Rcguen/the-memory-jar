@@ -35,6 +35,7 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
   const [showMenu, setShowMenu] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteConfirming, setIsDeleteConfirming] = useState(false);
 
   // Navigation Logic 
   const currentIndex = states.findIndex(s => s.id === memoryId);
@@ -142,31 +143,37 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
               <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-zinc-900 rounded-xl shadow-xl border border-zinc-200 dark:border-zinc-800 overflow-hidden py-1 z-[100]">
                 {isDeleting ? (
                   <div className="p-3 text-sm flex flex-col gap-2">
-                    <span className="text-zinc-600 dark:text-zinc-400">Are you sure?</span>
+                    <span className="text-zinc-600 dark:text-zinc-400">
+                      {isDeleteConfirming ? "Deleting..." : "Are you sure?"}
+                    </span>
                     <div className="flex gap-2">
                       <button 
+                        disabled={isDeleteConfirming}
                         onClick={async (e) => {
                           e.preventDefault();
                           e.stopPropagation();
+                          setIsDeleteConfirming(true);
                           try {
                             await memoryService.deleteMemory(memoryId);
-                            // Remove physics body immediately (realtime also does this, but ~200ms later)
                             removeMemory(memoryId);
                             queryClient.removeQueries({ queryKey: ['memory', memoryId] });
                             queryClient.invalidateQueries({ queryKey: ['memories'] });
-                            toast.success("Memory deleted gracefully.");
+                            toast.success("Memory deleted.");
                             onClose();
-                          } catch (e) {
-                            console.error(e);
-                            toast.error("Failed to delete memory");
+                          } catch (err) {
+                            console.error("[Delete]", err);
+                            setIsDeleteConfirming(false);
+                            setIsDeleting(false);
+                            toast.error(`Delete failed: ${err instanceof Error ? err.message : String(err)}`);
                           }
                         }}
-                        className="flex-1 bg-red-500 hover:bg-red-600 text-white py-1 rounded transition-colors"
+                        className="flex-1 bg-red-500 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-white py-1 rounded transition-colors"
                       >
-                        Yes
+                        {isDeleteConfirming ? "..." : "Yes"}
                       </button>
                       <button 
                         onClick={() => setIsDeleting(false)}
+                        disabled={isDeleteConfirming}
                         className="flex-1 bg-zinc-200 dark:bg-zinc-800 hover:bg-zinc-300 dark:hover:bg-zinc-700 py-1 rounded transition-colors"
                       >
                         No
