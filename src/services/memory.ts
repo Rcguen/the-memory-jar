@@ -105,15 +105,22 @@ export const memoryService = {
 
   async deleteMemory(id: string): Promise<void> {
     const supabase = createClient();
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("memories")
       .update({ deleted_at: new Date().toISOString() })
       .eq("id", id)
-      .is("deleted_at", null);
+      .is("deleted_at", null)
+      .select("id");
 
     if (error) {
       console.error("Supabase Memory Delete Error:", error);
       throw error;
+    }
+
+    // If no rows returned, the update was blocked (RLS or already deleted)
+    if (!data || data.length === 0) {
+      console.error("deleteMemory: 0 rows updated for id", id, "— possible RLS violation or row not found");
+      throw new Error("Delete failed: no rows updated. You may not have permission.");
     }
   },
 
