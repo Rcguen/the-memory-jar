@@ -28,7 +28,7 @@ interface ViewerContentProps {
 
 export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }: ViewerContentProps) {
   const { openViewer } = useMemoryViewer();
-  const { states } = usePhysics();
+  const { states, removeMemory } = usePhysics();
   const { profile } = useAuth();
   const queryClient = useQueryClient();
   
@@ -148,8 +148,11 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
                         onClick={async () => {
                           try {
                             await memoryService.deleteMemory(memoryId);
-                            toast.success("Memory deleted gracefully.");
+                            // Remove physics body immediately (realtime also does this, but ~200ms later)
+                            removeMemory(memoryId);
+                            queryClient.removeQueries({ queryKey: ['memory', memoryId] });
                             queryClient.invalidateQueries({ queryKey: ['memories'] });
+                            toast.success("Memory deleted gracefully.");
                             onClose();
                           } catch (e) {
                             console.error(e);

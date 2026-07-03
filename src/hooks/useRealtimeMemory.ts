@@ -4,7 +4,6 @@ import { useRealtimeContext } from "@/providers/realtime-provider";
 import { usePhysics } from "@/providers/physics-provider";
 import { Memory, MemoryType } from "@/types/memory";
 import { memoryService } from "@/services/memory";
-import { mapDatabaseMemory } from "@/lib/mappers/memory.mapper";
 
 export function useRealtimeMemory(relationshipId: string | null) {
   const queryClient = useQueryClient();
