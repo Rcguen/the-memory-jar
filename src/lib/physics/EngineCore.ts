@@ -249,6 +249,17 @@ export class EngineCore {
     }
   }
 
+  /**
+   * Update metadata on an existing physics body.
+   * The body position, velocity and rotation are preserved.
+   * Only the metaMap entry is updated (status, capsuleStyle, unlockAt, isCollaborative).
+   */
+  public updateMemoryMeta(id: string, meta: Partial<{ status: NormalizedVisualState["status"], capsuleStyle: NormalizedVisualState["capsuleStyle"], unlockAt: string | null, isCollaborative: boolean }>) {
+    const existing = this.metaMap.get(id);
+    if (!existing) return; // body not in world, nothing to do
+    this.metaMap.set(id, { ...existing, ...meta });
+  }
+
   private handleUpdate() {
     if (!this.updateCallback) return;
     

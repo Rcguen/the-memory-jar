@@ -12,6 +12,7 @@ interface PhysicsContextType {
   dropMemory: (id: string, type: MemoryType, stateExt?: { status: NormalizedVisualState["status"], capsuleStyle: NormalizedVisualState["capsuleStyle"], unlockAt: string | null, isCollaborative: boolean }) => void;
   loadMemory: (id: string, type: MemoryType, state: NormalizedVisualState) => void;
   removeMemory: (id: string) => void;
+  updateMemoryMeta: (id: string, meta: Partial<{ status: NormalizedVisualState["status"], capsuleStyle: NormalizedVisualState["capsuleStyle"], unlockAt: string | null, isCollaborative: boolean }>) => void;
   pokeMemory: (id: string) => void;
   pauseEngine: () => void;
   resumeEngine: () => void;
@@ -128,6 +129,10 @@ export function PhysicsProvider({ children }: { children: ReactNode }) {
     engineRef.current?.removeMemory(id);
   }, []);
 
+  const updateMemoryMeta = useCallback((id: string, meta: Partial<{ status: NormalizedVisualState["status"], capsuleStyle: NormalizedVisualState["capsuleStyle"], unlockAt: string | null, isCollaborative: boolean }>) => {
+    engineRef.current?.updateMemoryMeta(id, meta);
+  }, []);
+
   const pokeMemory = useCallback((id: string) => {
     engineRef.current?.pokeMemory(id);
   }, []);
@@ -146,12 +151,13 @@ export function PhysicsProvider({ children }: { children: ReactNode }) {
     dropMemory,
     loadMemory,
     removeMemory,
+    updateMemoryMeta,
     pokeMemory,
     pauseEngine,
     resumeEngine,
     registerMotionValues,
     unregisterMotionValues,
-  }), [states, setContainerNode, dropMemory, loadMemory, removeMemory, pokeMemory, pauseEngine, resumeEngine, registerMotionValues, unregisterMotionValues]);
+  }), [states, setContainerNode, dropMemory, loadMemory, removeMemory, updateMemoryMeta, pokeMemory, pauseEngine, resumeEngine, registerMotionValues, unregisterMotionValues]);
 
   return (
     <PhysicsContext.Provider value={contextValue}>
