@@ -1,8 +1,8 @@
 import Matter from "matter-js";
 import { MemoryType } from "@/types/memory";
 
-// Physical profiles for different memory types
-// HypeCup style physics: high bounciness, very low friction, low air friction so they drop fast and stack well
+// Physical profiles for different memory types.
+// Keep the older light, bouncy jar feel while the UI layer handles easy clicking.
 export const MEMORY_PHYSICS_PROFILES: Record<MemoryType, Matter.IBodyDefinition> = {
   promise: { mass: 2, friction: 0.05, restitution: 0.6, frictionAir: 0.005 },
   letter: { mass: 0.5, friction: 0.05, restitution: 0.7, frictionAir: 0.01 },
@@ -15,7 +15,7 @@ export const MEMORY_PHYSICS_PROFILES: Record<MemoryType, Matter.IBodyDefinition>
   random_thought: { mass: 0.3, friction: 0.05, restitution: 0.7, frictionAir: 0.01 },
 };
 
-// Default sizes relative to jar width (e.g. 0.2 = 20% of jar width)
+// Default sizes relative to jar width (e.g. 0.2 = 20% of jar width).
 export const MEMORY_SIZES: Record<MemoryType, { width: number; height: number }> = {
   promise: { width: 0.05, height: 0.04 },
   letter: { width: 0.05, height: 0.03 },
@@ -132,28 +132,22 @@ export class EngineCore {
 
   private setupBoundaries() {
     const wallThickness = 100;
-    
-    // The jar SVG is not a perfect rectangle. We approximate the mouth and the bottom.
-    // SVG viewbox is 400x500. It tapers slightly at the top.
-    // We'll create a bucket shape using 3 rectangles (bottom, left wall, right wall).
-    
-    // Adjusted for the new squarish jar image
-    // Raise the bottom significantly to account for thick glass base
-    const bottom = Matter.Bodies.rectangle(this.width / 2, this.height * 0.95, this.width, wallThickness, {
+
+    // Keep the older bucket shape, with the floor slightly lower so the pile sits in the glass base.
+    const bottom = Matter.Bodies.rectangle(this.width / 2, this.height * 0.965, this.width, wallThickness, {
       isStatic: true,
       friction: 0.3,
       restitution: 0.2
     });
 
-    // Bring side walls closer to the center
-    const leftWall = Matter.Bodies.rectangle(-wallThickness / 2 + (this.width * 0.25), this.height / 2, wallThickness, this.height * 1.5, { 
+    const leftWall = Matter.Bodies.rectangle(-wallThickness / 2 + (this.width * 0.25), this.height / 2, wallThickness, this.height * 1.5, {
       isStatic: true,
-      angle: 0 
+      angle: 0
     });
 
-    const rightWall = Matter.Bodies.rectangle(this.width + wallThickness / 2 - (this.width * 0.25), this.height / 2, wallThickness, this.height * 1.5, { 
+    const rightWall = Matter.Bodies.rectangle(this.width + wallThickness / 2 - (this.width * 0.25), this.height / 2, wallThickness, this.height * 1.5, {
       isStatic: true,
-      angle: 0 
+      angle: 0
     });
 
     Matter.Composite.add(this.engine.world, [bottom, leftWall, rightWall]);
@@ -183,8 +177,8 @@ export class EngineCore {
         ...MEMORY_PHYSICS_PROFILES[type],
         angle: state.rotation,
         label: `${id}|${type}`,
-        chamfer: { radius: Math.min(pxW, pxH) * 0.45 } // Pill shape for tumbling
-      } as any
+        chamfer: { radius: Math.min(pxW, pxH) * 0.45 }
+      }
     );
 
     Matter.Body.setVelocity(body, { x: state.vx, y: state.vy });
@@ -208,21 +202,19 @@ export class EngineCore {
     const pxW = size.width * this.width;
     const pxH = size.height * this.width;
 
-    // Drop from center top
     const body = Matter.Bodies.rectangle(
-      this.width / 2 + (Math.random() * 20 - 10), // slight random x jitter
-      -pxH, // start above jar
+      this.width / 2 + (Math.random() * 20 - 10),
+      -pxH,
       pxW, 
       pxH, 
       {
         ...MEMORY_PHYSICS_PROFILES[type],
-        angle: Math.random() * Math.PI, // random initial rotation
+        angle: Math.random() * Math.PI,
         label: `${id}|${type}`,
-        chamfer: { radius: Math.min(pxW, pxH) * 0.45 } // Pill shape for tumbling
-      } as any
+        chamfer: { radius: Math.min(pxW, pxH) * 0.45 }
+      }
     );
 
-    // Initial spin like HypeCup coins
     Matter.Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.5);
 
     this.bodiesMap.set(id, body);

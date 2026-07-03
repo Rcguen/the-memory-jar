@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useSfx } from "@/hooks/useSfx";
 import { usePhysics } from "@/providers/physics-provider";
 import { MemoryObjectFactory } from "./objects/MemoryObjectFactory";
+import { useMemoryViewer } from "@/providers/memory-viewer-provider";
 
 interface GlassJarProps {
   memoryCount: number;
@@ -14,6 +15,7 @@ interface GlassJarProps {
 export function GlassJar({ memoryCount }: GlassJarProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const { states, setContainerRef } = usePhysics();
+  const { viewingMemoryId, openViewer } = useMemoryViewer();
   
   // Cinematic zoom state
   const [isZoomed, setIsZoomed] = useState(false);
@@ -78,10 +80,37 @@ export function GlassJar({ memoryCount }: GlassJarProps) {
   };
 
   const handleOpenMemory = (id: string) => {
+    if (viewingMemoryId === id) return;
+
+    openViewer(id);
     setIsZoomed(true);
-    // TODO: Connect this to actual memory opening modal
-    // For now, simulate opening and then zooming back out after 2 seconds
     setTimeout(() => setIsZoomed(false), 2000);
+  };
+
+  const handleContentsPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (states.length === 0 || viewingMemoryId) return;
+
+    const rect = event.currentTarget.getBoundingClientRect();
+    const pointerX = event.clientX - rect.left;
+    const pointerY = event.clientY - rect.top;
+    const radius = event.pointerType === "touch" ? 86 : 70;
+
+    const closest = states.reduce<{ id: string; distance: number } | null>((nearest, state) => {
+      const dx = pointerX - state.x * rect.width;
+      const dy = pointerY - state.y * rect.height;
+      const distance = Math.hypot(dx, dy);
+
+      if (distance > radius) return nearest;
+      if (!nearest || distance < nearest.distance) {
+        return { id: state.id, distance };
+      }
+
+      return nearest;
+    }, null);
+
+    if (closest) {
+      handleOpenMemory(closest.id);
+    }
   };
 
   return (
@@ -190,7 +219,7 @@ export function GlassJar({ memoryCount }: GlassJarProps) {
           {/* 1. Contents (Where the memories go - Behind the jar glass!) */}
           <g id="layer-contents">
             <foreignObject x="0" y="0" width="400" height="500">
-              <div className="relative w-full h-full pointer-events-auto">
+              <div className="relative w-full h-full pointer-events-auto" onPointerUp={handleContentsPointerUp}>
                 {states.map(state => (
                   <MemoryObjectFactory key={state.id} state={state} onClick={handleOpenMemory} />
                 ))}

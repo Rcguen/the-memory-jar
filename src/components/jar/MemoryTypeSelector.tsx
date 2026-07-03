@@ -2,17 +2,17 @@
 
 import { motion, Variants } from "framer-motion";
 import { MemoryType } from "@/types/memory";
-import { 
-  HeartHandshake, 
-  Mail, 
-  Image as ImageIcon, 
-  Mic, 
-  Video, 
-  Plane, 
-  Star, 
-  Heart, 
+import {
+  HeartHandshake,
+  Mail,
+  Image as ImageIcon,
+  Mic,
+  Video,
+  Plane,
+  Star,
+  Heart,
   MessageCircleQuestion,
-  X 
+  X,
 } from "lucide-react";
 
 interface MemoryTypeSelectorProps {
@@ -33,16 +33,45 @@ const MEMORY_TYPES: { id: MemoryType; label: string; icon: React.ElementType; de
 ];
 
 const containerVariants: Variants = {
-  hidden: { opacity: 0 },
+  hidden: { opacity: 0, y: 18, scale: 0.985, filter: "blur(8px)" },
   show: {
     opacity: 1,
-    transition: { staggerChildren: 0.1, delayChildren: 0.3 }
-  }
+    y: 0,
+    scale: 1,
+    filter: "blur(0px)",
+    transition: { staggerChildren: 0.08, delayChildren: 0.18, ease: [0.22, 1, 0.36, 1] },
+  },
+  exit: {
+    opacity: 0,
+    y: 18,
+    scale: 0.985,
+    filter: "blur(8px)",
+    transition: { duration: 0.34, staggerChildren: 0.035, staggerDirection: -1, ease: [0.55, 0, 0.1, 1] },
+  },
+};
+
+const titleVariants: Variants = {
+  hidden: { opacity: 0, y: -18 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.7, delay: 0.08, ease: [0.22, 1, 0.36, 1] } },
+  exit: { opacity: 0, y: -14, transition: { duration: 0.2, ease: [0.55, 0, 0.1, 1] } },
+};
+
+const subtitleVariants: Variants = {
+  hidden: { opacity: 0, y: -8 },
+  show: { opacity: 0.7, y: 0, transition: { duration: 0.7, delay: 0.18, ease: [0.22, 1, 0.36, 1] } },
+  exit: { opacity: 0, y: -8, transition: { duration: 0.18, ease: [0.55, 0, 0.1, 1] } },
+};
+
+const gridVariants: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.08, delayChildren: 0.22 } },
+  exit: { transition: { staggerChildren: 0.035, staggerDirection: -1 } },
 };
 
 const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 200, damping: 20 } }
+  hidden: { opacity: 0, y: 18, scale: 0.98 },
+  show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 220, damping: 22 } },
+  exit: { opacity: 0, y: 16, scale: 0.97, transition: { duration: 0.22, ease: [0.55, 0, 0.1, 1] } },
 };
 
 export function MemoryTypeSelector({ onSelect, onCancel }: MemoryTypeSelectorProps) {
@@ -51,49 +80,49 @@ export function MemoryTypeSelector({ onSelect, onCancel }: MemoryTypeSelectorPro
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      exit={{ opacity: 0, scale: 0.95, filter: "blur(4px)", transition: { duration: 0.5 } }}
+      exit="exit"
       className="m-auto w-full max-w-4xl flex flex-col items-center justify-center min-h-[60vh] px-4 relative"
     >
       {onCancel && (
-        <button 
+        <motion.button
+          type="button"
           onClick={onCancel}
+          whileHover={{ scale: 1.08, rotate: 90 }}
+          whileTap={{ scale: 0.92 }}
+          transition={{ type: "spring", stiffness: 400, damping: 24 }}
           className="absolute top-0 right-4 p-2 rounded-full hover:bg-white/10 dark:hover:bg-white/5 transition-colors z-50 group"
+          aria-label="Close memory type selector"
         >
           <X className="w-6 h-6 text-zinc-500 group-hover:text-zinc-800 dark:text-zinc-400 dark:group-hover:text-zinc-200 transition-colors" />
-        </button>
+        </motion.button>
       )}
 
-      <motion.h2 
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1, delay: 0.2 }}
+      <motion.h2
+        variants={titleVariants}
         className="text-3xl md:text-5xl font-cormorant text-zinc-800 dark:text-zinc-200 mb-4"
       >
         What would you like to preserve?
       </motion.h2>
-      
-      <motion.p 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 0.7 }}
-        transition={{ duration: 1, delay: 0.5 }}
+
+      <motion.p
+        variants={subtitleVariants}
         className="font-inter text-zinc-500 dark:text-zinc-400 mb-12 text-center"
       >
         Select a memory type to begin.
       </motion.p>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 w-full">
+      <motion.div variants={gridVariants} className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 w-full">
         {MEMORY_TYPES.map((type) => (
           <motion.button
             key={type.id}
             variants={itemVariants}
             onClick={() => onSelect(type.id)}
-            whileHover={{ scale: 1.02 }}
+            whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
             className="group relative flex flex-col items-center justify-center p-6 md:p-8 rounded-2xl bg-white/40 dark:bg-zinc-900/40 hover:bg-white/60 dark:hover:bg-zinc-800/60 border border-white/50 dark:border-zinc-800/50 backdrop-blur-md transition-colors text-center overflow-hidden"
           >
-            {/* Subtle hover sweep */}
             <div className="absolute inset-0 -translate-x-[150%] skew-x-12 bg-gradient-to-r from-transparent via-white/20 to-transparent group-hover:animate-sweep pointer-events-none" />
-            
+
             <type.icon className="w-8 h-8 md:w-10 md:h-10 text-rose-500/70 dark:text-rose-400/70 mb-4 transition-transform group-hover:scale-110 duration-500" />
             <h3 className="font-cormorant text-xl md:text-2xl font-semibold text-zinc-800 dark:text-zinc-200 mb-2">
               {type.label}
@@ -103,7 +132,7 @@ export function MemoryTypeSelector({ onSelect, onCancel }: MemoryTypeSelectorPro
             </p>
           </motion.button>
         ))}
-      </div>
+      </motion.div>
     </motion.div>
   );
 }

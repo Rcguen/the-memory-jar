@@ -1,7 +1,6 @@
 "use client";
 
-import { motion, useMotionValue } from "framer-motion";
-import { MemoryType } from "@/types/memory";
+import { motion, useMotionValue, type MotionStyle } from "framer-motion";
 import { useState } from "react";
 import { NormalizedVisualState } from "@/lib/physics/EngineCore";
 import { useEffect } from "react";
@@ -22,7 +21,7 @@ interface MemoryObjectFactoryProps {
 }
 
 export function MemoryObjectFactory({ state, onClick }: MemoryObjectFactoryProps) {
-  const { pokeMemory, registerMotionValues, unregisterMotionValues } = usePhysics();
+  const { registerMotionValues, unregisterMotionValues } = usePhysics();
   const { viewingMemoryId, openViewer } = useMemoryViewer();
   const [isHovered, setIsHovered] = useState(false);
   const queryClient = useQueryClient();
@@ -40,10 +39,6 @@ export function MemoryObjectFactory({ state, onClick }: MemoryObjectFactoryProps
 
   const handleHoverStart = () => {
     setIsHovered(true);
-    // Poke the memory slightly on hover to give it life
-    if (state.isSleeping && viewingMemoryId !== state.id) {
-      pokeMemory(state.id);
-    }
 
     // Prefetch memory data and media metadata
     queryClient.prefetchQuery({
@@ -81,33 +76,42 @@ export function MemoryObjectFactory({ state, onClick }: MemoryObjectFactoryProps
     setIsHovered(false);
   };
 
-  const handleClick = () => {
+  const openMemory = () => {
     if (viewingMemoryId !== state.id) {
       openViewer(state.id);
       onClick(state.id);
     }
   };
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openMemory();
+    }
+  };
+
   // We apply x, y as percentages (top/left) and then translate -50% -50% so the center matches.
   const sizeConfig = MEMORY_SIZES[state.type] || MEMORY_SIZES.random_thought;
+  const hitTargetPx = 64;
   
-  const style: React.CSSProperties | any = {
+  const style: MotionStyle = {
     position: "absolute",
     left: x,
     top: y,
     width: `${sizeConfig.width * 100}%`,
+    minWidth: hitTargetPx,
+    minHeight: hitTargetPx,
     aspectRatio: `${sizeConfig.width} / ${sizeConfig.height}`,
     x: "-50%",
     y: "-50%",
-    rotate: rotate,
+    rotate,
     scale: state.scale,
-    // Use velocity to add subtle micro-animations
-    filter: Math.abs(state.vy) > 10 ? "blur(1px)" : "none",
+    filter: Math.abs(state.vy) > 12 ? "blur(0.6px)" : "none",
     transition: "filter 0.1s ease-out",
-    zIndex: state.z_index || 1,
+    zIndex: Math.max(1, Math.round(state.y * 100)),
     willChange: "transform",
     cursor: "pointer",
-    // Hide the physical copy if it's currently being viewed in the portal
+    touchAction: "manipulation",
     opacity: viewingMemoryId === state.id ? 0 : 1,
   };
 
@@ -153,9 +157,10 @@ export function MemoryObjectFactory({ state, onClick }: MemoryObjectFactoryProps
       style={style}
       onMouseEnter={handleHoverStart}
       onMouseLeave={handleHoverEnd}
-      onClick={handleClick}
-      whileHover={viewingMemoryId !== state.id ? { scale: state.scale * 1.05, filter: "brightness(1.1) drop-shadow(0px 10px 15px rgba(0,0,0,0.3))" } : {}}
-      whileTap={viewingMemoryId !== state.id ? { scale: state.scale * 0.95 } : {}}
+      onKeyDown={handleKeyDown}
+      role="button"
+      tabIndex={viewingMemoryId === state.id ? -1 : 0}
+      aria-label="Open memory"
     >
       {renderObject()}
       

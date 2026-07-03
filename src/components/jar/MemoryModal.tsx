@@ -110,20 +110,33 @@ export function MemoryModal() {
   };
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-auto">
+        <motion.div
+          key="memory-modal-shell"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+          className="fixed inset-0 z-50 flex items-center justify-center pointer-events-auto"
+        >
           {/* Background Darken & Blur */}
           <motion.div
             initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
             animate={{ opacity: 1, backdropFilter: "blur(12px)" }}
             exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
-            transition={{ duration: 1, ease: "easeInOut" }}
+            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
             className="absolute inset-0 bg-black/40 dark:bg-black/60 pointer-events-none"
           />
 
           {/* Modal Content Container */}
-          <div className="relative w-full h-full flex p-4 sm:p-8 overflow-y-auto z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 18, scale: 0.985, filter: "blur(6px)" }}
+            animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+            exit={{ opacity: 0, y: 18, scale: 0.985, filter: "blur(8px)" }}
+            transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
+            className="relative w-full h-full flex p-4 sm:p-8 overflow-y-auto z-10"
+          >
             <AnimatePresence mode="wait">
               {step === "select_type" && (
                 <MemoryTypeSelector key="select_type" onSelect={handleSelectType} onCancel={handleCancel} />
@@ -194,8 +207,8 @@ export function MemoryModal() {
                 </motion.div>
               )}
             </AnimatePresence>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
     </AnimatePresence>
   );
