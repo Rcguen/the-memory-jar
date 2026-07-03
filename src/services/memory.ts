@@ -105,11 +105,7 @@ export const memoryService = {
 
   async deleteMemory(id: string): Promise<void> {
     const supabase = createClient();
-    const { error } = await supabase
-      .from("memories")
-      .update({ deleted_at: new Date().toISOString() })
-      .eq("id", id)
-      .is("deleted_at", null);
+    const { error } = await supabase.rpc("soft_delete_memory", { p_memory_id: id });
 
     if (error) {
       console.error("Supabase Memory Delete Error:", error);
