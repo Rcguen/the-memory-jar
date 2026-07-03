@@ -114,13 +114,12 @@ export const memoryService = {
 
     if (error) {
       console.error("Supabase Memory Delete Error:", error);
-      throw error;
+      throw new Error(error.message ?? JSON.stringify(error));
     }
 
-    // If no rows returned, the update was blocked (RLS or already deleted)
     if (!data || data.length === 0) {
-      console.error("deleteMemory: 0 rows updated for id", id, "— possible RLS violation or row not found");
-      throw new Error("Delete failed: no rows updated. You may not have permission.");
+      console.error("deleteMemory: 0 rows updated for id", id);
+      throw new Error("Delete failed: memory not found or you do not have permission.");
     }
   },
 
