@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { format, addDays, addMonths, isBefore, setYear, isSameDay } from "date-fns";
-import { Clock, Calendar as CalendarIcon, Check } from "lucide-react";
+import { format, isSameDay, addDays, addMonths } from "date-fns";
+import { Clock, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { getNextAnniversary, formatInTimezone } from "@/lib/timezone";
 
 interface TimeCapsulePickerProps {
   value: string | undefined;
@@ -16,6 +17,7 @@ interface TimeCapsulePickerProps {
 
 export function TimeCapsulePicker({ value, onChange }: TimeCapsulePickerProps) {
   const [anniversaryDate, setAnniversaryDate] = useState<Date | null>(null);
+  const [relationshipTimezone, setRelationshipTimezone] = useState<string>("UTC");
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
@@ -34,18 +36,19 @@ export function TimeCapsulePicker({ value, onChange }: TimeCapsulePickerProps) {
 
       const { data: relData } = await supabase
         .from("relationship_settings")
-        .select("start_date")
+        .select("start_date, relationship_timezone")
         .eq("id", memberData.relationship_id)
         .single();
 
       if (relData && relData.start_date) {
-        const startDate = new Date(relData.start_date);
-        const today = new Date();
-        let nextAnniversary = setYear(startDate, today.getFullYear());
-        
-        if (isBefore(nextAnniversary, today) && !isSameDay(nextAnniversary, today)) {
-          nextAnniversary = setYear(startDate, today.getFullYear() + 1);
-        }
+        // Use relationship_timezone for anniversary so both partners share the same date.
+        // If the column hasn't been migrated yet, fall back gracefully to 'UTC'.
+        const tz: string = (relData as any).relationship_timezone || "UTC";
+        setRelationshipTimezone(tz);
+
+        // Anniversary is set to midnight (00:00) in the relationship timezone,
+        // not the viewer's local clock.
+        const nextAnniversary = getNextAnniversary(relData.start_date, tz);
         setAnniversaryDate(nextAnniversary);
       }
     }
@@ -54,9 +57,17 @@ export function TimeCapsulePicker({ value, onChange }: TimeCapsulePickerProps) {
 
   const presets = [
     { label: "Open Today", value: undefined, desc: "Not a time capsule" },
-    { label: "Next Week", value: addDays(new Date(), 7).toISOString(), desc: "In 7 days" },
+    { label: "Next Week",  value: addDays(new Date(), 7).toISOString(),  desc: "In 7 days" },
     { label: "Next Month", value: addMonths(new Date(), 1).toISOString(), desc: "In 1 month" },
-    ...(anniversaryDate ? [{ label: "Anniversary", value: anniversaryDate.toISOString(), desc: format(anniversaryDate, "MMM d, yyyy") }] : []),
+    ...(anniversaryDate
+      ? [{
+          label: "Anniversary",
+          value: anniversaryDate.toISOString(),
+          desc: formatInTimezone(anniversaryDate.toISOString(), relationshipTimezone, {
+            month: "short", day: "numeric", year: "numeric",
+          }),
+        }]
+      : []),
   ];
 
   const handleSelect = (val: string | undefined) => {
@@ -68,7 +79,7 @@ export function TimeCapsulePicker({ value, onChange }: TimeCapsulePickerProps) {
     if (!value) return "No lock";
     const d = new Date(value);
     
-    // Check if it matches a preset exactly
+    // Check if it matches a preset exactly (by calendar day)
     const matchingPreset = presets.find(p => p.value && isSameDay(new Date(p.value), d));
     if (matchingPreset && matchingPreset.label !== "Open Today") {
       return matchingPreset.label;

@@ -23,9 +23,23 @@ export async function getProfile() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, username, display_name, avatar")
+    .select("id, username, display_name, avatar, timezone")
     .eq("id", user.id)
     .single();
 
   return profile;
+}
+
+/**
+ * Saves the auto-detected timezone for a user's profile.
+ * Only writes if the current value IS NULL — never overwrites an
+ * existing value (including an explicitly chosen 'UTC').
+ */
+export async function updateProfileTimezone(userId: string, tz: string): Promise<void> {
+  const supabase = await createClient();
+  await supabase
+    .from("profiles")
+    .update({ timezone: tz })
+    .eq("id", userId)
+    .is("timezone", null); // Only update if timezone is currently NULL
 }

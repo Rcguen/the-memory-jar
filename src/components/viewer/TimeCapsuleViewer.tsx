@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
 import { motion } from "framer-motion";
-import { format, differenceInDays } from "date-fns";
 import { Memory } from "@/types/memory";
 import { useUnlockScheduler } from "@/providers/unlock-scheduler";
 import { useAuth } from "@/providers/auth-provider";
 import { Lock, DoorOpen, Pencil, Trash2 } from "lucide-react";
 import { useKnockState } from "@/hooks/useKnockState";
 import { createClient } from "@/lib/supabase/client";
+import { formatInTimezone, daysUntil } from "@/lib/timezone";
 
 interface TimeCapsuleViewerProps {
   memory: Memory;
@@ -21,17 +22,16 @@ export function TimeCapsuleViewer({ memory, onClose, onEdit, onDelete }: TimeCap
   const { now } = useUnlockScheduler();
   const { profile } = useAuth();
   const { hasKnocked, partnerKnocked, knock } = useKnockState(memory.id, profile?.id);
+  // daysRemaining is derived from pure UTC comparison, not local time
   const [daysRemaining, setDaysRemaining] = useState<number>(0);
   const [partnerName, setPartnerName] = useState<string>("your partner");
   
   useEffect(() => {
     if (memory.unlock_at) {
-      const unlockDate = new Date(memory.unlock_at);
-      const days = differenceInDays(unlockDate, now);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setDaysRemaining(days > 0 ? days : 0);
+      // daysUntil uses UTC millisecond math — timezone-safe
+      setDaysRemaining(daysUntil(memory.unlock_at));
     }
-  }, [memory.unlock_at, now]);
+  }, [memory.unlock_at, now]); // `now` ticks every minute via UnlockScheduler
 
   useEffect(() => {
     if (!memory.is_collaborative || !profile) return;
@@ -105,7 +105,11 @@ export function TimeCapsuleViewer({ memory, onClose, onEdit, onDelete }: TimeCap
         {isLocked && memory.unlock_at && (
           <div className="space-y-1">
             <h3 className="text-2xl text-amber-50/90 tracking-wide">
-              {format(new Date(memory.unlock_at), "d MMMM yyyy")}
+              {formatInTimezone(
+                memory.unlock_at,
+                profile?.timezone || "UTC",
+                { day: "numeric", month: "long", year: "numeric" }
+              )}
             </h3>
             <p className="text-amber-500/70 text-sm tracking-widest uppercase">
               {daysRemaining} {daysRemaining === 1 ? "day" : "days"} remaining

@@ -135,3 +135,30 @@ export interface Tag {
   id: string;
   name: string;
 }
+
+/**
+ * Full profile including timezone (populated by auto-detection hook).
+ * timezone is NULL until the hook writes it after first login.
+ */
+export interface UserProfile {
+  id: string;
+  username: string;
+  display_name: string;
+  avatar: string | null;
+  /** IANA timezone string, e.g. "Asia/Ho_Chi_Minh". NULL until auto-detected. */
+  timezone: string | null;
+}
+
+/**
+ * Relationship-level settings including the shared anniversary timezone.
+ */
+export interface RelationshipSettings {
+  id: string;
+  start_date: string;
+  anniversary_type: string;
+  /** Shared couple timezone for anniversary calculations. */
+  relationship_timezone: string;
+  created_at: string;
+  updated_at: string;
+}
+

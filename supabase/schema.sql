@@ -5,6 +5,9 @@ create table public.profiles (
   email text unique not null,
   display_name text not null,
   avatar text,
+  -- IANA timezone for display formatting. NULL until auto-detected on first login.
+  -- See: src/hooks/useTimezoneDetection.ts
+  timezone text DEFAULT NULL,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
@@ -56,7 +59,9 @@ create table public.relationship_settings (
   id uuid default gen_random_uuid() primary key,
   start_date timestamp with time zone not null,
   anniversary_type text default 'yearly',
-  timezone text default 'UTC',
+  -- Shared couple timezone for anniversary calculations.
+  -- Renamed from 'timezone' by migration 20260703130000_timezone_architecture.sql
+  relationship_timezone text default 'UTC',
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );

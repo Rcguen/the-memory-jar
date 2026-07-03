@@ -2,13 +2,8 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { getProfile } from "@/services/auth";
-
-type UserProfile = {
-  id: string;
-  username: string;
-  display_name: string;
-  avatar: string | null;
-};
+import { useTimezoneDetection } from "@/hooks/useTimezoneDetection";
+import { UserProfile } from "@/types/memory";
 
 type AuthContextType = {
   profile: UserProfile | null;
@@ -44,6 +39,9 @@ export function AuthProvider({ children, initialProfile }: { children: React.Rea
       refreshProfile();
     }
   }, [initialProfile]);
+
+  // Auto-detect and save timezone once when profile.timezone is NULL
+  useTimezoneDetection(profile);
 
   return (
     <AuthContext.Provider value={{ profile, isLoading, refreshProfile }}>
