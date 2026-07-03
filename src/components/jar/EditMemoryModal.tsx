@@ -33,6 +33,23 @@ export function EditMemoryModal({ memory, onClose }: EditMemoryModalProps) {
 
   const handleSave = async (data: MemoryFormData, files: File[]) => {
     try {
+      const isFutureUnlock = data.unlock_at && new Date(data.unlock_at).getTime() > Date.now();
+      
+      let newStatus = memory.status;
+      if (isFutureUnlock) {
+        if (memory.status === 'unlocked' || memory.status === 'opening') {
+          newStatus = 'sealed';
+        }
+      }
+
+      let newCapsuleStyle = memory.capsule_style;
+      if (data.unlock_at && !memory.capsule_style) {
+         const styles = ['vintage_parcel', 'ribbon_box', 'wax_capsule', 'glass_capsule', 'wooden_box', 'silk_envelope'];
+         newCapsuleStyle = styles[Math.floor(Math.random() * styles.length)] as any;
+      } else if (!data.unlock_at) {
+         newCapsuleStyle = null;
+      }
+
       // 1. Update memory
       await memoryService.updateMemory(memory.id, {
         title: data.title,
@@ -43,6 +60,8 @@ export function EditMemoryModal({ memory, onClose }: EditMemoryModalProps) {
         is_collaborative: data.is_collaborative,
         theme: data.theme as MemoryThemeType,
         decorations: data.decorations as DecorationID[],
+        status: newStatus,
+        capsule_style: newCapsuleStyle,
       });
 
       // 2. Remove deleted attachments
