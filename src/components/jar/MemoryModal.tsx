@@ -10,6 +10,7 @@ import { MemoryType, MemoryThemeType, DecorationID } from "@/types/memory";
 import { memoryService } from "@/services/memory";
 import { useMemoryDraft } from "@/hooks/useMemoryDraft";
 import { usePhysics } from "@/providers/physics-provider";
+import { uploadMemoryAttachments } from "@/lib/memory-upload";
 
 type ModalStep = "select_type" | "form" | "saving_animation";
 
@@ -62,22 +63,7 @@ export function MemoryModal() {
       capsule_style: data.unlock_at ? ['vintage_parcel', 'ribbon_box', 'wax_capsule', 'glass_capsule', 'wooden_box', 'silk_envelope'][Math.floor(Math.random() * 6)] as import("@/types/memory").CapsuleStyle : null,
     });
 
-    // Upload files
-    if (files.length > 0) {
-      let fileIndex = 0;
-      for (const file of files) {
-        let bucket: "memory-images" | "memory-voices" | "memory-videos" = "memory-images";
-        let attachType: "photo" | "voice" | "video" = "photo";
-
-        if (file.type.startsWith("video/")) { bucket = "memory-videos"; attachType = "video"; }
-        else if (file.type.startsWith("audio/")) { bucket = "memory-voices"; attachType = "voice"; }
-
-        // Pass index to ensure ordered paths
-        const path = await memoryService.uploadAttachment(file, memory.id, bucket, fileIndex + 1);
-        await memoryService.linkAttachmentToMemory(memory.id, attachType, path);
-        fileIndex++;
-      }
-    }
+    await uploadMemoryAttachments(memory.id, files);
 
     clearDraft();
     setStep("saving_animation");

@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useMemoryViewer } from "@/providers/memory-viewer-provider";
 import { usePhysics } from "@/providers/physics-provider";
 import { AudioPlayer } from "./AudioPlayer";
-import { PhotoViewer } from "./PhotoViewer";
+import { PhotoGallery } from "./PhotoGallery";
 import { VideoPlayer } from "./VideoPlayer";
 import { useQuery } from "@tanstack/react-query";
 import { memoryService } from "@/services/memory";
@@ -110,6 +110,11 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
       placements: getDecorationPlacements(memoryId, rawDecorations)
     };
   }, [fullMemory, memoryId]);
+
+  const attachments = fullMemory?.attachments ?? [];
+  const photoAttachments = attachments.filter((attachment) => attachment.file_type === "photo");
+  const thumbnailAttachments = attachments.filter((attachment) => attachment.file_type === "thumbnail");
+  const playableAttachments = attachments.filter((attachment) => attachment.file_type === "voice" || attachment.file_type === "video");
 
   // If memory isn't fully loaded yet, show a beautiful skeleton or wait
   if (!fullMemory) {
@@ -299,9 +304,13 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
           </div>
         )}
 
-        {/* Render Attachments Dynamically */}
-        {fullMemory.attachments?.map((attachment) => (
-          <AttachmentRenderer key={attachment.id} attachment={attachment} />
+        <PhotoGallery attachments={photoAttachments} />
+        {playableAttachments.map((attachment) => (
+          <AttachmentRenderer
+            key={attachment.id}
+            attachment={attachment}
+            thumbnail={attachment.file_type === "video" ? thumbnailAttachments[0] : undefined}
+          />
         ))}
       </div>
 
@@ -344,25 +353,28 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
   );
 }
 
-function AttachmentRenderer({ attachment }: { attachment: MemoryAttachment }) {
+function AttachmentRenderer({ attachment, thumbnail }: { attachment: MemoryAttachment; thumbnail?: MemoryAttachment }) {
   const { data: url, isLoading } = useQuery({
     queryKey: ['attachmentUrl', attachment.id, attachment.url],
     queryFn: () => memoryService.getAttachmentUrlAsync(attachment.file_type, attachment.url),
     staleTime: 1000 * 60 * 30, // Cache signed URLs for 30 minutes
+  });
+  const { data: thumbnailUrl } = useQuery({
+    queryKey: ['attachmentUrl', thumbnail?.id, thumbnail?.url],
+    queryFn: () => memoryService.getAttachmentUrlAsync(thumbnail!.file_type, thumbnail!.url),
+    staleTime: 1000 * 60 * 30,
+    enabled: !!thumbnail,
   });
 
   if (isLoading || !url) {
     return <div className="w-full h-32 bg-black/5 dark:bg-white/5 animate-pulse rounded-xl" />;
   }
 
-  if (attachment.file_type === "photo") {
-    return <PhotoViewer url={url} />;
-  }
   if (attachment.file_type === "voice") {
     return <AudioPlayer url={url} />;
   }
   if (attachment.file_type === "video") {
-    return <VideoPlayer url={url} />;
+    return <VideoPlayer url={url} poster={thumbnailUrl} />;
   }
   return null;
 }

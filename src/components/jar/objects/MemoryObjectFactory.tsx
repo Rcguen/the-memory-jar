@@ -11,6 +11,7 @@ import { Lock } from "lucide-react";
 import { MEMORY_SIZES } from "@/lib/physics/EngineCore";
 import { useQueryClient } from "@tanstack/react-query";
 import { memoryService } from "@/services/memory";
+import { useUnlockScheduler } from "@/providers/unlock-scheduler";
 
 // The heavy SVG components have been removed to improve physics rendering performance.
 // We now use lightweight emoji badges.
@@ -25,6 +26,7 @@ export function MemoryObjectFactory({ state, onClick }: MemoryObjectFactoryProps
   const { viewingMemoryId } = useMemoryViewer();
   const [isHovered, setIsHovered] = useState(false);
   const queryClient = useQueryClient();
+  const { now } = useUnlockScheduler();
   const prefetchTimerRef = useRef<number | null>(null);
   const pointerStartRef = useRef<{ x: number; y: number; pointerId: number; pointerType: string } | null>(null);
 
@@ -43,7 +45,7 @@ export function MemoryObjectFactory({ state, onClick }: MemoryObjectFactoryProps
   }, [state.id, x, y, rotate, registerMotionValues, unregisterMotionValues]);
 
   const unlockAtMs = state.unlockAt ? new Date(state.unlockAt).getTime() : 0;
-  const isLocked = !!state.unlockAt && Number.isFinite(unlockAtMs) && Date.now() < unlockAtMs;
+  const isLocked = !!state.unlockAt && Number.isFinite(unlockAtMs) && now.getTime() < unlockAtMs;
 
   const handleHoverStart = () => {
     setIsHovered(true);

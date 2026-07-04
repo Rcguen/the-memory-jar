@@ -1,9 +1,10 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNow } from "date-fns";
 import {
   BookOpen,
@@ -97,6 +98,25 @@ function lockedUntilLabel(unlockAt: string | null) {
   return `Opens ${format(date, "MMM d")}`;
 }
 
+function MemoryPreviewThumb({ memory }: { memory: Memory }) {
+  const thumbnail = memory.attachments?.find((attachment) => attachment.file_type === "thumbnail")
+    ?? memory.attachments?.find((attachment) => attachment.file_type === "photo");
+  const { data: url } = useQuery({
+    queryKey: ["attachmentUrl", thumbnail?.id, thumbnail?.url],
+    queryFn: () => memoryService.getAttachmentUrlAsync(thumbnail!.file_type, thumbnail!.url),
+    staleTime: 1000 * 60 * 30,
+    enabled: !!thumbnail && (memory.type === "video" || memory.type === "photo"),
+  });
+
+  if (!url) return null;
+
+  return (
+    <span className="mr-3 hidden h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-white/[0.07] bg-black/20 sm:block">
+      <img src={url} alt="" loading="lazy" className="h-full w-full object-cover" />
+    </span>
+  );
+}
+
 interface MemoryCommandCenterProps {
   className?: string;
 }
@@ -143,6 +163,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
     mutationFn: ({ memory, favorite }: { memory: Memory; favorite: boolean }) => memoryService.setFavorite(memory.id, favorite),
     onMutate: async ({ memory, favorite }) => {
       await queryClient.cancelQueries({ queryKey: ["memories"] });
+      const previousMemories = queryClient.getQueriesData<Memory[]>({ queryKey: ["memories"] });
       queryClient.setQueriesData<Memory[]>({ queryKey: ["memories"] }, (old) =>
         old?.map((item) =>
           item.id === memory.id
@@ -150,6 +171,13 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
             : item,
         ),
       );
+      return { previousMemories };
+    },
+    onError: (error, _variables, context) => {
+      context?.previousMemories.forEach(([queryKey, data]) => {
+        queryClient.setQueryData(queryKey, data);
+      });
+      toast.error(`Favorite failed: ${error instanceof Error ? error.message : String(error)}`);
     },
     onSettled: (_, __, variables) => {
       queryClient.invalidateQueries({ queryKey: ["memories"] });
@@ -172,9 +200,31 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
 
   const reactionMutation = useMutation({
     mutationFn: ({ memory, emoji }: { memory: Memory; emoji: ReactionEmoji }) => memoryService.setReaction(memory.id, emoji),
+    onMutate: async ({ memory, emoji }) => {
+      await queryClient.cancelQueries({ queryKey: ["memories"] });
+      const previousMemories = queryClient.getQueriesData<Memory[]>({ queryKey: ["memories"] });
+      queryClient.setQueriesData<Memory[]>({ queryKey: ["memories"] }, (old) =>
+        old?.map((item) => {
+          if (item.id !== memory.id) return item;
+          const previousEmoji = item.my_reaction;
+          const counts = { ...(item.reaction_counts ?? {}) } as Record<ReactionEmoji, number>;
+          if (previousEmoji) counts[previousEmoji] = Math.max(0, (counts[previousEmoji] ?? 0) - 1);
+          counts[emoji] = (counts[emoji] ?? 0) + 1;
+          return { ...item, my_reaction: emoji, reaction_counts: counts };
+        }),
+      );
+      return { previousMemories };
+    },
+    onError: (error, _variables, context) => {
+      context?.previousMemories.forEach(([queryKey, data]) => {
+        queryClient.setQueryData(queryKey, data);
+      });
+      toast.error(`Reaction failed: ${error instanceof Error ? error.message : String(error)}`);
+    },
     onSettled: (_, __, variables) => {
       queryClient.invalidateQueries({ queryKey: ["memories"] });
       queryClient.invalidateQueries({ queryKey: ["memory", variables.memory.id] });
+      queryClient.invalidateQueries({ queryKey: ["activity-feed"] });
     },
   });
 
@@ -376,7 +426,9 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                               )}
                             >
                               <div className="flex items-start gap-3">
-                                <button onClick={() => openViewer(memory.id)} className="min-w-0 flex-1 text-left">
+                                <button onClick={() => openViewer(memory.id)} className="flex min-w-0 flex-1 text-left">
+                                  <MemoryPreviewThumb memory={memory} />
+                                  <span className="min-w-0 flex-1">
                                   <div className="mb-1 flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-zinc-500">
                                     {memory.is_pinned && <Pin className="h-3 w-3 text-emerald-400" />}
                                     <span>{memory.type.replace("_", " ")}</span>
@@ -411,6 +463,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                                       <EmojiText text={preview} />
                                     )}
                                   </p>
+                                  </span>
                                 </button>
 
                                 <div className="flex items-center gap-1">

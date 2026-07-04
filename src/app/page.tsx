@@ -26,6 +26,7 @@ import { DropMemoryButton } from "@/components/jar/DropMemoryButton";
 import { WritingDesk } from "@/components/jar/WritingDesk";
 import { JarHeartbeat } from "@/components/jar/JarHeartbeat";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { usePhysics } from "@/providers/physics-provider";
 import { memoryService } from "@/services/memory";
 import { createClient } from "@/lib/supabase/client";
@@ -164,6 +165,8 @@ export default function Home() {
       {/* 3. Top Navigation */}
       <header className="absolute top-0 left-0 right-0 p-6 flex justify-end z-20">
         {profile && (
+          <div className="flex items-center gap-3">
+          <NotificationBell />
           <DropdownMenu>
             <DropdownMenuTrigger className="relative h-10 flex items-center gap-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 pr-4 pl-1 outline-none transition-colors">
               <Avatar className="h-8 w-8">
@@ -202,6 +205,7 @@ export default function Home() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          </div>
         )}
       </header>
 

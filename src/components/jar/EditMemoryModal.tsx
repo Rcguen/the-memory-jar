@@ -8,6 +8,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { X } from "lucide-react";
 import { usePhysics } from "@/providers/physics-provider";
 import { NormalizedVisualState } from "@/lib/physics/EngineCore";
+import { uploadMemoryAttachments } from "@/lib/memory-upload";
 
 interface EditMemoryModalProps {
   memory: Memory;
@@ -81,20 +82,7 @@ export function EditMemoryModal({ memory, onClose }: EditMemoryModalProps) {
         await memoryService.deleteAttachment(attId);
       }
 
-      if (files.length > 0) {
-        let fileIndex = existingAttachments.length;
-        for (const file of files) {
-          let bucket: "memory-images" | "memory-voices" | "memory-videos" = "memory-images";
-          let attachType: "photo" | "voice" | "video" = "photo";
-
-          if (file.type.startsWith("video/")) { bucket = "memory-videos"; attachType = "video"; }
-          else if (file.type.startsWith("audio/")) { bucket = "memory-voices"; attachType = "voice"; }
-
-          const path = await memoryService.uploadAttachment(file, memory.id, bucket, fileIndex + 1);
-          await memoryService.linkAttachmentToMemory(memory.id, attachType, path);
-          fileIndex++;
-        }
-      }
+      await uploadMemoryAttachments(memory.id, files, existingAttachments.length);
 
       const updatedMemory = await memoryService.getMemoryById(memory.id);
       if (updatedMemory) {

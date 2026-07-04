@@ -12,6 +12,7 @@ import { AttachmentUploader } from "./AttachmentUploader";
 import { TimeCapsulePicker } from "./TimeCapsulePicker";
 import { ThemePicker } from "./ThemePicker";
 import { DecorationPicker } from "./DecorationPicker";
+import { VoiceRecorder } from "./VoiceRecorder";
 import { MEMORY_THEMES, DECORATIONS } from "@/lib/memoryThemes";
 import { MemoryThemeType, DecorationID } from "@/types/memory";
 import { Button } from "@/components/ui/button";
@@ -181,15 +182,24 @@ export function DynamicMemoryForm({
         )}
         
         {showVoice && (
-          <AttachmentUploader 
-            accept="audio/*" 
-            maxFiles={1}
-            files={files} 
-            onChange={setFiles} 
-            label="Upload Voice Recording"
-            existingAttachments={existingAttachments.filter(a => a.file_type === 'voice')}
-            onRemoveExisting={onRemoveAttachment}
-          />
+          <div className="space-y-3">
+            <VoiceRecorder
+              disabled={isSubmitting}
+              onRecordingReady={(file) => setFiles((current) => [
+                ...current.filter((item) => !item.type.startsWith("audio/")),
+                file,
+              ])}
+            />
+            <AttachmentUploader 
+              accept="audio/*" 
+              maxFiles={1}
+              files={files} 
+              onChange={setFiles} 
+              label="Upload Voice Recording"
+              existingAttachments={existingAttachments.filter(a => a.file_type === 'voice')}
+              onRemoveExisting={onRemoveAttachment}
+            />
+          </div>
         )}
 
         {showVideo && (

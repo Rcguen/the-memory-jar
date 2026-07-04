@@ -218,6 +218,7 @@ export function GlassJar({ memoryCount }: GlassJarProps) {
             src="/Jar-Background-PNG.png" 
             alt="Jar" 
             fill 
+            sizes="(min-width: 768px) 20rem, 18rem"
             className="object-contain"
             priority 
           />

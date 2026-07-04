@@ -4,11 +4,13 @@ import { useRealtimeContext } from "@/providers/realtime-provider";
 import { usePhysics } from "@/providers/physics-provider";
 import { Memory, MemoryType } from "@/types/memory";
 import { memoryService } from "@/services/memory";
+import { useAuth } from "@/providers/auth-provider";
 
 export function useRealtimeMemory(relationshipId: string | null) {
   const queryClient = useQueryClient();
   const { subscribePostgres, unsubscribePostgres } = useRealtimeContext();
   const { dropMemory, loadMemory, removeMemory, updateMemoryMeta } = usePhysics();
+  const { profile } = useAuth();
 
   useEffect(() => {
     if (!relationshipId) return;
@@ -144,6 +146,7 @@ export function useRealtimeMemory(relationshipId: string | null) {
       // Always need a full refetch for attachments because the realtime payload
       // does not contain signed URLs — we must re-fetch from service
       queryClient.invalidateQueries({ queryKey: ['memory', memoryId] });
+      queryClient.invalidateQueries({ queryKey: ['memories'] });
     };
 
     window.addEventListener(`postgres-${attachmentsChannel}`, handleAttachmentChange);
@@ -176,6 +179,17 @@ export function useRealtimeMemory(relationshipId: string | null) {
       subscribePostgres(entry.channel, '*', 'public', entry.table, undefined);
     }
 
+    const notificationsChannel = profile?.id ? `notifications_${profile.id}` : null;
+    const handleNotificationChange = () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['unread-notification-count'] });
+    };
+
+    if (notificationsChannel && profile?.id) {
+      window.addEventListener(`postgres-${notificationsChannel}`, handleNotificationChange);
+      subscribePostgres(notificationsChannel, '*', 'public', 'notifications', `user_id=eq.${profile.id}`);
+    }
+
     return () => {
       window.removeEventListener(`postgres-${memoriesChannel}`, handleMemoryChange);
       window.removeEventListener(`postgres-${attachmentsChannel}`, handleAttachmentChange);
@@ -185,6 +199,10 @@ export function useRealtimeMemory(relationshipId: string | null) {
         window.removeEventListener(`postgres-${entry.channel}`, handleRelatedChange);
         unsubscribePostgres(entry.channel);
       }
+      if (notificationsChannel) {
+        window.removeEventListener(`postgres-${notificationsChannel}`, handleNotificationChange);
+        unsubscribePostgres(notificationsChannel);
+      }
     };
-  }, [relationshipId, queryClient, subscribePostgres, unsubscribePostgres, dropMemory, loadMemory, removeMemory, updateMemoryMeta]);
+  }, [relationshipId, profile?.id, queryClient, subscribePostgres, unsubscribePostgres, dropMemory, loadMemory, removeMemory, updateMemoryMeta]);
 }

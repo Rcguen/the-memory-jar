@@ -5,6 +5,7 @@ import {
   MemoryComment,
   MemoryListOptions,
   MemoryMood,
+  MemoryNotification,
   MemoryReaction,
   ReactionEmoji,
 } from "@/types/memory";
@@ -12,6 +13,16 @@ import { mapDatabaseMemory } from "@/lib/mappers/memory.mapper";
 
 const ACTIVE_MEMORY_STATUSES = ["sealed", "unlocked", "opening"];
 const REACTION_EMOJIS: ReactionEmoji[] = ["❤️", "🥹", "😂", "😭", "😍", "🔥"];
+
+function describeSupabaseError(error: { message?: string; details?: string | null; hint?: string | null; code?: string } | null) {
+  if (!error) return "Unknown Supabase error";
+  return [
+    error.message,
+    error.details ? `Details: ${error.details}` : null,
+    error.hint ? `Hint: ${error.hint}` : null,
+    error.code ? `Code: ${error.code}` : null,
+  ].filter(Boolean).join(" ");
+}
 
 function getStorageBucket(fileType: string): "memory-images" | "memory-voices" | "memory-videos" | "memory-thumbnails" {
   if (fileType === "voice") return "memory-voices";
@@ -381,18 +392,40 @@ export const memoryService = {
     }));
   },
 
-  async createComment(memoryId: string, content: string): Promise<void> {
+  async createComment(memoryId: string, content: string): Promise<MemoryComment | null> {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Not authenticated");
     const trimmed = content.trim();
-    if (!trimmed) return;
+    if (!trimmed) return null;
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("memory_comments")
-      .insert({ memory_id: memoryId, user_id: user.id, content: trimmed });
+      .insert({ memory_id: memoryId, user_id: user.id, content: trimmed })
+      .select("*, profiles(id,display_name,username,avatar)")
+      .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error("[comments] create failed", {
+        memoryId,
+        userId: user.id,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      });
+      throw new Error(describeSupabaseError(error));
+    }
+
+    return data ? {
+      id: data.id,
+      memory_id: data.memory_id,
+      user_id: data.user_id,
+      content: data.content,
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+      author: data.profiles ?? null,
+    } : null;
   },
 
   async updateComment(commentId: string, content: string): Promise<void> {
@@ -443,6 +476,61 @@ export const memoryService = {
     })) as ActivityLog[];
   },
 
+  async listNotifications(limit = 20): Promise<MemoryNotification[]> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("notifications")
+      .select("*, profiles(id,display_name,username,avatar), memories(id,title,type,deleted_at)")
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+
+    return (data ?? []).map((notification) => ({
+      id: notification.id,
+      user_id: notification.user_id,
+      relationship_id: notification.relationship_id,
+      actor_id: notification.actor_id,
+      type: notification.type,
+      title: notification.title,
+      body: notification.body,
+      target_memory_id: notification.target_memory_id,
+      metadata: notification.metadata ?? {},
+      read_at: notification.read_at,
+      created_at: notification.created_at,
+      actor: notification.profiles ?? null,
+      memory: notification.memories ?? null,
+    })) as MemoryNotification[];
+  },
+
+  async getUnreadNotificationCount(): Promise<number> {
+    const supabase = createClient();
+    const { count, error } = await supabase
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .is("read_at", null);
+
+    if (error) throw error;
+    return count ?? 0;
+  },
+
+  async markNotificationRead(notificationId: string): Promise<void> {
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("notifications")
+      .update({ read_at: new Date().toISOString() })
+      .eq("id", notificationId)
+      .is("read_at", null);
+
+    if (error) throw error;
+  },
+
+  async markAllNotificationsRead(): Promise<void> {
+    const supabase = createClient();
+    const { error } = await supabase.rpc("mark_all_notifications_read");
+    if (error) throw error;
+  },
+
   async deleteAttachment(attachmentId: string): Promise<void> {
     const supabase = createClient();
     
@@ -456,9 +544,7 @@ export const memoryService = {
     if (!attachment) return;
 
     // 2. Delete from storage
-    let bucket = "memory-images";
-    if (attachment.file_type === "voice") bucket = "memory-voices";
-    if (attachment.file_type === "video") bucket = "memory-videos";
+    const bucket = getStorageBucket(attachment.file_type);
 
     await supabase.storage.from(bucket).remove([attachment.url]);
 
@@ -469,7 +555,7 @@ export const memoryService = {
   async uploadAttachment(
     file: File, 
     memoryId: string, 
-    bucket: "memory-images" | "memory-voices" | "memory-videos",
+    bucket: "memory-images" | "memory-voices" | "memory-videos" | "memory-thumbnails",
     index: number = 1
   ): Promise<string> {
     const supabase = createClient();
@@ -479,8 +565,9 @@ export const memoryService = {
     if (bucket === "memory-images") prefix = "photo";
     if (bucket === "memory-voices") prefix = "voice";
     if (bucket === "memory-videos") prefix = "video";
+    if (bucket === "memory-thumbnails") prefix = "thumbnail";
     
-    const fileName = `${memoryId}/${prefix}-${index}.${fileExt}`;
+    const fileName = `${memoryId}/${prefix}-${index}-${Date.now()}.${fileExt}`;
 
     const { error } = await supabase.storage
       .from(bucket)
@@ -511,11 +598,8 @@ export const memoryService = {
   },
 
   async getAttachmentUrlAsync(fileType: string, path: string): Promise<string> {
-    let bucket = "memory-images";
-    let isPublic = true;
-    
-    if (fileType === "voice") { bucket = "memory-voices"; isPublic = false; }
-    if (fileType === "video") { bucket = "memory-videos"; isPublic = false; }
+    const bucket = getStorageBucket(fileType);
+    const isPublic = bucket === "memory-images" || bucket === "memory-thumbnails";
     
     const supabase = createClient();
     if (isPublic) {

@@ -5,9 +5,10 @@ import { cn } from "@/lib/utils";
 
 interface VideoPlayerProps {
   url: string;
+  poster?: string;
 }
 
-export function VideoPlayer({ url }: VideoPlayerProps) {
+export function VideoPlayer({ url, poster }: VideoPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -107,6 +108,7 @@ export function VideoPlayer({ url }: VideoPlayerProps) {
         <video 
           ref={videoRef} 
           src={url} 
+          poster={poster}
           onTimeUpdate={handleTimeUpdate}
           onEnded={() => setIsPlaying(false)}
           onCanPlay={() => setIsLoading(false)}

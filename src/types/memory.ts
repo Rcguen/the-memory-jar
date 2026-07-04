@@ -198,6 +198,28 @@ export interface ActivityLog {
   memory?: Pick<Memory, "id" | "title" | "type" | "deleted_at"> | null;
 }
 
+export type NotificationType =
+  | "partner_created_memory"
+  | "partner_commented"
+  | "partner_reacted"
+  | "time_capsule_unlocked";
+
+export interface MemoryNotification {
+  id: string;
+  user_id: string;
+  relationship_id: string;
+  actor_id: string | null;
+  type: NotificationType;
+  title: string;
+  body: string;
+  target_memory_id: string | null;
+  metadata: Record<string, unknown>;
+  read_at: string | null;
+  created_at: string;
+  actor?: Pick<UserProfile, "id" | "display_name" | "username" | "avatar"> | null;
+  memory?: Pick<Memory, "id" | "title" | "type" | "deleted_at"> | null;
+}
+
 export type MemoryFilter =
   | "all"
   | "photos"

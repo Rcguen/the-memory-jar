@@ -65,3 +65,19 @@ export function useActivityFeed() {
     staleTime: 30 * 1000,
   });
 }
+
+export function useNotifications() {
+  return useQuery({
+    queryKey: ['notifications'],
+    queryFn: () => memoryService.listNotifications(20),
+    staleTime: 15 * 1000,
+  });
+}
+
+export function useUnreadNotificationCount() {
+  return useQuery({
+    queryKey: ['unread-notification-count'],
+    queryFn: () => memoryService.getUnreadNotificationCount(),
+    staleTime: 15 * 1000,
+  });
+}

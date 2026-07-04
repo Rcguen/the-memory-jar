@@ -5,9 +5,11 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { Edit2, Send, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { useAuth } from "@/providers/auth-provider";
 import { useMemoryComments } from "@/hooks/useMemoryData";
 import { memoryService } from "@/services/memory";
+import { MemoryComment } from "@/types/memory";
 
 export function MemoryComments({ memoryId }: { memoryId: string }) {
   const { profile } = useAuth();
@@ -16,19 +18,64 @@ export function MemoryComments({ memoryId }: { memoryId: string }) {
   const [content, setContent] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState("");
-  const { data: comments = [] } = useMemoryComments(memoryId);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const { data: comments = [], isLoading } = useMemoryComments(memoryId);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [comments.length]);
 
   const createMutation = useMutation({
-    mutationFn: () => memoryService.createComment(memoryId, content),
-    onSuccess: () => {
+    mutationFn: (nextContent: string) => memoryService.createComment(memoryId, nextContent),
+    onMutate: async (nextContent) => {
+      setSubmitError(null);
+      await queryClient.cancelQueries({ queryKey: ['memory-comments', memoryId] });
+      const previousComments = queryClient.getQueryData<MemoryComment[]>(['memory-comments', memoryId]) ?? [];
+      const trimmed = nextContent.trim();
+      const optimisticId = `optimistic-${Date.now()}`;
+      const optimisticComment: MemoryComment = {
+        id: optimisticId,
+        memory_id: memoryId,
+        user_id: profile?.id ?? "pending",
+        content: trimmed,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        author: profile ? {
+          id: profile.id,
+          display_name: profile.display_name,
+          username: profile.username,
+          avatar: profile.avatar,
+        } : null,
+      };
+
+      queryClient.setQueryData<MemoryComment[]>(['memory-comments', memoryId], [...previousComments, optimisticComment]);
       setContent("");
+      return { previousComments, optimisticId };
+    },
+    onSuccess: (createdComment, _nextContent, context) => {
+      if (createdComment && context?.optimisticId) {
+        queryClient.setQueryData<MemoryComment[]>(['memory-comments', memoryId], (current = []) => (
+          current.map((comment) => comment.id === context.optimisticId ? createdComment : comment)
+        ));
+      }
       queryClient.invalidateQueries({ queryKey: ['memory-comments', memoryId] });
       queryClient.invalidateQueries({ queryKey: ['memories'] });
       queryClient.invalidateQueries({ queryKey: ['activity-feed'] });
+    },
+    onError: (error, _nextContent, context) => {
+      if (context?.previousComments) {
+        queryClient.setQueryData(['memory-comments', memoryId], context.previousComments);
+      }
+      const message = error instanceof Error
+        ? error.message
+        : typeof error === "object" && error && "message" in error
+          ? String((error as { message: unknown }).message)
+          : "Could not add comment.";
+      setSubmitError(message);
+      toast.error(`Comment failed: ${message}`);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['memory-comments', memoryId] });
     },
   });
 
@@ -55,6 +102,12 @@ export function MemoryComments({ memoryId }: { memoryId: string }) {
     <section className="relative z-10 border-t border-black/5 dark:border-white/5 bg-black/[0.015] dark:bg-white/[0.015] px-6 py-4">
       <h3 className="text-sm font-medium text-zinc-600 dark:text-zinc-300 mb-3">Comments</h3>
       <div className="max-h-44 overflow-y-auto space-y-2 pr-1">
+        {isLoading && (
+          <p className="text-xs text-zinc-500">Loading comments...</p>
+        )}
+        {!isLoading && comments.length === 0 && (
+          <p className="text-xs text-zinc-500">No comments yet.</p>
+        )}
         <AnimatePresence initial={false}>
           {comments.map((comment) => {
             const isAuthor = profile?.id === comment.user_id;
@@ -122,24 +175,37 @@ export function MemoryComments({ memoryId }: { memoryId: string }) {
         className="mt-3 flex gap-2"
         onSubmit={(event) => {
           event.preventDefault();
-          if (!content.trim()) return;
-          createMutation.mutate();
+          const trimmed = content.trim();
+          if (!trimmed || createMutation.isPending) return;
+          createMutation.mutate(trimmed);
         }}
       >
         <input
           value={content}
           onChange={(event) => setContent(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault();
+              const trimmed = content.trim();
+              if (trimmed && !createMutation.isPending) createMutation.mutate(trimmed);
+            }
+          }}
           placeholder="Add a comment"
+          disabled={createMutation.isPending}
           className="min-w-0 flex-1 h-9 rounded-full bg-white/70 dark:bg-zinc-900/70 border border-black/10 dark:border-white/10 px-4 text-sm outline-none"
         />
         <button
           type="submit"
           disabled={!content.trim() || createMutation.isPending}
-          className="h-9 w-9 rounded-full bg-emerald-600 text-white inline-flex items-center justify-center disabled:opacity-40"
+          aria-label="Send comment"
+          className="h-9 w-9 rounded-full bg-emerald-600 text-white inline-flex items-center justify-center disabled:opacity-40 transition active:scale-95"
         >
-          <Send className="w-4 h-4" />
+          <Send className={createMutation.isPending ? "w-4 h-4 animate-pulse" : "w-4 h-4"} />
         </button>
       </form>
+      {submitError && (
+        <p className="mt-2 text-xs text-rose-500 dark:text-rose-300">{submitError}</p>
+      )}
     </section>
   );
 }
