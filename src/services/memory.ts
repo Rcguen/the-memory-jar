@@ -148,12 +148,15 @@ export const memoryService = {
 
     const filter = options.filter ?? "all";
     memories = memories.filter((memory) => {
+      const unlockAtMs = memory.unlock_at ? new Date(memory.unlock_at).getTime() : null;
+      const isFutureCapsule = typeof unlockAtMs === "number" && Number.isFinite(unlockAtMs) && Date.now() < unlockAtMs;
+
       if (filter === "photos") return memory.type === "photo";
       if (filter === "videos") return memory.type === "video";
       if (filter === "letters") return memory.type === "letter";
       if (filter === "time_capsules") return !!memory.unlock_at;
-      if (filter === "locked") return memory.status === "sealed" && (!memory.unlock_at || Date.now() < new Date(memory.unlock_at).getTime());
-      if (filter === "unlocked") return memory.status !== "sealed" || (!!memory.unlock_at && Date.now() >= new Date(memory.unlock_at).getTime());
+      if (filter === "locked") return memory.status === "sealed" || isFutureCapsule;
+      if (filter === "unlocked") return memory.status !== "sealed" && !isFutureCapsule;
       if (filter === "mine") return !!user && memory.created_by === user.id;
       if (filter === "partner") return !!user && memory.created_by !== user.id;
       if (filter === "favorites") return memory.is_favorite === true;

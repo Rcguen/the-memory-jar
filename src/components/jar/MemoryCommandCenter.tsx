@@ -4,12 +4,13 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import {
   BookOpen,
   ChevronLeft,
   Flame,
   Heart,
+  Lock,
   MessageCircle,
   Pin,
   PinOff,
@@ -26,6 +27,7 @@ import { usePhysics } from "@/providers/physics-provider";
 import { memoryService } from "@/services/memory";
 import { ActivityLog, Memory, MemoryFilter, MemorySort, ReactionEmoji } from "@/types/memory";
 import { cn } from "@/lib/utils";
+import { EmojiText } from "@/components/ui/EmojiText";
 
 const FILTERS: { id: MemoryFilter; label: string }[] = [
   { id: "all", label: "All" },
@@ -77,6 +79,22 @@ function activityLabel(activity: ActivityLog) {
     time_capsule_unlocked: `${title} opened`,
   };
   return labels[activity.type];
+}
+
+function isPendingTimeCapsule(memory: Memory) {
+  if (!memory.unlock_at) return false;
+
+  const unlockAtMs = new Date(memory.unlock_at).getTime();
+  return Number.isFinite(unlockAtMs) && Date.now() < unlockAtMs;
+}
+
+function lockedUntilLabel(unlockAt: string | null) {
+  if (!unlockAt) return "Locked time capsule";
+
+  const date = new Date(unlockAt);
+  if (!Number.isFinite(date.getTime())) return "Locked time capsule";
+
+  return `Opens ${format(date, "MMM d")}`;
 }
 
 interface MemoryCommandCenterProps {
@@ -339,83 +357,115 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                       )}
 
                       <AnimatePresence initial={false}>
-                        {renderedMemories.map((memory) => (
-                          <motion.article
-                            key={memory.id}
-                            layout
-                            initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, x: -16, scale: 0.98 }}
-                            transition={{ duration: 0.22 }}
-                            className="group rounded-2xl border border-white/[0.07] bg-white/[0.045] p-3 transition-colors hover:bg-white/[0.07]"
-                          >
-                            <div className="flex items-start gap-3">
-                              <button onClick={() => openViewer(memory.id)} className="min-w-0 flex-1 text-left">
-                                <div className="mb-1 flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-zinc-500">
-                                  {memory.is_pinned && <Pin className="h-3 w-3 text-emerald-400" />}
-                                  <span>{memory.type.replace("_", " ")}</span>
-                                  {memory.unlock_at && <span className="normal-case tracking-normal text-zinc-600">Capsule</span>}
-                                </div>
-                                <h3 className="truncate font-cormorant text-xl leading-tight text-zinc-100">
-                                  {memory.title || "Untitled memory"}
-                                </h3>
-                                <p className="mt-1 line-clamp-1 text-xs text-zinc-500">
-                                  {memory.content || memory.tags?.map((tag) => `#${tag.name}`).join(" ") || "Open to preview this memory."}
-                                </p>
-                              </button>
+                        {renderedMemories.map((memory) => {
+                          const isLockedCapsule = isPendingTimeCapsule(memory);
+                          const title = memory.title || "Untitled memory";
+                          const preview = memory.content || memory.tags?.map((tag) => `#${tag.name}`).join(" ") || "Open to preview this memory.";
 
-                              <div className="flex items-center gap-1">
-                                <button
-                                  onClick={() => favoriteMutation.mutate({ memory, favorite: !memory.is_favorite })}
-                                  className="rounded-full p-1.5 text-zinc-500 transition-colors hover:bg-white/[0.08] hover:text-zinc-200"
-                                  aria-label={memory.is_favorite ? "Remove favorite" : "Favorite memory"}
-                                >
-                                  <Star className={cn("h-4 w-4", memory.is_favorite && "fill-amber-400 text-amber-400")} />
-                                </button>
-                                {profile?.id === memory.created_by && (
-                                  <button
-                                    onClick={() => pinMutation.mutate({ memory, pinned: !memory.is_pinned })}
-                                    className="rounded-full p-1.5 text-zinc-500 transition-colors hover:bg-white/[0.08] hover:text-zinc-200"
-                                    aria-label={memory.is_pinned ? "Unpin memory" : "Pin memory"}
-                                  >
-                                    {memory.is_pinned ? <PinOff className="h-4 w-4 text-emerald-400" /> : <Pin className="h-4 w-4" />}
-                                  </button>
-                                )}
-                                {profile?.id === memory.created_by && (
-                                  <button
-                                    onClick={() => scheduleDelete(memory)}
-                                    className="rounded-full p-1.5 text-rose-500 transition-colors hover:bg-rose-500/10"
-                                    aria-label="Delete memory"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-
-                            <div className="mt-3 flex items-center justify-between gap-2">
-                              <div className="flex max-w-[70%] gap-1 overflow-hidden">
-                                {REACTIONS.map((emoji) => (
-                                  <motion.button
-                                    key={emoji}
-                                    whileTap={{ scale: 0.86 }}
-                                    onClick={() => reactionMutation.mutate({ memory, emoji })}
-                                    className={cn(
-                                      "h-7 min-w-7 rounded-full border border-white/[0.07] bg-black/20 px-2 text-xs",
-                                      memory.my_reaction === emoji && "border-rose-400/40 bg-rose-400/10",
+                          return (
+                            <motion.article
+                              key={memory.id}
+                              layout
+                              initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                              animate={{ opacity: 1, y: 0, scale: 1 }}
+                              exit={{ opacity: 0, x: -16, scale: 0.98 }}
+                              transition={{ duration: 0.22 }}
+                              className={cn(
+                                "group rounded-2xl border border-white/[0.07] bg-white/[0.045] p-3 transition-colors hover:bg-white/[0.07]",
+                                isLockedCapsule && "border-emerald-400/15 bg-emerald-950/[0.08]",
+                              )}
+                            >
+                              <div className="flex items-start gap-3">
+                                <button onClick={() => openViewer(memory.id)} className="min-w-0 flex-1 text-left">
+                                  <div className="mb-1 flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-zinc-500">
+                                    {memory.is_pinned && <Pin className="h-3 w-3 text-emerald-400" />}
+                                    <span>{memory.type.replace("_", " ")}</span>
+                                    {memory.unlock_at && <span className="normal-case tracking-normal text-zinc-600">Capsule</span>}
+                                  </div>
+                                  <h3 className="truncate font-cormorant text-xl leading-tight text-zinc-100">
+                                    {isLockedCapsule ? (
+                                      <span className="relative block">
+                                        <span className="block truncate select-none blur-md opacity-15 text-transparent">
+                                          <EmojiText text={title} />
+                                        </span>
+                                        <span className="absolute inset-0 flex items-center gap-1.5 text-zinc-100">
+                                          <Lock className="h-3.5 w-3.5 text-emerald-300" />
+                                          Locked time capsule
+                                        </span>
+                                      </span>
+                                    ) : (
+                                      <EmojiText text={title} />
                                     )}
+                                  </h3>
+                                  <p className="mt-1 line-clamp-1 text-xs text-zinc-500">
+                                    {isLockedCapsule ? (
+                                      <span className="relative block">
+                                        <span className="block truncate select-none blur-md opacity-15 text-transparent">
+                                          <EmojiText text={preview} />
+                                        </span>
+                                        <span className="absolute inset-0 text-emerald-300/70">
+                                          {lockedUntilLabel(memory.unlock_at)}
+                                        </span>
+                                      </span>
+                                    ) : (
+                                      <EmojiText text={preview} />
+                                    )}
+                                  </p>
+                                </button>
+
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    onClick={() => favoriteMutation.mutate({ memory, favorite: !memory.is_favorite })}
+                                    className="rounded-full p-1.5 text-zinc-500 transition-colors hover:bg-white/[0.08] hover:text-zinc-200"
+                                    aria-label={memory.is_favorite ? "Remove favorite" : "Favorite memory"}
                                   >
-                                    {emoji} {memory.reaction_counts?.[emoji] ? memory.reaction_counts[emoji] : ""}
-                                  </motion.button>
-                                ))}
+                                    <Star className={cn("h-4 w-4", memory.is_favorite && "fill-amber-400 text-amber-400")} />
+                                  </button>
+                                  {profile?.id === memory.created_by && (
+                                    <button
+                                      onClick={() => pinMutation.mutate({ memory, pinned: !memory.is_pinned })}
+                                      className="rounded-full p-1.5 text-zinc-500 transition-colors hover:bg-white/[0.08] hover:text-zinc-200"
+                                      aria-label={memory.is_pinned ? "Unpin memory" : "Pin memory"}
+                                    >
+                                      {memory.is_pinned ? <PinOff className="h-4 w-4 text-emerald-400" /> : <Pin className="h-4 w-4" />}
+                                    </button>
+                                  )}
+                                  {profile?.id === memory.created_by && (
+                                    <button
+                                      onClick={() => scheduleDelete(memory)}
+                                      className="rounded-full p-1.5 text-rose-500 transition-colors hover:bg-rose-500/10"
+                                      aria-label="Delete memory"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </button>
+                                  )}
+                                </div>
                               </div>
-                              <div className="flex items-center gap-2 text-xs text-zinc-500">
-                                <span className="inline-flex items-center gap-1"><Heart className="h-3 w-3" />{memory.favorite_count ?? 0}</span>
-                                <span className="inline-flex items-center gap-1"><MessageCircle className="h-3 w-3" />{memory.comment_count ?? 0}</span>
+
+                              <div className="mt-3 flex items-center justify-between gap-2">
+                                <div className="flex max-w-[70%] gap-1 overflow-hidden">
+                                  {REACTIONS.map((emoji) => (
+                                    <motion.button
+                                      key={emoji}
+                                      whileTap={{ scale: 0.86 }}
+                                      onClick={() => reactionMutation.mutate({ memory, emoji })}
+                                      className={cn(
+                                        "h-7 min-w-7 rounded-full border border-white/[0.07] bg-black/20 px-2 text-xs",
+                                        memory.my_reaction === emoji && "border-rose-400/40 bg-rose-400/10",
+                                      )}
+                                    >
+                                      <EmojiText text={emoji} /> {memory.reaction_counts?.[emoji] ? memory.reaction_counts[emoji] : ""}
+                                    </motion.button>
+                                  ))}
+                                </div>
+                                <div className="flex items-center gap-2 text-xs text-zinc-500">
+                                  <span className="inline-flex items-center gap-1"><Heart className="h-3 w-3" />{memory.favorite_count ?? 0}</span>
+                                  <span className="inline-flex items-center gap-1"><MessageCircle className="h-3 w-3" />{memory.comment_count ?? 0}</span>
+                                </div>
                               </div>
-                            </div>
-                          </motion.article>
-                        ))}
+                            </motion.article>
+                          );
+                        })}
                       </AnimatePresence>
                       {visibleMemories.length > renderedMemories.length && (
                         <div className="px-2 py-3 text-center text-xs text-zinc-600">
@@ -445,7 +495,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                             <Flame className="h-3.5 w-3.5" />
                           </div>
                           <div>
-                            <p className="text-zinc-300">{activityLabel(activity)}</p>
+                            <p className="text-zinc-300"><EmojiText text={activityLabel(activity)} /></p>
                             <p className="mt-1 text-xs text-zinc-600">{formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}</p>
                           </div>
                         </div>

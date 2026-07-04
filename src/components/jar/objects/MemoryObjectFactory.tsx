@@ -42,7 +42,8 @@ export function MemoryObjectFactory({ state, onClick }: MemoryObjectFactoryProps
     };
   }, [state.id, x, y, rotate, registerMotionValues, unregisterMotionValues]);
 
-  const isLocked = state.status === "sealed" && state.unlockAt !== null;
+  const unlockAtMs = state.unlockAt ? new Date(state.unlockAt).getTime() : 0;
+  const isLocked = !!state.unlockAt && Number.isFinite(unlockAtMs) && Date.now() < unlockAtMs;
 
   const handleHoverStart = () => {
     setIsHovered(true);

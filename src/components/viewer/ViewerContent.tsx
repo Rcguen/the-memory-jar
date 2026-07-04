@@ -19,6 +19,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { MoreVertical, Trash2, Edit2, Pin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MemoryComments } from "./MemoryComments";
+import { EmojiText } from "@/components/ui/EmojiText";
 
 interface ViewerContentProps {
   memoryId: string;
@@ -282,7 +283,7 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
           )}
         </p>
         <h2 className={cn("text-4xl font-semibold", theme.textClass)}>
-          {fullMemory.title}
+          <EmojiText text={fullMemory.title || "Untitled memory"} />
         </h2>
       </div>
 
@@ -293,7 +294,7 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
         {fullMemory.content && (
           <div className="prose prose-zinc dark:prose-invert prose-p:leading-relaxed prose-lg">
             <p className={cn("whitespace-pre-wrap font-light", theme.textClass)}>
-              {fullMemory.content}
+              <EmojiText text={fullMemory.content} />
             </p>
           </div>
         )}

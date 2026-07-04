@@ -80,7 +80,7 @@ export function TimeCapsuleViewer({ memory, onClose, onEdit, onDelete }: TimeCap
 
   const daysRemaining = memory.unlock_at ? daysUntil(memory.unlock_at) : 0;
   const unlockAtMs = memory.unlock_at ? new Date(memory.unlock_at).getTime() : 0;
-  const isLocked = memory.status === "sealed" && !!memory.unlock_at && now.getTime() < unlockAtMs;
+  const isLocked = !!memory.unlock_at && Number.isFinite(unlockAtMs) && now.getTime() < unlockAtMs;
 
   return (
     <motion.div

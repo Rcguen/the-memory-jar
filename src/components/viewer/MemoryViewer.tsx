@@ -111,10 +111,18 @@ export function MemoryViewer() {
       setViewerState('LOADING');
       return;
     }
+
+    const unlockAtMs = fullMemory.unlock_at ? new Date(fullMemory.unlock_at).getTime() : 0;
+    const isFutureTimeCapsule = !!fullMemory.unlock_at && Number.isFinite(unlockAtMs) && Date.now() < unlockAtMs;
+
+    if (isFutureTimeCapsule) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setViewerState('LOCKED');
+      return;
+    }
     
     if (fullMemory.status === 'sealed') {
-      const isTimeCapsule = fullMemory.unlock_at ? Date.now() < new Date(fullMemory.unlock_at).getTime() : false;
-      if (isTimeCapsule || fullMemory.is_collaborative) {
+      if (fullMemory.is_collaborative) {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setViewerState('LOCKED');
       } else {
