@@ -17,7 +17,10 @@ export function PhotoViewer({ url }: PhotoViewerProps) {
           src={url} 
           alt="Memory attachment" 
           className="w-full h-auto object-cover max-h-[400px] cursor-pointer"
-          whileHover={{ scale: 1.02 }}
+          initial={{ opacity: 0, y: 14, scale: 0.98, filter: "blur(6px)" }}
+          animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          whileHover={{ scale: 1.018, filter: "brightness(1.04)" }}
           onClick={() => setIsFullscreen(true)}
         />
         <button 
@@ -32,9 +35,10 @@ export function PhotoViewer({ url }: PhotoViewerProps) {
       <AnimatePresence>
         {isFullscreen && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
+            animate={{ opacity: 1, backdropFilter: "blur(14px)" }}
+            exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
+            transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
             className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4 md:p-12 cursor-zoom-out"
             onClick={() => setIsFullscreen(false)}
           >
@@ -46,9 +50,10 @@ export function PhotoViewer({ url }: PhotoViewerProps) {
             </button>
             
             <motion.img
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
+              initial={{ opacity: 0, scale: 0.88, y: 28, rotateZ: -2, filter: "blur(8px)" }}
+              animate={{ opacity: 1, scale: 1, y: 0, rotateZ: 0, filter: "blur(0px)" }}
+              exit={{ opacity: 0, scale: 0.82, y: 34, rotateZ: 3, filter: "blur(10px)" }}
+              transition={{ duration: 0.36, ease: [0.22, 1, 0.36, 1] }}
               src={url}
               alt="Memory attachment fullscreen"
               className="max-w-full max-h-full object-contain cursor-grab active:cursor-grabbing"
@@ -56,7 +61,7 @@ export function PhotoViewer({ url }: PhotoViewerProps) {
               dragConstraints={{ left: -500, right: 500, top: -500, bottom: 500 }}
               dragElastic={0.1}
               onClick={(e) => e.stopPropagation()} // Prevent closing when clicking the image itself
-              whileTap={{ scale: 1.1 }} // Simple pinch-zoom simulation for desktop
+              whileTap={{ scale: 1.04 }}
             />
           </motion.div>
         )}

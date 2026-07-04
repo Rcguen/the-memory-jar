@@ -35,6 +35,8 @@ const MemorySchema = z.object({
   created_by: z.string().uuid(),
   created_at: z.string(),
   updated_at: z.string(),
+  is_pinned: z.boolean().optional().default(false),
+  pinned_at: z.string().nullable().optional().default(null),
   attachments: z.array(AttachmentSchema).default([])
 });
 

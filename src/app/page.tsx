@@ -2,11 +2,11 @@
 
 import { useEffect, useState, useRef, useTransition } from "react";
 
+import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import { User, LogOut } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { logoutAction } from "@/app/actions/auth";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,15 +23,28 @@ import { GlassJar } from "@/components/jar/GlassJar";
 import { FloatingParticles } from "@/components/jar/FloatingParticles";
 import { RelationshipCounter } from "@/components/jar/RelationshipCounter";
 import { DropMemoryButton } from "@/components/jar/DropMemoryButton";
-import { MemoryModal } from "@/components/jar/MemoryModal";
 import { WritingDesk } from "@/components/jar/WritingDesk";
 import { JarHeartbeat } from "@/components/jar/JarHeartbeat";
-import { MemoryViewer } from "@/components/viewer/MemoryViewer";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { usePhysics } from "@/providers/physics-provider";
 import { memoryService } from "@/services/memory";
 import { createClient } from "@/lib/supabase/client";
 import { MemoryType } from "@/types/memory";
+
+const MemoryCommandCenter = dynamic(
+  () => import("@/components/jar/MemoryCommandCenter").then((mod) => mod.MemoryCommandCenter),
+  { ssr: false },
+);
+
+const MemoryModal = dynamic(
+  () => import("@/components/jar/MemoryModal").then((mod) => mod.MemoryModal),
+  { ssr: false },
+);
+
+const MemoryViewer = dynamic(
+  () => import("@/components/viewer/MemoryViewer").then((mod) => mod.MemoryViewer),
+  { ssr: false },
+);
 
 export default function Home() {
   const { profile } = useAuth();
@@ -227,6 +240,12 @@ export default function Home() {
         {/* Call to Action */}
         <DropMemoryButton />
 
+      </div>
+
+      <div className="relative z-10 w-full max-w-3xl px-4 xl:absolute xl:left-6 xl:top-24 xl:bottom-6 xl:w-[28rem] xl:max-w-none xl:px-0 2xl:w-[34rem]">
+        <ErrorBoundary fallbackMessage="Memory tools failed to load.">
+          <MemoryCommandCenter className="xl:mt-0 xl:max-w-none" />
+        </ErrorBoundary>
       </div>
 
       {/* Global Modals & Portals for this route */}

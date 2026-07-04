@@ -86,7 +86,16 @@ export interface Memory {
   created_by: string;
   created_at: string;
   updated_at: string;
+  is_pinned?: boolean;
+  pinned_at?: string | null;
   attachments?: MemoryAttachment[];
+  tags?: Tag[];
+  creator?: Pick<UserProfile, "id" | "display_name" | "username" | "avatar"> | null;
+  is_favorite?: boolean;
+  favorite_count?: number;
+  reaction_counts?: Record<ReactionEmoji, number>;
+  my_reaction?: ReactionEmoji | null;
+  comment_count?: number;
 }
 
 export interface RelationshipMember {
@@ -136,6 +145,81 @@ export interface Tag {
   name: string;
 }
 
+export type ReactionEmoji = "❤️" | "🥹" | "😂" | "😭" | "😍" | "🔥";
+
+export interface MemoryFavorite {
+  id: string;
+  memory_id: string;
+  user_id: string;
+  created_at: string;
+}
+
+export interface MemoryReaction {
+  memory_id: string;
+  user_id: string;
+  emoji: ReactionEmoji;
+  created_at: string;
+}
+
+export interface MemoryComment {
+  id: string;
+  memory_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+  author?: Pick<UserProfile, "id" | "display_name" | "username" | "avatar"> | null;
+}
+
+export type ActivityLogType =
+  | "memory_created"
+  | "memory_edited"
+  | "memory_deleted"
+  | "memory_restored"
+  | "favorite_added"
+  | "favorite_removed"
+  | "reaction_added"
+  | "reaction_changed"
+  | "comment_added"
+  | "comment_edited"
+  | "comment_deleted"
+  | "time_capsule_locked"
+  | "time_capsule_unlocked";
+
+export interface ActivityLog {
+  id: string;
+  relationship_id: string;
+  actor_id: string;
+  type: ActivityLogType;
+  target_memory_id: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  actor?: Pick<UserProfile, "id" | "display_name" | "username" | "avatar"> | null;
+  memory?: Pick<Memory, "id" | "title" | "type" | "deleted_at"> | null;
+}
+
+export type MemoryFilter =
+  | "all"
+  | "photos"
+  | "videos"
+  | "letters"
+  | "time_capsules"
+  | "locked"
+  | "unlocked"
+  | "mine"
+  | "partner"
+  | "favorites"
+  | "pinned";
+
+export type MemorySort = "newest" | "oldest";
+
+export interface MemoryListOptions {
+  search?: string;
+  filter?: MemoryFilter;
+  sort?: MemorySort;
+  includeDeleted?: boolean;
+}
+
 /**
  * Full profile including timezone (populated by auto-detection hook).
  * timezone is NULL until the hook writes it after first login.
@@ -161,4 +245,3 @@ export interface RelationshipSettings {
   created_at: string;
   updated_at: string;
 }
-

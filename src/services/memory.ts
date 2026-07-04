@@ -1,13 +1,177 @@
 import { createClient } from "@/lib/supabase/client";
-import { Memory, MemoryAttachment, MemoryMood, MemoryType } from "@/types/memory";
+import {
+  ActivityLog,
+  Memory,
+  MemoryComment,
+  MemoryListOptions,
+  MemoryMood,
+  MemoryReaction,
+  ReactionEmoji,
+} from "@/types/memory";
 import { mapDatabaseMemory } from "@/lib/mappers/memory.mapper";
 
+const ACTIVE_MEMORY_STATUSES = ["sealed", "unlocked", "opening"];
+const REACTION_EMOJIS: ReactionEmoji[] = ["❤️", "🥹", "😂", "😭", "😍", "🔥"];
+
+function getStorageBucket(fileType: string): "memory-images" | "memory-voices" | "memory-videos" | "memory-thumbnails" {
+  if (fileType === "voice") return "memory-voices";
+  if (fileType === "video") return "memory-videos";
+  if (fileType === "thumbnail") return "memory-thumbnails";
+  return "memory-images";
+}
+
+function hydrateMemoryMeta(memories: Memory[], userId: string | null, favorites: { memory_id: string; user_id: string }[], reactions: MemoryReaction[], comments: { memory_id: string }[]) {
+  const favoriteCounts = new Map<string, number>();
+  const reactionCounts = new Map<string, Record<ReactionEmoji, number>>();
+  const commentCounts = new Map<string, number>();
+  const myFavorites = new Set<string>();
+  const myReactions = new Map<string, ReactionEmoji>();
+
+  for (const favorite of favorites) {
+    favoriteCounts.set(favorite.memory_id, (favoriteCounts.get(favorite.memory_id) ?? 0) + 1);
+    if (userId && favorite.user_id === userId) myFavorites.add(favorite.memory_id);
+  }
+
+  for (const reaction of reactions) {
+    const counts = reactionCounts.get(reaction.memory_id) ?? { "❤️": 0, "🥹": 0, "😂": 0, "😭": 0, "😍": 0, "🔥": 0 };
+    counts[reaction.emoji] += 1;
+    reactionCounts.set(reaction.memory_id, counts);
+    if (userId && reaction.user_id === userId) myReactions.set(reaction.memory_id, reaction.emoji);
+  }
+
+  for (const comment of comments) {
+    commentCounts.set(comment.memory_id, (commentCounts.get(comment.memory_id) ?? 0) + 1);
+  }
+
+  return memories.map((memory) => ({
+    ...memory,
+    is_favorite: myFavorites.has(memory.id),
+    favorite_count: favoriteCounts.get(memory.id) ?? 0,
+    reaction_counts: reactionCounts.get(memory.id) ?? { "❤️": 0, "🥹": 0, "😂": 0, "😭": 0, "😍": 0, "🔥": 0 },
+    my_reaction: myReactions.get(memory.id) ?? null,
+    comment_count: commentCounts.get(memory.id) ?? 0,
+  }));
+}
+
 export const memoryService = {
+  async getCurrentRelationshipId(): Promise<string | null> {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const { data, error } = await supabase
+      .from("relationship_members")
+      .select("relationship_id")
+      .eq("profile_id", user.id)
+      .limit(1)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data?.relationship_id ?? null;
+  },
+
   async getMoods(): Promise<MemoryMood[]> {
     const supabase = createClient();
     const { data, error } = await supabase.from("memory_moods").select("*");
     if (error) throw error;
     return data as MemoryMood[];
+  },
+
+  async listMemories(options: MemoryListOptions = {}): Promise<Memory[]> {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const relationshipId = await this.getCurrentRelationshipId();
+    if (!relationshipId) return [];
+
+    const includeDeleted = options.includeDeleted === true;
+    let query = supabase
+      .from("memories")
+      .select("*, memory_attachments(*), memory_tags(tags(*))")
+      .eq("relationship_id", relationshipId);
+
+    if (includeDeleted) {
+      query = query.not("deleted_at", "is", null);
+    } else {
+      query = query.is("deleted_at", null).in("status", ACTIVE_MEMORY_STATUSES);
+    }
+
+    const { data, error } = await query.order("created_at", { ascending: false });
+    if (error) throw error;
+
+    const memoryRows = data ?? [];
+    const memoryIds = memoryRows.map((memory) => memory.id);
+    if (memoryIds.length === 0) return [];
+
+    const [{ data: favorites }, { data: reactions }, { data: comments }, { data: creators }] = await Promise.all([
+      supabase.from("memory_favorites").select("memory_id,user_id").in("memory_id", memoryIds),
+      supabase.from("memory_reactions").select("memory_id,user_id,emoji,created_at").in("memory_id", memoryIds),
+      supabase.from("memory_comments").select("memory_id").in("memory_id", memoryIds),
+      supabase.from("profiles").select("id,display_name,username,avatar").in("id", [...new Set(memoryRows.map((memory) => memory.created_by))]),
+    ]);
+
+    const creatorMap = new Map((creators ?? []).map((creator) => [creator.id, creator]));
+    let memories = hydrateMemoryMeta(
+      memoryRows.map((row) => {
+        const tags = (row.memory_tags ?? [])
+          .map((tagLink: { tags?: { id: string; name: string } | null }) => tagLink.tags)
+          .filter(Boolean);
+
+        return {
+          ...mapDatabaseMemory(row),
+          tags,
+          creator: creatorMap.get(row.created_by) ?? null,
+        } as Memory;
+      }),
+      user?.id ?? null,
+      favorites ?? [],
+      (reactions ?? []) as MemoryReaction[],
+      comments ?? [],
+    );
+
+    const normalizedSearch = options.search?.trim().toLowerCase();
+    if (normalizedSearch) {
+      memories = memories.filter((memory) => {
+        const haystack = [
+          memory.title,
+          memory.content,
+          memory.type,
+          memory.creator?.display_name,
+          memory.creator?.username,
+          ...(memory.tags ?? []).map((tag) => tag.name),
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        return haystack.includes(normalizedSearch);
+      });
+    }
+
+    const filter = options.filter ?? "all";
+    memories = memories.filter((memory) => {
+      if (filter === "photos") return memory.type === "photo";
+      if (filter === "videos") return memory.type === "video";
+      if (filter === "letters") return memory.type === "letter";
+      if (filter === "time_capsules") return !!memory.unlock_at;
+      if (filter === "locked") return memory.status === "sealed" && (!memory.unlock_at || Date.now() < new Date(memory.unlock_at).getTime());
+      if (filter === "unlocked") return memory.status !== "sealed" || (!!memory.unlock_at && Date.now() >= new Date(memory.unlock_at).getTime());
+      if (filter === "mine") return !!user && memory.created_by === user.id;
+      if (filter === "partner") return !!user && memory.created_by !== user.id;
+      if (filter === "favorites") return memory.is_favorite === true;
+      if (filter === "pinned") return memory.is_pinned === true;
+      return true;
+    });
+
+    const oldest = options.sort === "oldest";
+    return memories.sort((a, b) => {
+      if ((a.is_pinned ?? false) !== (b.is_pinned ?? false)) return a.is_pinned ? -1 : 1;
+      return oldest
+        ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        : new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  },
+
+  async listDeletedMemories(): Promise<Memory[]> {
+    return this.listMemories({ includeDeleted: true, sort: "newest" });
   },
 
   async saveMemory(memoryData: Partial<Memory>, tags: string[] = []): Promise<Memory> {
@@ -23,7 +187,7 @@ export const memoryService = {
       .limit(1)
       .maybeSingle();
 
-    const memoryPayload: any = { 
+    const memoryPayload: Partial<Memory> & { version: number; created_by: string; relationship_id?: string } = { 
       ...memoryData, 
       version: 1,
       created_by: user.id
@@ -111,6 +275,169 @@ export const memoryService = {
       console.error("Supabase Memory Delete Error:", error);
       throw new Error(error.message ?? JSON.stringify(error));
     }
+  },
+
+  async restoreMemory(id: string): Promise<void> {
+    const supabase = createClient();
+    const { error } = await supabase.rpc("restore_memory", { p_memory_id: id });
+    if (error) throw error;
+  },
+
+  async permanentlyDeleteMemory(id: string): Promise<void> {
+    const supabase = createClient();
+    const { data: attachments, error: attachmentError } = await supabase
+      .from("memory_attachments")
+      .select("*")
+      .eq("memory_id", id);
+
+    if (attachmentError) throw attachmentError;
+
+    const pathsByBucket = new Map<string, string[]>();
+    for (const attachment of attachments ?? []) {
+      const bucket = getStorageBucket(attachment.file_type);
+      pathsByBucket.set(bucket, [...(pathsByBucket.get(bucket) ?? []), attachment.url]);
+    }
+
+    for (const [bucket, paths] of pathsByBucket.entries()) {
+      const { error } = await supabase.storage.from(bucket).remove(paths);
+      if (error) throw error;
+    }
+
+    const { error } = await supabase.rpc("permanently_delete_memory", { p_memory_id: id });
+    if (error) throw error;
+  },
+
+  async setFavorite(memoryId: string, favorite: boolean): Promise<void> {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Not authenticated");
+
+    if (favorite) {
+      const { error } = await supabase
+        .from("memory_favorites")
+        .upsert({ memory_id: memoryId, user_id: user.id }, { onConflict: "memory_id,user_id" });
+      if (error) throw error;
+    } else {
+      const { error } = await supabase
+        .from("memory_favorites")
+        .delete()
+        .eq("memory_id", memoryId)
+        .eq("user_id", user.id);
+      if (error) throw error;
+    }
+  },
+
+  async setPinned(memoryId: string, pinned: boolean): Promise<void> {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Not authenticated");
+
+    const { error } = await supabase
+      .from("memories")
+      .update({
+        is_pinned: pinned,
+        pinned_at: pinned ? new Date().toISOString() : null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", memoryId)
+      .eq("created_by", user.id);
+
+    if (error) throw error;
+  },
+
+  async setReaction(memoryId: string, emoji: ReactionEmoji): Promise<void> {
+    if (!REACTION_EMOJIS.includes(emoji)) throw new Error("Unsupported reaction");
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Not authenticated");
+
+    const { error } = await supabase
+      .from("memory_reactions")
+      .upsert({ memory_id: memoryId, user_id: user.id, emoji }, { onConflict: "memory_id,user_id" });
+
+    if (error) throw error;
+  },
+
+  async getComments(memoryId: string): Promise<MemoryComment[]> {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from("memory_comments")
+      .select("*, profiles(id,display_name,username,avatar)")
+      .eq("memory_id", memoryId)
+      .order("created_at", { ascending: true });
+
+    if (error) throw error;
+    return (data ?? []).map((comment) => ({
+      id: comment.id,
+      memory_id: comment.memory_id,
+      user_id: comment.user_id,
+      content: comment.content,
+      created_at: comment.created_at,
+      updated_at: comment.updated_at,
+      author: comment.profiles ?? null,
+    }));
+  },
+
+  async createComment(memoryId: string, content: string): Promise<void> {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Not authenticated");
+    const trimmed = content.trim();
+    if (!trimmed) return;
+
+    const { error } = await supabase
+      .from("memory_comments")
+      .insert({ memory_id: memoryId, user_id: user.id, content: trimmed });
+
+    if (error) throw error;
+  },
+
+  async updateComment(commentId: string, content: string): Promise<void> {
+    const trimmed = content.trim();
+    if (!trimmed) return;
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("memory_comments")
+      .update({ content: trimmed })
+      .eq("id", commentId);
+
+    if (error) throw error;
+  },
+
+  async deleteComment(commentId: string): Promise<void> {
+    const supabase = createClient();
+    const { error } = await supabase.from("memory_comments").delete().eq("id", commentId);
+    if (error) throw error;
+  },
+
+  async getActivityFeed(limit = 30, before?: string): Promise<ActivityLog[]> {
+    const supabase = createClient();
+    const relationshipId = await this.getCurrentRelationshipId();
+    if (!relationshipId) return [];
+
+    let query = supabase
+      .from("activity_logs")
+      .select("*, profiles(id,display_name,username,avatar), memories(id,title,type,deleted_at)")
+      .eq("relationship_id", relationshipId)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (before) query = query.lt("created_at", before);
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    return (data ?? []).map((activity) => ({
+      id: activity.id,
+      relationship_id: activity.relationship_id,
+      actor_id: activity.actor_id,
+      type: activity.type,
+      target_memory_id: activity.target_memory_id,
+      metadata: activity.metadata ?? {},
+      created_at: activity.created_at,
+      actor: activity.profiles ?? null,
+      memory: activity.memories ?? null,
+    })) as ActivityLog[];
   },
 
   async deleteAttachment(attachmentId: string): Promise<void> {

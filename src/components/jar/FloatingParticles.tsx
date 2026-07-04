@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
 
 interface Particle {
@@ -12,10 +12,16 @@ interface Particle {
   delay: number;
 }
 
-export function FloatingParticles({ count = 15 }: { count?: number }) {
+export function FloatingParticles({ count = 8 }: { count?: number }) {
   const [particles, setParticles] = useState<Particle[]>([]);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
+    if (reduceMotion) {
+      setParticles([]);
+      return;
+    }
+
     // Generate exactly 'count' particles once, then loop them via Framer Motion
     const generatedParticles: Particle[] = Array.from({ length: count }).map((_, i) => ({
       id: i,
@@ -27,7 +33,7 @@ export function FloatingParticles({ count = 15 }: { count?: number }) {
     }));
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setParticles(generatedParticles);
-  }, [count]);
+  }, [count, reduceMotion]);
 
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">

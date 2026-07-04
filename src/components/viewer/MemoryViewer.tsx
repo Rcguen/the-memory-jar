@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { useMemoryViewer } from "@/providers/memory-viewer-provider";
 import { usePhysics } from "@/providers/physics-provider";
-import { MemoryType, Memory } from "@/types/memory";
+import { MemoryType } from "@/types/memory";
 import { ViewerAnimation } from "./ViewerAnimation";
 import { TimeCapsuleViewer } from "./TimeCapsuleViewer";
 import { EditMemoryModal } from "../jar/EditMemoryModal";
@@ -18,12 +18,71 @@ import { Loader2 } from "lucide-react";
 
 type ViewerState = 'LOADING' | 'LOCKED' | 'WAITING_PARTNER' | 'OPENING' | 'VIEWING' | 'ERROR';
 
+function getCloseMotion(type: MemoryType) {
+  switch (type) {
+    case "letter":
+    case "promise":
+      return {
+        opacity: 0,
+        y: 44,
+        scale: 0.78,
+        rotateX: 72,
+        rotateZ: -4,
+        filter: "blur(10px)",
+      };
+    case "photo":
+      return {
+        opacity: 0,
+        y: 30,
+        scale: 0.72,
+        rotateZ: 7,
+        filter: "blur(8px) saturate(0.65)",
+      };
+    case "random_thought":
+    case "wish":
+    case "gratitude":
+      return {
+        opacity: 0,
+        y: -26,
+        scale: 0.65,
+        rotateZ: 12,
+        filter: "blur(16px) brightness(1.25)",
+      };
+    case "voice":
+    case "video":
+      return {
+        opacity: 0,
+        y: 36,
+        scale: 0.76,
+        rotateX: -24,
+        filter: "blur(9px)",
+      };
+    case "travel":
+      return {
+        opacity: 0,
+        x: -56,
+        y: 24,
+        scale: 0.74,
+        rotateZ: -8,
+        filter: "blur(8px)",
+      };
+    default:
+      return {
+        opacity: 0,
+        y: 34,
+        scale: 0.78,
+        filter: "blur(10px)",
+      };
+  }
+}
+
 export function MemoryViewer() {
   const { viewingMemoryId, navigateDirection, closeViewer } = useMemoryViewer();
   const { states, removeMemory } = usePhysics();
   const { profile } = useAuth();
   const queryClient = useQueryClient();
   const [isEditingCapsule, setIsEditingCapsule] = useState(false);
+  const capsuleDeleteTimerRef = useRef<number | null>(null);
   
   // We need a stable reference to the type even when closing and viewingMemoryId is null
   const [activeMemoryState, setActiveMemoryState] = useState<{ id: string, type: MemoryType } | null>(null);
@@ -104,17 +163,41 @@ export function MemoryViewer() {
 
   const handleCapsuleDelete = async () => {
     if (!fullMemory) return;
-    try {
-      await memoryService.deleteMemory(fullMemory.id);
-      removeMemory(fullMemory.id); // Remove immediately from physics engine
-      queryClient.invalidateQueries({ queryKey: ['memories'] });
-      queryClient.removeQueries({ queryKey: ['memory', fullMemory.id] });
-      closeViewer();
-      toast.success("Memory deleted.", { className: "font-cormorant text-lg bg-zinc-900 text-white border-zinc-800" });
-    } catch {
-      toast.error("Failed to delete memory.");
-    }
+    const memoryId = fullMemory.id;
+    closeViewer();
+
+    capsuleDeleteTimerRef.current = window.setTimeout(async () => {
+      capsuleDeleteTimerRef.current = null;
+      try {
+        await memoryService.deleteMemory(memoryId);
+        removeMemory(memoryId);
+        queryClient.invalidateQueries({ queryKey: ['memories'] });
+        queryClient.invalidateQueries({ queryKey: ['activity-feed'] });
+        queryClient.removeQueries({ queryKey: ['memory', memoryId] });
+      } catch {
+        toast.error("Failed to delete memory.");
+      }
+    }, 10000);
+
+    toast("Memory moved to trash", {
+      description: "Undo is available for 10 seconds.",
+      action: {
+        label: "Undo",
+        onClick: () => {
+          if (capsuleDeleteTimerRef.current) window.clearTimeout(capsuleDeleteTimerRef.current);
+          capsuleDeleteTimerRef.current = null;
+        },
+      },
+      duration: 10000,
+      className: "font-cormorant text-lg bg-zinc-900 text-white border-zinc-800",
+    });
   };
+
+  useEffect(() => {
+    return () => {
+      if (capsuleDeleteTimerRef.current) window.clearTimeout(capsuleDeleteTimerRef.current);
+    };
+  }, []);
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -152,19 +235,20 @@ export function MemoryViewer() {
                 opacity: dir ? 0 : 1,
                 rotate: 0,
                 scale: dir ? 0.8 : 1,
+                filter: "blur(0px)",
               }),
-              animate: { x: 0, opacity: 1, rotate: 0, scale: 1 },
+              animate: { x: 0, y: 0, opacity: 1, rotate: 0, rotateX: 0, rotateZ: 0, scale: 1, filter: "blur(0px)" },
               exit: (dir) => ({
                 x: dir === "next" ? -500 : dir === "prev" ? 500 : 0,
-                opacity: dir ? 0 : 1,
-                scale: dir ? 0.8 : 1,
+                ...(dir ? { opacity: 0, scale: 0.8, filter: "blur(3px)" } : getCloseMotion(activeMemoryState.type)),
               })
             }}
             initial="initial"
             animate="animate"
             exit="exit"
             className="relative z-10 pointer-events-auto"
-            transition={{ type: "spring", damping: 25, stiffness: 120, mass: 1 }}
+            transition={{ type: "spring", damping: 26, stiffness: 150, mass: 0.9 }}
+            style={{ transformStyle: "preserve-3d" }}
           >
             {viewerState === 'LOADING' && (
               <div className="flex flex-col items-center justify-center p-12 bg-white/5 dark:bg-black/20 rounded-3xl backdrop-blur-md shadow-2xl">

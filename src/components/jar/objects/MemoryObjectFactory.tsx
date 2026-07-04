@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useMotionValue, type MotionStyle } from "framer-motion";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { NormalizedVisualState } from "@/lib/physics/EngineCore";
 import { useEffect } from "react";
 import { formatDistanceToNow, format } from "date-fns";
@@ -22,9 +22,11 @@ interface MemoryObjectFactoryProps {
 
 export function MemoryObjectFactory({ state, onClick }: MemoryObjectFactoryProps) {
   const { registerMotionValues, unregisterMotionValues } = usePhysics();
-  const { viewingMemoryId, openViewer } = useMemoryViewer();
+  const { viewingMemoryId } = useMemoryViewer();
   const [isHovered, setIsHovered] = useState(false);
   const queryClient = useQueryClient();
+  const prefetchTimerRef = useRef<number | null>(null);
+  const pointerStartRef = useRef<{ x: number; y: number; pointerId: number; pointerType: string } | null>(null);
 
   const x = useMotionValue<string | number>(`${state.x * 100}%`);
   const y = useMotionValue<string | number>(`${state.y * 100}%`);
@@ -32,7 +34,12 @@ export function MemoryObjectFactory({ state, onClick }: MemoryObjectFactoryProps
 
   useEffect(() => {
     registerMotionValues(state.id, x, y, rotate);
-    return () => unregisterMotionValues(state.id);
+    return () => {
+      if (prefetchTimerRef.current !== null) {
+        window.clearTimeout(prefetchTimerRef.current);
+      }
+      unregisterMotionValues(state.id);
+    };
   }, [state.id, x, y, rotate, registerMotionValues, unregisterMotionValues]);
 
   const isLocked = state.status === "sealed" && state.unlockAt !== null;
@@ -40,47 +47,90 @@ export function MemoryObjectFactory({ state, onClick }: MemoryObjectFactoryProps
   const handleHoverStart = () => {
     setIsHovered(true);
 
-    // Prefetch memory data and media metadata
-    queryClient.prefetchQuery({
-      queryKey: ['memory', state.id],
-      queryFn: async () => {
-        const memory = await memoryService.getMemoryById(state.id);
-        if (memory && memory.attachments) {
-          memory.attachments.forEach(async (att) => {
-            try {
-              const url = await queryClient.fetchQuery({
-                queryKey: ['attachmentUrl', att.id, att.url],
-                queryFn: () => memoryService.getAttachmentUrlAsync(att.file_type, att.url),
-                staleTime: 1000 * 60 * 30
-              });
-              
-              if (att.file_type === 'photo') {
-                const img = new window.Image();
-                img.src = url;
-              } else if (att.file_type === 'voice' || att.file_type === 'video') {
-                const media = new window.Audio(); // Works for preloading video metadata too
-                media.preload = 'metadata';
-                media.src = url;
+    if (prefetchTimerRef.current !== null) window.clearTimeout(prefetchTimerRef.current);
+
+    prefetchTimerRef.current = window.setTimeout(() => {
+      queryClient.prefetchQuery({
+        queryKey: ['memory', state.id],
+        queryFn: async () => {
+          const memory = await memoryService.getMemoryById(state.id);
+          if (memory && memory.attachments) {
+            memory.attachments.forEach(async (att) => {
+              try {
+                const url = await queryClient.fetchQuery({
+                  queryKey: ['attachmentUrl', att.id, att.url],
+                  queryFn: () => memoryService.getAttachmentUrlAsync(att.file_type, att.url),
+                  staleTime: 1000 * 60 * 30
+                });
+                
+                if (att.file_type === 'photo') {
+                  const img = new window.Image();
+                  img.src = url;
+                } else if (att.file_type === 'voice' || att.file_type === 'video') {
+                  const media = new window.Audio();
+                  media.preload = 'metadata';
+                  media.src = url;
+                }
+              } catch (e) {
+                console.warn("Failed to prefetch media", e);
               }
-            } catch (e) {
-              console.warn("Failed to prefetch media", e);
-            }
-          });
+            });
+          }
+          return memory;
         }
-        return memory;
-      }
-    });
+      });
+    }, 240);
   };
 
   const handleHoverEnd = () => {
+    if (prefetchTimerRef.current !== null) {
+      window.clearTimeout(prefetchTimerRef.current);
+      prefetchTimerRef.current = null;
+    }
     setIsHovered(false);
   };
 
   const openMemory = () => {
     if (viewingMemoryId !== state.id) {
-      openViewer(state.id);
       onClick(state.id);
     }
+  };
+
+  const releasePointer = (target: HTMLDivElement, pointerId: number) => {
+    if (target.hasPointerCapture?.(pointerId)) {
+      target.releasePointerCapture(pointerId);
+    }
+  };
+
+  const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    pointerStartRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+      pointerId: event.pointerId,
+      pointerType: event.pointerType,
+    };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    event.stopPropagation();
+  };
+
+  const handlePointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    const start = pointerStartRef.current;
+    pointerStartRef.current = null;
+    releasePointer(event.currentTarget, event.pointerId);
+    event.stopPropagation();
+
+    const pointerType = event.pointerType || start?.pointerType || "mouse";
+    const movement = start ? Math.hypot(event.clientX - start.x, event.clientY - start.y) : 0;
+    const movementLimit = pointerType === "touch" ? 34 : 12;
+    if (movement <= movementLimit) {
+      openMemory();
+    }
+  };
+
+  const handlePointerCancel = (event: React.PointerEvent<HTMLDivElement>) => {
+    pointerStartRef.current = null;
+    releasePointer(event.currentTarget, event.pointerId);
+    event.stopPropagation();
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -92,7 +142,7 @@ export function MemoryObjectFactory({ state, onClick }: MemoryObjectFactoryProps
 
   // We apply x, y as percentages (top/left) and then translate -50% -50% so the center matches.
   const sizeConfig = MEMORY_SIZES[state.type] || MEMORY_SIZES.random_thought;
-  const hitTargetPx = 64;
+  const hitTargetPx = 76;
   
   const style: MotionStyle = {
     position: "absolute",
@@ -155,9 +205,13 @@ export function MemoryObjectFactory({ state, onClick }: MemoryObjectFactoryProps
     <motion.div
       layoutId={state.isSleeping ? `memory-${state.id}` : undefined}
       style={style}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
       onMouseEnter={handleHoverStart}
       onMouseLeave={handleHoverEnd}
       onKeyDown={handleKeyDown}
+      onClick={(event) => event.stopPropagation()}
       role="button"
       tabIndex={viewingMemoryId === state.id ? -1 : 0}
       aria-label="Open memory"

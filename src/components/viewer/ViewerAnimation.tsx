@@ -16,6 +16,51 @@ function assertNever(x: never): never {
   throw new Error("Unexpected object: " + x);
 }
 
+function getTypeReadingVariants(type: MemoryType) {
+  switch (type) {
+    case "letter":
+    case "promise":
+      return {
+        initial: { opacity: 0, y: 34, rotateX: -58, scale: 0.92, filter: "blur(8px)" },
+        animate: { opacity: 1, y: 0, rotateX: 0, scale: 1, filter: "blur(0px)" },
+        exit: { opacity: 0, y: 42, rotateX: 64, rotateZ: -3, scale: 0.82, filter: "blur(10px)" },
+      };
+    case "photo":
+      return {
+        initial: { opacity: 0, y: 28, rotateZ: -4, scale: 0.88, filter: "blur(6px) saturate(0.75)" },
+        animate: { opacity: 1, y: 0, rotateZ: 0, scale: 1, filter: "blur(0px) saturate(1)" },
+        exit: { opacity: 0, y: 30, rotateZ: 6, scale: 0.78, filter: "blur(8px) saturate(0.65)" },
+      };
+    case "random_thought":
+    case "wish":
+    case "gratitude":
+      return {
+        initial: { opacity: 0, y: -24, scale: 0.9, filter: "blur(14px) brightness(1.25)" },
+        animate: { opacity: 1, y: 0, scale: 1, filter: "blur(0px) brightness(1)" },
+        exit: { opacity: 0, y: -30, rotateZ: 10, scale: 0.72, filter: "blur(18px) brightness(1.3)" },
+      };
+    case "voice":
+    case "video":
+      return {
+        initial: { opacity: 0, y: 22, rotateX: 18, scale: 0.9, filter: "blur(7px)" },
+        animate: { opacity: 1, y: 0, rotateX: 0, scale: 1, filter: "blur(0px)" },
+        exit: { opacity: 0, y: 34, rotateX: -28, scale: 0.8, filter: "blur(10px)" },
+      };
+    case "travel":
+      return {
+        initial: { opacity: 0, x: 38, y: 18, rotateZ: 5, scale: 0.9, filter: "blur(6px)" },
+        animate: { opacity: 1, x: 0, y: 0, rotateZ: 0, scale: 1, filter: "blur(0px)" },
+        exit: { opacity: 0, x: -48, y: 22, rotateZ: -7, scale: 0.78, filter: "blur(8px)" },
+      };
+    default:
+      return {
+        initial: { opacity: 0, scale: 0.92, y: 20, filter: "blur(7px)" },
+        animate: { opacity: 1, scale: 1, y: 0, filter: "blur(0px)" },
+        exit: { opacity: 0, scale: 0.8, y: 28, filter: "blur(10px)" },
+      };
+  }
+}
+
 // Content Components (We will create these next)
 import { ViewerContent } from "./ViewerContent";
 import { MEMORY_THEMES } from "@/lib/memoryThemes";
@@ -73,8 +118,8 @@ export function ViewerAnimation({ memoryId, type, fullMemory, onClose, stage: in
       case "photo":
         return (
           <motion.div
-            animate={isUnveiling ? { rotateY: 180, scale: 1.2 } : { rotateY: 0, scale: 1 }}
-            transition={{ duration: 0.8, ease: "easeInOut" }}
+            animate={isUnveiling ? { rotateY: [0, 14, 0], rotateZ: [-2, 3, 0], scale: [1, 1.12, 1.04] } : { rotateY: 0, rotateZ: 0, scale: 1 }}
+            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
             style={{ transformStyle: "preserve-3d" }}
           >
             <Polaroid {...commonProps} />
@@ -92,8 +137,9 @@ export function ViewerAnimation({ memoryId, type, fullMemory, onClose, stage: in
       case "letter":
         return (
           <motion.div
-            animate={isUnveiling ? { scaleY: [1, 0.9, 1.2], opacity: [1, 0.8, 1] } : {}}
-            transition={{ duration: 0.8 }}
+            animate={isUnveiling ? { rotateX: [0, -34, 0], scaleY: [1, 0.82, 1.12], opacity: [1, 0.86, 1] } : { rotateX: 0, scaleY: 1 }}
+            transition={{ duration: 0.82, ease: [0.22, 1, 0.36, 1] }}
+            style={{ transformOrigin: "50% 100%", transformStyle: "preserve-3d" }}
           >
             <Letter {...commonProps} />
           </motion.div>
@@ -137,7 +183,14 @@ export function ViewerAnimation({ memoryId, type, fullMemory, onClose, stage: in
           </motion.div>
         );
       default:
-        return <TinySlip {...commonProps} />;
+        return (
+          <motion.div
+            animate={isUnveiling ? { y: [0, -14, 0], rotate: [0, 8, -2], scale: [1, 1.18, 1.04], filter: ["blur(0px)", "blur(2px)", "blur(0px)"] } : {}}
+            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <TinySlip {...commonProps} />
+          </motion.div>
+        );
     }
   };
 
@@ -146,7 +199,8 @@ export function ViewerAnimation({ memoryId, type, fullMemory, onClose, stage: in
   const animationPreset = themeConfig.animationPreset;
 
   const getReadingVariants = () => {
-    switch (animationPreset) {
+    const themeVariants = (() => {
+      switch (animationPreset) {
       case "vintage":
         return {
           initial: { opacity: 0, rotateX: 90, y: 20 },
@@ -185,7 +239,16 @@ export function ViewerAnimation({ memoryId, type, fullMemory, onClose, stage: in
         };
       default:
         assertNever(animationPreset);
-    }
+      }
+    })();
+
+    const typeVariants = getTypeReadingVariants(type);
+
+    return {
+      initial: { ...themeVariants.initial, ...typeVariants.initial },
+      animate: { ...themeVariants.animate, ...typeVariants.animate },
+      exit: { ...themeVariants.exit, ...typeVariants.exit },
+    };
   };
 
   const readingVariants = getReadingVariants();
@@ -225,6 +288,7 @@ export function ViewerAnimation({ memoryId, type, fullMemory, onClose, stage: in
             variants={readingVariants}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
             className="w-full h-full relative z-30 perspective-1000"
+            style={{ transformStyle: "preserve-3d" }}
           >
             {/* The actual reading experience */}
             <ViewerContent memoryId={memoryId} type={type} fullMemory={fullMemory} onClose={onClose} />

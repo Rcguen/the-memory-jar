@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { memoryService } from "@/services/memory";
 import { mapDatabaseMemory } from "@/lib/mappers/memory.mapper";
 import { createClient } from "@/lib/supabase/client";
-import { Memory } from "@/types/memory";
+import { MemoryListOptions } from "@/types/memory";
 
 export function useMemory(id: string | null) {
   return useQuery({
@@ -30,5 +30,38 @@ export function usePendingMemories() {
       return (data || []).map(mapDatabaseMemory);
     },
     staleTime: 60 * 1000,
+  });
+}
+
+export function useMemories(options: MemoryListOptions = {}) {
+  return useQuery({
+    queryKey: ['memories', options],
+    queryFn: () => memoryService.listMemories(options),
+    staleTime: 30 * 1000,
+  });
+}
+
+export function useDeletedMemories() {
+  return useQuery({
+    queryKey: ['memories', 'trash'],
+    queryFn: () => memoryService.listDeletedMemories(),
+    staleTime: 30 * 1000,
+  });
+}
+
+export function useMemoryComments(memoryId: string | null) {
+  return useQuery({
+    queryKey: ['memory-comments', memoryId],
+    queryFn: () => memoryService.getComments(memoryId!),
+    enabled: !!memoryId,
+    staleTime: 15 * 1000,
+  });
+}
+
+export function useActivityFeed() {
+  return useQuery({
+    queryKey: ['activity-feed'],
+    queryFn: () => memoryService.getActivityFeed(30),
+    staleTime: 30 * 1000,
   });
 }

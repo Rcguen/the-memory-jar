@@ -1,9 +1,8 @@
 "use client";
 
-import { motion, useMotionValue, useSpring, useTransform, AnimatePresence } from "framer-motion";
+import { motion, useMotionValue, useReducedMotion, useSpring, useTransform, AnimatePresence } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { useSfx } from "@/hooks/useSfx";
 import { usePhysics } from "@/providers/physics-provider";
 import { MemoryObjectFactory } from "./objects/MemoryObjectFactory";
 import { useMemoryViewer } from "@/providers/memory-viewer-provider";
@@ -14,8 +13,12 @@ interface GlassJarProps {
 
 export function GlassJar({ memoryCount }: GlassJarProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const frameRef = useRef<number | null>(null);
+  const lastPointerRef = useRef<{ x: number; y: number } | null>(null);
+  const tapStartRef = useRef<{ x: number; y: number; pointerId: number; pointerType: string } | null>(null);
   const { states, setContainerRef } = usePhysics();
   const { viewingMemoryId, openViewer } = useMemoryViewer();
+  const reduceMotion = useReducedMotion();
   
   // Cinematic zoom state
   const [isZoomed, setIsZoomed] = useState(false);
@@ -28,25 +31,14 @@ export function GlassJar({ memoryCount }: GlassJarProps) {
   const rotateX = useSpring(useTransform(mouseY, [0, 1], [2, -2]), { stiffness: 100, damping: 30 });
   const rotateY = useSpring(useTransform(mouseX, [0, 1], [-2, 2]), { stiffness: 100, damping: 30 });
 
-  // Spring for the sweeping highlight (0 to 100%)
-  const highlightPos = useSpring(useTransform(mouseX, [0, 1], [-20, 120]), { stiffness: 150, damping: 20 });
-
-  // Glow state for when a memory is saved
-  const [saveGlow, setSaveGlow] = useState(0);
   const [partnerOnline, setPartnerOnline] = useState(false);
 
   useEffect(() => {
-    const handleMemorySaved = () => {
-      setSaveGlow(1);
-      setTimeout(() => setSaveGlow(0), 2000);
-    };
-    
     const handleHeartbeat = (e: Event) => {
       const customEvent = e as CustomEvent;
       setPartnerOnline(customEvent.detail.active);
     };
 
-    window.addEventListener("memory-saved", handleMemorySaved);
     window.addEventListener("jar-heartbeat-active", handleHeartbeat);
     
     // Debug toggle for the user to test the glow (Ctrl + G)
@@ -58,19 +50,28 @@ export function GlassJar({ memoryCount }: GlassJarProps) {
     window.addEventListener('keydown', handleKey);
 
     return () => {
-      window.removeEventListener("memory-saved", handleMemorySaved);
+      if (frameRef.current !== null) {
+        cancelAnimationFrame(frameRef.current);
+      }
       window.removeEventListener("jar-heartbeat-active", handleHeartbeat);
       window.removeEventListener('keydown', handleKey);
     };
   }, []);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width;
-    const y = (e.clientY - rect.top) / rect.height;
-    mouseX.set(x);
-    mouseY.set(y);
+    if (reduceMotion) return;
+    lastPointerRef.current = { x: e.clientX, y: e.clientY };
+    if (frameRef.current !== null) return;
+
+    frameRef.current = requestAnimationFrame(() => {
+      frameRef.current = null;
+      if (!containerRef.current || !lastPointerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const x = (lastPointerRef.current.x - rect.left) / rect.width;
+      const y = (lastPointerRef.current.y - rect.top) / rect.height;
+      mouseX.set(x);
+      mouseY.set(y);
+    });
   };
 
   const handleMouseLeave = () => {
@@ -87,30 +88,84 @@ export function GlassJar({ memoryCount }: GlassJarProps) {
     setTimeout(() => setIsZoomed(false), 2000);
   };
 
-  const handleContentsPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (states.length === 0 || viewingMemoryId) return;
+  const findMemoryNearPoint = (
+    target: HTMLDivElement,
+    clientX: number,
+    clientY: number,
+    pointerType: string
+  ) => {
+    const rect = target.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return null;
 
-    const rect = event.currentTarget.getBoundingClientRect();
-    const pointerX = event.clientX - rect.left;
-    const pointerY = event.clientY - rect.top;
-    const radius = event.pointerType === "touch" ? 86 : 70;
+    const pointerX = clientX - rect.left;
+    const pointerY = clientY - rect.top;
+    const isTouch = pointerType === "touch";
+    const radius = isTouch ? 128 : 76;
+    const fallbackRadius = isTouch ? 178 : radius;
+    const lowerJarTap = pointerY > rect.height * 0.44;
 
-    const closest = states.reduce<{ id: string; distance: number } | null>((nearest, state) => {
-      const dx = pointerX - state.x * rect.width;
-      const dy = pointerY - state.y * rect.height;
+    const closest = states.reduce<{ id: string; distance: number; score: number } | null>((nearest, state) => {
+      const centerX = state.x * rect.width;
+      const centerY = state.y * rect.height;
+      const dx = pointerX - centerX;
+      const dy = pointerY - centerY;
       const distance = Math.hypot(dx, dy);
+      const inPrimaryHit = distance <= radius;
+      const inTouchFallback = isTouch && lowerJarTap && distance <= fallbackRadius;
 
-      if (distance > radius) return nearest;
-      if (!nearest || distance < nearest.distance) {
-        return { id: state.id, distance };
+      if (!inPrimaryHit && !inTouchFallback) return nearest;
+
+      const score = distance - (isTouch ? state.y * 18 : 0);
+      if (!nearest || score < nearest.score) {
+        return { id: state.id, distance, score };
       }
 
       return nearest;
     }, null);
 
-    if (closest) {
-      handleOpenMemory(closest.id);
+    return closest?.id ?? null;
+  };
+
+  const releasePointer = (target: HTMLDivElement, pointerId: number) => {
+    if (target.hasPointerCapture?.(pointerId)) {
+      target.releasePointerCapture(pointerId);
     }
+  };
+
+  const handleContentsPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (states.length === 0 || viewingMemoryId) return;
+
+    tapStartRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+      pointerId: event.pointerId,
+      pointerType: event.pointerType,
+    };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+
+  const handleContentsPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (states.length === 0 || viewingMemoryId) return;
+
+    const start = tapStartRef.current;
+    tapStartRef.current = null;
+    releasePointer(event.currentTarget, event.pointerId);
+
+    const pointerType = event.pointerType || start?.pointerType || "mouse";
+    const movement = start ? Math.hypot(event.clientX - start.x, event.clientY - start.y) : 0;
+    const movementLimit = pointerType === "touch" ? 32 : 12;
+    if (movement > movementLimit) return;
+
+    const closest = findMemoryNearPoint(event.currentTarget, event.clientX, event.clientY, pointerType);
+
+    if (closest) {
+      handleOpenMemory(closest);
+    }
+  };
+
+  const handleContentsPointerCancel = (event: React.PointerEvent<HTMLDivElement>) => {
+    tapStartRef.current = null;
+    releasePointer(event.currentTarget, event.pointerId);
   };
 
   return (
@@ -148,19 +203,14 @@ export function GlassJar({ memoryCount }: GlassJarProps) {
       <motion.div 
         className="w-full h-full relative"
         style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-        animate={{
-          y: [0, -4, 0],
-        }}
+        animate={reduceMotion ? undefined : { y: [0, -2, 0] }}
         transition={{
-          duration: 4,
+          duration: 6,
           repeat: Infinity,
           ease: "easeInOut",
         }}
       >
-        <div ref={(el) => {
-          containerRef.current = el;
-          setContainerRef(el);
-        }} className="absolute inset-0 pointer-events-none" />
+        <div className="absolute inset-0 pointer-events-none" />
 
         {/* The custom Jar image loaded via Next.js Image for instant preloading */}
         <div className="absolute inset-0 pointer-events-none z-10">
@@ -219,7 +269,13 @@ export function GlassJar({ memoryCount }: GlassJarProps) {
           {/* 1. Contents (Where the memories go - Behind the jar glass!) */}
           <g id="layer-contents">
             <foreignObject x="0" y="0" width="400" height="500">
-              <div className="relative w-full h-full pointer-events-auto" onPointerUp={handleContentsPointerUp}>
+              <div
+                className="relative w-full h-full pointer-events-auto select-none"
+                style={{ touchAction: "manipulation" }}
+                onPointerDown={handleContentsPointerDown}
+                onPointerUp={handleContentsPointerUp}
+                onPointerCancel={handleContentsPointerCancel}
+              >
                 {states.map(state => (
                   <MemoryObjectFactory key={state.id} state={state} onClick={handleOpenMemory} />
                 ))}

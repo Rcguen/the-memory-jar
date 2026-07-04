@@ -149,11 +149,42 @@ export function useRealtimeMemory(relationshipId: string | null) {
     window.addEventListener(`postgres-${attachmentsChannel}`, handleAttachmentChange);
     subscribePostgres(attachmentsChannel, '*', 'public', 'memory_attachments', undefined);
 
+    const relatedTables = [
+      { table: 'memory_favorites', channel: `favorites_${relationshipId}` },
+      { table: 'memory_reactions', channel: `reactions_${relationshipId}` },
+      { table: 'memory_comments', channel: `comments_${relationshipId}` },
+      { table: 'activity_logs', channel: `activity_${relationshipId}` },
+    ];
+
+    const handleRelatedChange = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const payload = customEvent.detail;
+      const record = payload.new || payload.old;
+      const memoryId: string | undefined = record?.memory_id || record?.target_memory_id;
+
+      if (memoryId) {
+        queryClient.invalidateQueries({ queryKey: ['memory', memoryId] });
+        queryClient.invalidateQueries({ queryKey: ['memory-comments', memoryId] });
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['memories'] });
+      queryClient.invalidateQueries({ queryKey: ['activity-feed'] });
+    };
+
+    for (const entry of relatedTables) {
+      window.addEventListener(`postgres-${entry.channel}`, handleRelatedChange);
+      subscribePostgres(entry.channel, '*', 'public', entry.table, undefined);
+    }
+
     return () => {
       window.removeEventListener(`postgres-${memoriesChannel}`, handleMemoryChange);
       window.removeEventListener(`postgres-${attachmentsChannel}`, handleAttachmentChange);
       unsubscribePostgres(memoriesChannel);
       unsubscribePostgres(attachmentsChannel);
+      for (const entry of relatedTables) {
+        window.removeEventListener(`postgres-${entry.channel}`, handleRelatedChange);
+        unsubscribePostgres(entry.channel);
+      }
     };
   }, [relationshipId, queryClient, subscribePostgres, unsubscribePostgres, dropMemory, loadMemory, removeMemory, updateMemoryMeta]);
 }
