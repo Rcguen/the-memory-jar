@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useTransition } from "react";
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
 import { Compass, LayoutDashboard, LogOut, User } from "lucide-react";
@@ -58,6 +59,7 @@ export default function Home() {
   const { data: relationship } = useRelationshipContext();
   const { loadMemory } = usePhysics();
   const queryClient = useQueryClient();
+  const router = useRouter();
   const [memoryCount, setMemoryCount] = useState<number | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -157,6 +159,9 @@ export default function Home() {
     });
   }, [queryClient, relationship?.relationshipTimezone]);
 
+  const prefetchTimeline = () => router.prefetch("/timeline");
+  const prefetchDashboard = () => router.prefetch("/dashboard");
+
   return (
     <main className="relative min-h-screen flex flex-col items-center justify-start overflow-x-hidden bg-emerald-50/30 dark:bg-emerald-950/20 transition-colors duration-700 xl:justify-center">
       
@@ -178,17 +183,23 @@ export default function Home() {
       <header className="pointer-events-none absolute inset-x-0 top-0 z-20 px-3 pt-3 sm:p-6">
         <div className="flex items-start justify-between gap-3">
         <div className="pointer-events-auto hidden items-center gap-2 md:flex">
-          <Link
-            href="/timeline"
-            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-zinc-950/35 px-4 py-2 text-sm text-zinc-200 shadow-lg backdrop-blur-xl transition-colors hover:bg-zinc-950/55"
-          >
+            <Link
+              href="/timeline"
+              onMouseEnter={prefetchTimeline}
+              onTouchStart={prefetchTimeline}
+              onFocus={prefetchTimeline}
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-zinc-950/35 px-4 py-2 text-sm text-zinc-200 shadow-lg backdrop-blur-xl transition-colors hover:bg-zinc-950/55"
+            >
             <Compass className="h-4 w-4 text-emerald-400" />
             Timeline
           </Link>
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-zinc-950/35 px-4 py-2 text-sm text-zinc-200 shadow-lg backdrop-blur-xl transition-colors hover:bg-zinc-950/55"
-          >
+            <Link
+              href="/dashboard"
+              onMouseEnter={prefetchDashboard}
+              onTouchStart={prefetchDashboard}
+              onFocus={prefetchDashboard}
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-zinc-950/35 px-4 py-2 text-sm text-zinc-200 shadow-lg backdrop-blur-xl transition-colors hover:bg-zinc-950/55"
+            >
             <LayoutDashboard className="h-4 w-4 text-rose-300" />
             Dashboard
           </Link>
@@ -258,6 +269,9 @@ export default function Home() {
           <div className="mt-4 grid w-full grid-cols-2 gap-2 md:hidden">
             <Link
               href="/timeline"
+              onMouseEnter={prefetchTimeline}
+              onTouchStart={prefetchTimeline}
+              onFocus={prefetchTimeline}
               className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-zinc-950/35 px-4 py-2.5 text-sm text-zinc-200 shadow-lg backdrop-blur-xl transition-colors hover:bg-zinc-950/55"
             >
               <Compass className="h-4 w-4 text-emerald-400" />
@@ -265,6 +279,9 @@ export default function Home() {
             </Link>
             <Link
               href="/dashboard"
+              onMouseEnter={prefetchDashboard}
+              onTouchStart={prefetchDashboard}
+              onFocus={prefetchDashboard}
               className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-zinc-950/35 px-4 py-2.5 text-sm text-zinc-200 shadow-lg backdrop-blur-xl transition-colors hover:bg-zinc-950/55"
             >
               <LayoutDashboard className="h-4 w-4 text-rose-300" />
