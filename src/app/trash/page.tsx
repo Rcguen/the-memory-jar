@@ -8,6 +8,7 @@ import { formatDistanceToNow } from "date-fns";
 import { ArrowLeft, RotateCcw, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { useDeletedMemories } from "@/hooks/useMemoryData";
+import { useRoutePrefetch } from "@/hooks/useRoutePrefetch";
 import { usePhysics } from "@/providers/physics-provider";
 import { memoryService } from "@/services/memory";
 import { Memory } from "@/types/memory";
@@ -18,6 +19,8 @@ export default function TrashPage() {
   const { data: memories = [], isLoading } = useDeletedMemories();
   const [preview, setPreview] = useState<Memory | null>(null);
   const [confirming, setConfirming] = useState<Memory | null>(null);
+
+  useRoutePrefetch(["/"]);
 
   const restoreMutation = useMutation({
     mutationFn: (memory: Memory) => memoryService.restoreMemory(memory.id),

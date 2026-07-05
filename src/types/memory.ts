@@ -267,3 +267,42 @@ export interface RelationshipSettings {
   created_at: string;
   updated_at: string;
 }
+
+export interface RelationshipContext {
+  relationshipId: string;
+  relationshipTimezone: string;
+  startDate: string | null;
+  partnerId: string | null;
+  partnerName: string | null;
+}
+
+export interface TimelineMemoryPage {
+  memories: Memory[];
+  nextOffset: number | null;
+  hasMore: boolean;
+}
+
+export interface DashboardMemoryReference {
+  id: string;
+  title: string | null;
+  type: MemoryType;
+  memory_date: string;
+  created_at: string;
+}
+
+export interface CoupleDashboardStats {
+  togetherDays: number;
+  totalMemories: number;
+  totalPhotos: number;
+  totalVideos: number;
+  totalVoices: number;
+  totalLetters: number;
+  waitingCapsules: number;
+  favorites: number;
+  currentStreak: number;
+  newestMemory: DashboardMemoryReference | null;
+  oldestMemory: DashboardMemoryReference | null;
+  mostCommonMemoryType: MemoryType | null;
+  mostActiveMonth: string | null;
+  favoriteReaction: ReactionEmoji | null;
+}

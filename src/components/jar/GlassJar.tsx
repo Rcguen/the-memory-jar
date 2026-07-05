@@ -174,7 +174,7 @@ export function GlassJar({ memoryCount }: GlassJarProps) {
         containerRef.current = node;
         setContainerRef(node);
       }}
-      className={`relative w-72 h-96 md:w-80 md:h-[28rem] mx-auto cursor-pointer perspective-[1000px] z-20 transition-all duration-700 ease-in-out ${isZoomed ? "scale-[1.05] drop-shadow-2xl" : ""}`}
+      className={`relative mx-auto h-[21rem] w-[15.5rem] cursor-pointer perspective-[1000px] z-20 transition-all duration-700 ease-in-out sm:h-96 sm:w-72 md:h-[28rem] md:w-80 ${isZoomed ? "scale-[1.05] drop-shadow-2xl" : ""}`}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       initial={{ opacity: 0, scale: 0.9 }}

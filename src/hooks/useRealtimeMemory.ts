@@ -6,11 +6,12 @@ import { Memory, MemoryType } from "@/types/memory";
 import { memoryService } from "@/services/memory";
 import { useAuth } from "@/providers/auth-provider";
 
-export function useRealtimeMemory(relationshipId: string | null) {
+export function useRealtimeMemory(relationshipId: string | null, options?: { syncPhysics?: boolean }) {
   const queryClient = useQueryClient();
   const { subscribePostgres, unsubscribePostgres } = useRealtimeContext();
   const { dropMemory, loadMemory, removeMemory, updateMemoryMeta } = usePhysics();
   const { profile } = useAuth();
+  const syncPhysics = options?.syncPhysics !== false;
 
   useEffect(() => {
     if (!relationshipId) return;
@@ -28,8 +29,11 @@ export function useRealtimeMemory(relationshipId: string | null) {
       if (eventType === 'INSERT' && record?.id) {
         const status = record.status as string;
         queryClient.invalidateQueries({ queryKey: ['memories'] });
+        queryClient.invalidateQueries({ queryKey: ['on-this-day'] });
+        queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+        queryClient.invalidateQueries({ queryKey: ['timeline-memories'] });
 
-        if (['sealed', 'unlocked', 'opening'].includes(status)) {
+        if (syncPhysics && ['sealed', 'unlocked', 'opening'].includes(status)) {
           // Use dropMemory for INSERT so the spawn animation (drop from top) plays
           // loadMemory would silently skip if body already exists (guard inside EngineCore)
           const visualState = await memoryService.getVisualState(record.id).catch(() => null);
@@ -71,20 +75,25 @@ export function useRealtimeMemory(relationshipId: string | null) {
 
         if (deletedAt || status === 'archived' || status === 'draft' || status === 'pending_partner') {
           // Invisible — remove from jar and close any open viewer
-          removeMemory(record.id);
+          if (syncPhysics) removeMemory(record.id);
           queryClient.removeQueries({ queryKey: ['memory', record.id] });
           queryClient.invalidateQueries({ queryKey: ['memories'] });
+          queryClient.invalidateQueries({ queryKey: ['on-this-day'] });
+          queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+          queryClient.invalidateQueries({ queryKey: ['timeline-memories'] });
           window.dispatchEvent(new CustomEvent('viewer-force-close', { detail: { id: record.id } }));
           return;
         }
 
         // Update physics metadata in-place (no body recreate, no position reset)
-        updateMemoryMeta(record.id, {
-          status: status as 'sealed' | 'unlocked' | 'opening',
-          capsuleStyle: record.capsule_style ?? null,
-          unlockAt: record.unlock_at ?? null,
-          isCollaborative: record.is_collaborative ?? false,
-        });
+        if (syncPhysics) {
+          updateMemoryMeta(record.id, {
+            status: status as 'sealed' | 'unlocked' | 'opening',
+            capsuleStyle: record.capsule_style ?? null,
+            unlockAt: record.unlock_at ?? null,
+            isCollaborative: record.is_collaborative ?? false,
+          });
+        }
 
         // Build a partial Memory from the realtime payload for instant cache update
         // Postgres realtime does NOT include joined tables (memory_attachments), so
@@ -116,14 +125,20 @@ export function useRealtimeMemory(relationshipId: string | null) {
 
         // Also update the memories list
         queryClient.invalidateQueries({ queryKey: ['memories'] });
+        queryClient.invalidateQueries({ queryKey: ['on-this-day'] });
+        queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+        queryClient.invalidateQueries({ queryKey: ['timeline-memories'] });
       }
 
       // ── DELETE ─────────────────────────────────────────────────────────
       if (eventType === 'DELETE' && payload.old?.id) {
         const deletedId = payload.old.id;
-        removeMemory(deletedId);
+        if (syncPhysics) removeMemory(deletedId);
         queryClient.removeQueries({ queryKey: ['memory', deletedId] });
         queryClient.invalidateQueries({ queryKey: ['memories'] });
+        queryClient.invalidateQueries({ queryKey: ['on-this-day'] });
+        queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+        queryClient.invalidateQueries({ queryKey: ['timeline-memories'] });
         window.dispatchEvent(new CustomEvent('viewer-force-close', { detail: { id: deletedId } }));
       }
     };
@@ -147,6 +162,7 @@ export function useRealtimeMemory(relationshipId: string | null) {
       // does not contain signed URLs — we must re-fetch from service
       queryClient.invalidateQueries({ queryKey: ['memory', memoryId] });
       queryClient.invalidateQueries({ queryKey: ['memories'] });
+      queryClient.invalidateQueries({ queryKey: ['timeline-memories'] });
     };
 
     window.addEventListener(`postgres-${attachmentsChannel}`, handleAttachmentChange);
@@ -172,6 +188,8 @@ export function useRealtimeMemory(relationshipId: string | null) {
 
       queryClient.invalidateQueries({ queryKey: ['memories'] });
       queryClient.invalidateQueries({ queryKey: ['activity-feed'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['timeline-memories'] });
     };
 
     for (const entry of relatedTables) {
@@ -204,5 +222,5 @@ export function useRealtimeMemory(relationshipId: string | null) {
         unsubscribePostgres(notificationsChannel);
       }
     };
-  }, [relationshipId, profile?.id, queryClient, subscribePostgres, unsubscribePostgres, dropMemory, loadMemory, removeMemory, updateMemoryMeta]);
+  }, [relationshipId, profile?.id, queryClient, subscribePostgres, unsubscribePostgres, dropMemory, loadMemory, removeMemory, syncPhysics, updateMemoryMeta]);
 }

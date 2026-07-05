@@ -99,6 +99,11 @@ function getTimezoneDateParts(date: Date, tz: string): {
   };
 }
 
+export function getDateTimePartsInTimezone(date: Date, tz: string | null | undefined) {
+  const safeTimezone = normalizeTimezone(tz);
+  return getTimezoneDateParts(date, safeTimezone);
+}
+
 function formatDateOnlyFromParts(parts: { year: number; month: number; day: number }): string {
   return [
     String(parts.year).padStart(4, "0"),
@@ -120,6 +125,25 @@ export function utcIsoToDateOnlyInTimezone(isoString: string, tz: string | null 
 export function todayDateOnlyInTimezone(tz: string | null | undefined, now: Date = new Date()): string {
   const safeTimezone = normalizeTimezone(tz);
   return formatDateOnlyFromParts(getTimezoneDateParts(now, safeTimezone));
+}
+
+export function getMonthDayInTimezone(tz: string | null | undefined, now: Date = new Date()): string {
+  const safeTimezone = normalizeTimezone(tz);
+  const parts = getTimezoneDateParts(now, safeTimezone);
+  return `${String(parts.month).padStart(2, "0")}-${String(parts.day).padStart(2, "0")}`;
+}
+
+export function getTimezonePeriod(
+  tz: string | null | undefined,
+  now: Date = new Date()
+): "morning" | "day" | "evening" | "night" {
+  const safeTimezone = normalizeTimezone(tz);
+  const hour = getTimezoneDateParts(now, safeTimezone).hour;
+
+  if (hour >= 5 && hour < 11) return "morning";
+  if (hour >= 11 && hour < 17) return "day";
+  if (hour >= 17 && hour < 21) return "evening";
+  return "night";
 }
 
 /**

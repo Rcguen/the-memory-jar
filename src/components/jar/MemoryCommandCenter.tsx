@@ -295,7 +295,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
   };
 
   return (
-    <div className={cn("mt-6 w-full max-w-[min(100%,42rem)] xl:mt-0 xl:max-w-none", className)}>
+    <div className={cn("mt-7 w-full max-w-[min(100%,42rem)] xl:mt-0 xl:max-w-none", className)}>
       <AnimatePresence mode="wait">
         {!isOpen ? (
           <motion.button
@@ -318,19 +318,19 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
             animate={{ opacity: 1, x: 0, scale: 1, filter: "blur(0px)" }}
             exit={{ opacity: 0, x: -28, scale: 0.985, filter: "blur(8px)" }}
             transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
-            className="relative overflow-hidden rounded-[1.1rem] border border-white/[0.12] bg-zinc-950/[0.9] shadow-[0_18px_60px_rgba(0,0,0,0.32)] backdrop-blur-xl sm:rounded-[1.35rem] sm:bg-zinc-950/[0.74] xl:bg-zinc-950/[0.38]"
+            className="relative overflow-hidden rounded-[1.35rem] border border-white/[0.12] bg-zinc-950/[0.9] shadow-[0_18px_60px_rgba(0,0,0,0.32)] backdrop-blur-xl sm:bg-zinc-950/[0.74] xl:bg-zinc-950/[0.38]"
           >
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.14),transparent_44%),linear-gradient(180deg,rgba(255,255,255,0.06),transparent_36%)]" />
 
-            <div className="relative flex items-center justify-between gap-3 border-b border-white/[0.07] px-3 py-3 sm:px-4">
+            <div className="relative flex items-center justify-between gap-3 border-b border-white/[0.07] px-4 py-4">
               <div>
-                <p className="font-cormorant text-xl text-zinc-100">Memory Shelf</p>
-                <p className="text-[11px] text-zinc-400">{visibleMemories.length} shown</p>
+                <p className="font-cormorant text-[1.75rem] leading-none text-zinc-100 sm:text-xl">Memory Shelf</p>
+                <p className="mt-1 text-[11px] text-zinc-400">{visibleMemories.length} shown</p>
               </div>
               <div className="flex items-center gap-1">
                 <Link
                   href="/trash"
-                  className="inline-flex h-8 items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.04] px-3 text-xs text-zinc-400 transition-colors hover:text-zinc-100"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.04] px-3 text-xs text-zinc-400 transition-colors hover:text-zinc-100"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   Trash
@@ -345,8 +345,8 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
               </div>
             </div>
 
-            <div className="relative p-3 sm:p-4">
-              <div className="grid grid-cols-2 rounded-full border border-white/[0.1] bg-black/35 p-1">
+            <div className="relative p-4">
+              <div className="grid grid-cols-2 rounded-[1rem] border border-white/[0.1] bg-black/35 p-1">
                 {[
                   { id: "memories" as const, label: "Memories", icon: BookOpen },
                   { id: "activity" as const, label: "Activity", icon: Flame },
@@ -358,7 +358,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                       key={item.id}
                       onClick={() => setActiveView(item.id)}
                       className={cn(
-                        "relative h-9 rounded-full text-sm transition-colors",
+                        "relative h-10 rounded-[0.9rem] text-sm transition-colors",
                         selected ? "text-white" : "text-zinc-300 hover:text-zinc-100",
                       )}
                     >
@@ -395,12 +395,12 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                           value={search}
                           onChange={(event) => setSearch(event.target.value)}
                           placeholder="Search"
-                          className="h-10 w-full rounded-full border border-white/[0.1] bg-black/35 pl-9 pr-3 text-sm text-zinc-100 placeholder:text-zinc-400 outline-none transition focus:border-emerald-400/50 focus:ring-2 focus:ring-emerald-400/15"
+                          className="h-11 w-full rounded-full border border-white/[0.1] bg-black/35 pl-9 pr-3 text-sm text-zinc-100 placeholder:text-zinc-400 outline-none transition focus:border-emerald-400/50 focus:ring-2 focus:ring-emerald-400/15"
                         />
                       </label>
                       <button
                         onClick={() => setSort(sort === "newest" ? "oldest" : "newest")}
-                        className="h-10 rounded-full border border-white/[0.1] bg-white/[0.08] px-3 text-xs text-zinc-200 transition hover:text-zinc-100"
+                        className="h-11 rounded-full border border-white/[0.1] bg-white/[0.08] px-3 text-xs text-zinc-200 transition hover:text-zinc-100"
                       >
                         {sort === "newest" ? "Newest" : "Oldest"}
                       </button>

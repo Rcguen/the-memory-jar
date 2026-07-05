@@ -132,6 +132,7 @@ export class EngineCore {
 
   private setupBoundaries() {
     const wallThickness = 100;
+    const sideInset = this.width * 0.19;
 
     // Keep the older bucket shape, with the floor slightly lower so the pile sits in the glass base.
     const bottom = Matter.Bodies.rectangle(this.width / 2, this.height * 0.965, this.width, wallThickness, {
@@ -140,12 +141,12 @@ export class EngineCore {
       restitution: 0.2
     });
 
-    const leftWall = Matter.Bodies.rectangle(-wallThickness / 2 + (this.width * 0.25), this.height / 2, wallThickness, this.height * 1.5, {
+    const leftWall = Matter.Bodies.rectangle(-wallThickness / 2 + sideInset, this.height / 2, wallThickness, this.height * 1.5, {
       isStatic: true,
       angle: 0
     });
 
-    const rightWall = Matter.Bodies.rectangle(this.width + wallThickness / 2 - (this.width * 0.25), this.height / 2, wallThickness, this.height * 1.5, {
+    const rightWall = Matter.Bodies.rectangle(this.width + wallThickness / 2 - sideInset, this.height / 2, wallThickness, this.height * 1.5, {
       isStatic: true,
       angle: 0
     });

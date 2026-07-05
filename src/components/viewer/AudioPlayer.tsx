@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Play, Pause, FastForward, Rewind } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
+import { useAudioWaveform } from "@/hooks/useAudioWaveform";
 
 interface AudioPlayerProps {
   url: string;
@@ -23,6 +24,7 @@ function AudioPlayerBody({ url }: AudioPlayerProps) {
   const hasDuration = Number.isFinite(duration) && duration > 0;
   const isResolvingFirstPlayback = isPlaying && !hasDuration;
   const showLoadingState = isLoading || isResolvingFirstPlayback;
+  const waveform = useAudioWaveform(url, 54);
 
   const syncProgress = () => {
     const audio = audioRef.current;
@@ -279,27 +281,53 @@ function AudioPlayerBody({ url }: AudioPlayerProps) {
         </button>
       </div>
 
-        <div className="relative mt-4 h-2.5 w-full overflow-hidden rounded-full border border-black/20 bg-stone-800 shadow-inner sm:mt-5">
-        {hasDuration ? (
-          <>
-            <div
-              className="absolute inset-y-0 left-0 rounded-full bg-stone-500/70 transition-all duration-200 ease-out"
-              style={{ width: `${bufferedProgress}%` }}
+        <div className="relative mt-4 overflow-hidden rounded-[1rem] border border-black/20 bg-stone-900/70 px-3 py-3 shadow-inner sm:mt-5">
+          {showLoadingState && !hasDuration && (
+            <motion.div
+              className="absolute inset-y-0 left-0 w-1/4 bg-gradient-to-r from-transparent via-amber-200/35 to-transparent"
+              initial={{ x: "-120%" }}
+              animate={{ x: "420%" }}
+              transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
             />
+          )}
+          <div className="relative flex h-16 items-end gap-[3px] sm:h-20">
+            {waveform.map((sample, index) => {
+              const ratio = waveform.length <= 1 ? 0 : index / (waveform.length - 1);
+              const played = progress >= ratio * 100;
+              const buffered = bufferedProgress >= ratio * 100;
+              const activeHeight = 18 + sample * 42;
+
+              return (
+                <motion.span
+                  key={index}
+                  className="relative block flex-1 rounded-full"
+                  style={{
+                    height: `${activeHeight}px`,
+                    background: played
+                      ? "linear-gradient(180deg, rgba(110,231,183,0.98), rgba(251,191,36,0.94))"
+                      : buffered
+                        ? "rgba(168,162,158,0.85)"
+                        : "rgba(68,64,60,0.85)",
+                  }}
+                  animate={
+                    isPlaying
+                      ? { scaleY: [1, 1 + sample * 0.1, 1], opacity: [0.92, 1, 0.92] }
+                      : { scaleY: 1, opacity: 0.96 }
+                  }
+                  transition={{
+                    duration: 0.45 + ((index % 6) * 0.04),
+                    repeat: isPlaying ? Infinity : 0,
+                    ease: "easeInOut",
+                  }}
+                />
+              );
+            })}
             <div
-              className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-emerald-500 via-amber-300 to-emerald-400 transition-all duration-100 ease-linear"
+              className="pointer-events-none absolute inset-y-0 left-0 rounded-[0.8rem] border-r border-amber-100/30 bg-gradient-to-r from-emerald-400/10 via-transparent to-transparent"
               style={{ width: `${progress}%` }}
             />
-          </>
-        ) : showLoadingState ? (
-          <motion.div
-            className="absolute inset-y-0 w-1/3 rounded-full bg-amber-300"
-            initial={{ x: "-120%" }}
-            animate={{ x: "320%" }}
-            transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
-          />
-        ) : null}
-      </div>
+          </div>
+        </div>
         <div className="mt-2 flex items-center justify-between font-mono text-[11px] uppercase tracking-[0.12em] text-stone-400">
           <span>{formatTime(currentTime)}</span>
           <span>{showLoadingState && !hasDuration ? "loading..." : formatTime(duration)}</span>

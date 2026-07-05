@@ -72,7 +72,16 @@ export function useKnockState(memoryId: string | null, userId: string | undefine
     };
   }, [memoryId, userId, subscribePostgres, unsubscribePostgres, queryClient]);
 
-  const knock = async () => {
+  const openMemory = async () => {
+    if (!memoryId) return;
+    const supabase = createClient();
+    await supabase.from("memories").update({ status: "opening" }).eq("id", memoryId);
+    window.dispatchEvent(new CustomEvent("memory-opened", { detail: { id: memoryId } }));
+    queryClient.invalidateQueries({ queryKey: ["memory", memoryId] });
+    queryClient.invalidateQueries({ queryKey: ["memories"] });
+  };
+
+  const knock = async (options?: { autoOpen?: boolean }) => {
     if (!memoryId || !userId) return;
     const supabase = createClient();
     await supabase.from("memory_open_participants").insert({
@@ -81,12 +90,10 @@ export function useKnockState(memoryId: string | null, userId: string | undefine
     });
     
     // Fallback: if we just became the second knocker, trigger opening
-    if (partnerKnocked) {
-      await supabase.from("memories").update({ status: 'opening' }).eq("id", memoryId);
-      window.dispatchEvent(new CustomEvent('memory-opened', { detail: { id: memoryId } }));
-      queryClient.invalidateQueries({ queryKey: ['memory', memoryId] });
+    if (partnerKnocked && options?.autoOpen !== false) {
+      await openMemory();
     }
   };
 
-  return { hasKnocked, partnerKnocked, knock };
+  return { hasKnocked, partnerKnocked, knock, openMemory };
 }

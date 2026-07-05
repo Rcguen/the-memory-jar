@@ -46,12 +46,12 @@ export function RelationshipCounter({ startDate }: RelationshipCounterProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 1, ease: "easeOut", delay: 0.5 }}
-      className="flex flex-col items-center gap-1 mt-6 z-10 font-inter"
+      className="z-10 mt-5 flex flex-col items-center gap-1 font-inter sm:mt-6"
     >
-      <span className="text-sm uppercase tracking-widest text-zinc-400 dark:text-zinc-500 font-medium">
+      <span className="text-[11px] font-medium uppercase tracking-[0.22em] text-zinc-400 dark:text-zinc-500 sm:text-sm sm:tracking-widest">
         ❤️ Together for
       </span>
-      <span className="text-xl md:text-2xl font-cormorant text-zinc-700 dark:text-zinc-300 font-semibold tracking-wide bg-white/30 dark:bg-zinc-800/30 backdrop-blur-md px-6 py-2 rounded-full border border-white/40 dark:border-zinc-700/50 shadow-sm">
+      <span className="rounded-full border border-white/40 bg-white/30 px-5 py-2 text-lg font-semibold tracking-wide text-zinc-700 shadow-sm backdrop-blur-md dark:border-zinc-700/50 dark:bg-zinc-800/30 dark:text-zinc-300 sm:px-6 sm:text-xl md:text-2xl">
         {timeElapsed}
       </span>
     </motion.div>

@@ -3,8 +3,10 @@
 import { useEffect, useState, useRef, useTransition } from "react";
 
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { motion } from "framer-motion";
-import { User, LogOut } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Compass, LayoutDashboard, LogOut, User } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { logoutAction } from "@/app/actions/auth";
 import {
@@ -31,6 +33,10 @@ import { usePhysics } from "@/providers/physics-provider";
 import { memoryService } from "@/services/memory";
 import { createClient } from "@/lib/supabase/client";
 import { MemoryType } from "@/types/memory";
+import { useRelationshipContext } from "@/hooks/useRelationshipContext";
+import { useRoutePrefetch } from "@/hooks/useRoutePrefetch";
+import { RelationshipAmbientBackdrop } from "@/components/experience/RelationshipAmbientBackdrop";
+import { OnThisDayCard } from "@/components/experience/OnThisDayCard";
 
 const MemoryCommandCenter = dynamic(
   () => import("@/components/jar/MemoryCommandCenter").then((mod) => mod.MemoryCommandCenter),
@@ -49,13 +55,15 @@ const MemoryViewer = dynamic(
 
 export default function Home() {
   const { profile } = useAuth();
-  
-  const [relationshipStartDate, setRelationshipStartDate] = useState<Date | null>(null);
+  const { data: relationship } = useRelationshipContext();
   const { loadMemory } = usePhysics();
+  const queryClient = useQueryClient();
   const [memoryCount, setMemoryCount] = useState<number | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const hasLoadedJar = useRef(false);
+
+  useRoutePrefetch(["/timeline", "/dashboard", "/on-this-day", "/trash"]);
 
   useEffect(() => {
     if (hasLoadedJar.current) return;
@@ -63,28 +71,6 @@ export default function Home() {
 
     async function loadJar() {
       const supabase = createClient();
-      
-      // Fetch relationship start date
-      if (profile) {
-        const { data: memberData } = await supabase
-          .from("relationship_members")
-          .select("relationship_id")
-          .eq("profile_id", profile.id)
-          .limit(1)
-          .single();
-          
-        if (memberData) {
-          const { data: settingsData } = await supabase
-            .from("relationship_settings")
-            .select("start_date")
-            .eq("id", memberData.relationship_id)
-            .single();
-            
-          if (settingsData?.start_date) {
-            setRelationshipStartDate(new Date(settingsData.start_date));
-          }
-        }
-      }
 
       // Fetch both visual states and their corresponding memory types, filtering out drafts, archived, and pending_partner
       const { data: memories, error } = await supabase
@@ -148,10 +134,36 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (!relationship?.relationshipTimezone) return;
+
+    queryClient.prefetchInfiniteQuery({
+      queryKey: ["timeline-memories", "all"],
+      queryFn: ({ pageParam }) => memoryService.listTimelineMemories({ filter: "all", offset: pageParam as number }),
+      initialPageParam: 0,
+      staleTime: 1000 * 30,
+    });
+
+    queryClient.prefetchQuery({
+      queryKey: ["dashboard-stats", relationship.relationshipTimezone],
+      queryFn: () => memoryService.getCoupleDashboardStats(relationship.relationshipTimezone),
+      staleTime: 1000 * 60,
+    });
+
+    queryClient.prefetchQuery({
+      queryKey: ["on-this-day", relationship.relationshipTimezone],
+      queryFn: () => memoryService.getOnThisDayMemories(relationship.relationshipTimezone),
+      staleTime: 1000 * 60 * 10,
+    });
+  }, [queryClient, relationship?.relationshipTimezone]);
+
   return (
-    <main className="relative min-h-screen flex flex-col items-center justify-center overflow-x-hidden bg-emerald-50/30 dark:bg-emerald-950/20 transition-colors duration-700">
+    <main className="relative min-h-screen flex flex-col items-center justify-start overflow-x-hidden bg-emerald-50/30 dark:bg-emerald-950/20 transition-colors duration-700 xl:justify-center">
       
       {/* 1. Ambient Background Gradients & Vignette */}
+      {relationship?.relationshipTimezone && (
+        <RelationshipAmbientBackdrop timezone={relationship.relationshipTimezone} />
+      )}
       {/* Radial soft lighting */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-teal-100/40 via-emerald-50/20 to-transparent dark:from-teal-900/20 dark:via-emerald-950/30 dark:to-transparent pointer-events-none z-0" />
       {/* Vignette effect for warmth and focus */}
@@ -163,9 +175,26 @@ export default function Home() {
       <FloatingParticles />
 
       {/* 3. Top Navigation */}
-      <header className="absolute top-0 left-0 right-0 p-6 flex justify-end z-20">
+      <header className="pointer-events-none absolute inset-x-0 top-0 z-20 px-3 pt-3 sm:p-6">
+        <div className="flex items-start justify-between gap-3">
+        <div className="pointer-events-auto hidden items-center gap-2 md:flex">
+          <Link
+            href="/timeline"
+            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-zinc-950/35 px-4 py-2 text-sm text-zinc-200 shadow-lg backdrop-blur-xl transition-colors hover:bg-zinc-950/55"
+          >
+            <Compass className="h-4 w-4 text-emerald-400" />
+            Timeline
+          </Link>
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-zinc-950/35 px-4 py-2 text-sm text-zinc-200 shadow-lg backdrop-blur-xl transition-colors hover:bg-zinc-950/55"
+          >
+            <LayoutDashboard className="h-4 w-4 text-rose-300" />
+            Dashboard
+          </Link>
+        </div>
         {profile && (
-          <div className="flex items-center gap-3">
+          <div className="pointer-events-auto ml-auto flex items-center gap-2 rounded-full border border-white/10 bg-zinc-950/28 px-1.5 py-1 shadow-lg backdrop-blur-xl sm:gap-3 sm:bg-transparent sm:px-0 sm:py-0 sm:shadow-none">
           <NotificationBell />
           <DropdownMenu>
             <DropdownMenuTrigger className="relative h-10 flex items-center gap-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 pr-4 pl-1 outline-none transition-colors">
@@ -207,21 +236,41 @@ export default function Home() {
           </DropdownMenu>
           </div>
         )}
+        </div>
       </header>
 
       {/* 4. Main Content Area */}
-      <div className="relative z-10 container flex flex-col items-center px-4 max-w-2xl mx-auto">
+      <div className="relative z-10 flex w-full max-w-[23rem] flex-col items-center px-3 pb-8 pt-16 sm:max-w-2xl sm:px-4 sm:pb-10 sm:pt-24">
         
         {/* Title / Mood Text */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease: "easeOut" }}
-          className="text-center mb-10"
+          className="mb-6 w-full text-center sm:mb-10"
         >
-          <h1 className="text-3xl md:text-4xl font-light tracking-widest text-zinc-800 dark:text-zinc-200 font-cormorant uppercase opacity-80">
+          <h1 className="font-cormorant text-[2rem] leading-none tracking-[0.18em] text-zinc-800 opacity-80 sm:text-3xl sm:tracking-widest md:text-4xl dark:text-zinc-200">
             The Memory Jar
           </h1>
+          <p className="mt-2 text-[10px] uppercase tracking-[0.28em] text-zinc-500/90 dark:text-zinc-400/80 sm:hidden">
+            Keep your little moments close
+          </p>
+          <div className="mt-4 grid w-full grid-cols-2 gap-2 md:hidden">
+            <Link
+              href="/timeline"
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-zinc-950/35 px-4 py-2.5 text-sm text-zinc-200 shadow-lg backdrop-blur-xl transition-colors hover:bg-zinc-950/55"
+            >
+              <Compass className="h-4 w-4 text-emerald-400" />
+              Timeline
+            </Link>
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-zinc-950/35 px-4 py-2.5 text-sm text-zinc-200 shadow-lg backdrop-blur-xl transition-colors hover:bg-zinc-950/55"
+            >
+              <LayoutDashboard className="h-4 w-4 text-rose-300" />
+              Dashboard
+            </Link>
+          </div>
         </motion.div>
 
         {/* The Physical Glass Jar */}
@@ -232,9 +281,11 @@ export default function Home() {
         )}
 
         {/* Relationship Time Elapsed */}
-        {relationshipStartDate && (
-          <RelationshipCounter startDate={relationshipStartDate} />
+        {relationship?.startDate && (
+          <RelationshipCounter startDate={new Date(relationship.startDate)} />
         )}
+
+        <OnThisDayCard className="mt-8" />
 
         {/* The Writing Desk (Staging Area) */}
         <ErrorBoundary fallbackMessage="The Writing Desk encountered an error.">
@@ -246,7 +297,7 @@ export default function Home() {
 
       </div>
 
-      <div className="relative z-10 w-full max-w-3xl px-4 xl:absolute xl:left-6 xl:top-24 xl:bottom-6 xl:w-[28rem] xl:max-w-none xl:px-0 2xl:w-[34rem]">
+      <div className="relative z-10 mt-8 w-full max-w-[23rem] px-3 pb-8 sm:max-w-3xl sm:px-4 xl:absolute xl:bottom-6 xl:left-6 xl:top-24 xl:mt-0 xl:w-[28rem] xl:max-w-none xl:px-0 xl:pb-0 2xl:w-[34rem]">
         <ErrorBoundary fallbackMessage="Memory tools failed to load.">
           <MemoryCommandCenter className="xl:mt-0 xl:max-w-none" />
         </ErrorBoundary>

@@ -1,16 +1,22 @@
 import { createClient } from "@/lib/supabase/client";
 import {
+  CoupleDashboardStats,
+  DashboardMemoryReference,
   ActivityLog,
   Memory,
   MemoryComment,
+  MemoryFilter,
   MemoryListOptions,
   MemoryMood,
   MemoryNotification,
   MemoryReaction,
+  RelationshipContext,
   ReactionEmoji,
+  TimelineMemoryPage,
   UserProfile,
 } from "@/types/memory";
 import { mapDatabaseMemory } from "@/lib/mappers/memory.mapper";
+import { getMonthDayInTimezone, normalizeTimezone, todayDateOnlyInTimezone } from "@/lib/timezone";
 
 const ACTIVE_MEMORY_STATUSES = ["sealed", "unlocked", "opening"];
 const REACTION_EMOJIS: ReactionEmoji[] = ["❤️", "🥹", "😂", "😭", "😍", "🔥"];
@@ -124,6 +130,55 @@ function hydrateMemoryMeta(memories: Memory[], userId: string | null, favorites:
   }));
 }
 
+function applyClientFilter(memory: Memory, filter: MemoryFilter, userId: string | null) {
+  const unlockAtMs = memory.unlock_at ? new Date(memory.unlock_at).getTime() : null;
+  const isFutureCapsule = typeof unlockAtMs === "number" && Number.isFinite(unlockAtMs) && Date.now() < unlockAtMs;
+
+  if (filter === "photos") return memory.type === "photo";
+  if (filter === "videos") return memory.type === "video";
+  if (filter === "letters") return memory.type === "letter";
+  if (filter === "time_capsules") return !!memory.unlock_at;
+  if (filter === "locked") return memory.status === "sealed" || isFutureCapsule;
+  if (filter === "unlocked") return memory.status !== "sealed" && !isFutureCapsule;
+  if (filter === "mine") return !!userId && memory.created_by === userId;
+  if (filter === "partner") return !!userId && memory.created_by !== userId;
+  if (filter === "favorites") return memory.is_favorite === true;
+  if (filter === "pinned") return memory.is_pinned === true;
+  return true;
+}
+
+function toDashboardReference(memory: Pick<Memory, "id" | "title" | "type" | "memory_date" | "created_at">): DashboardMemoryReference {
+  return {
+    id: memory.id,
+    title: memory.title,
+    type: memory.type,
+    memory_date: memory.memory_date,
+    created_at: memory.created_at,
+  };
+}
+
+function getCurrentMonthlyStreak(dateOnlyValues: string[], timezone: string) {
+  if (dateOnlyValues.length === 0) return 0;
+
+  const today = todayDateOnlyInTimezone(timezone);
+  const currentYearMonth = today.slice(0, 7);
+  const monthSet = new Set(dateOnlyValues.map((value) => value.slice(0, 7)));
+
+  let [year, month] = currentYearMonth.split("-").map(Number);
+  let streak = 0;
+
+  while (monthSet.has(`${year}-${String(month).padStart(2, "0")}`)) {
+    streak += 1;
+    month -= 1;
+    if (month === 0) {
+      month = 12;
+      year -= 1;
+    }
+  }
+
+  return streak;
+}
+
 export const memoryService = {
   async getCurrentRelationshipId(): Promise<string | null> {
     const supabase = createClient();
@@ -139,6 +194,43 @@ export const memoryService = {
 
     if (error) throw error;
     return data?.relationship_id ?? null;
+  },
+
+  async getRelationshipContext(): Promise<RelationshipContext | null> {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const { data: memberData, error: memberError } = await supabase
+      .from("relationship_members")
+      .select("relationship_id")
+      .eq("profile_id", user.id)
+      .single();
+
+    if (memberError || !memberData?.relationship_id) return null;
+
+    const relationshipId = memberData.relationship_id;
+    const [{ data: settingsData }, { data: membersData }] = await Promise.all([
+      supabase
+        .from("relationship_settings")
+        .select("start_date, relationship_timezone")
+        .eq("id", relationshipId)
+        .single(),
+      supabase
+        .from("relationship_members")
+        .select("profile_id, display_name")
+        .eq("relationship_id", relationshipId),
+    ]);
+
+    const partner = (membersData ?? []).find((member) => member.profile_id !== user.id) ?? null;
+
+    return {
+      relationshipId,
+      relationshipTimezone: normalizeTimezone(settingsData?.relationship_timezone),
+      startDate: settingsData?.start_date ?? null,
+      partnerId: partner?.profile_id ?? null,
+      partnerName: partner?.display_name ?? null,
+    };
   },
 
   async getMoods(): Promise<MemoryMood[]> {
@@ -218,22 +310,7 @@ export const memoryService = {
     }
 
     const filter = options.filter ?? "all";
-    memories = memories.filter((memory) => {
-      const unlockAtMs = memory.unlock_at ? new Date(memory.unlock_at).getTime() : null;
-      const isFutureCapsule = typeof unlockAtMs === "number" && Number.isFinite(unlockAtMs) && Date.now() < unlockAtMs;
-
-      if (filter === "photos") return memory.type === "photo";
-      if (filter === "videos") return memory.type === "video";
-      if (filter === "letters") return memory.type === "letter";
-      if (filter === "time_capsules") return !!memory.unlock_at;
-      if (filter === "locked") return memory.status === "sealed" || isFutureCapsule;
-      if (filter === "unlocked") return memory.status !== "sealed" && !isFutureCapsule;
-      if (filter === "mine") return !!user && memory.created_by === user.id;
-      if (filter === "partner") return !!user && memory.created_by !== user.id;
-      if (filter === "favorites") return memory.is_favorite === true;
-      if (filter === "pinned") return memory.is_pinned === true;
-      return true;
-    });
+    memories = memories.filter((memory) => applyClientFilter(memory, filter, user?.id ?? null));
 
     const oldest = options.sort === "oldest";
     return memories.sort((a, b) => {
@@ -246,6 +323,214 @@ export const memoryService = {
 
   async listDeletedMemories(): Promise<Memory[]> {
     return this.listMemories({ includeDeleted: true, sort: "newest" });
+  },
+
+  async getOnThisDayMemories(timezone?: string | null): Promise<Memory[]> {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const relationshipId = await this.getCurrentRelationshipId();
+    if (!relationshipId) return [];
+
+    const monthDay = getMonthDayInTimezone(timezone);
+    const { data, error } = await supabase
+      .from("memories")
+      .select("*, memory_attachments(*), memory_tags(tags(*))")
+      .eq("relationship_id", relationshipId)
+      .is("deleted_at", null)
+      .in("status", ACTIVE_MEMORY_STATUSES)
+      .order("memory_date", { ascending: false })
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    const rows = (data ?? []).filter((memory) => typeof memory.memory_date === "string" && memory.memory_date.slice(5) === monthDay);
+    if (rows.length === 0) return [];
+
+    const memoryIds = rows.map((memory) => memory.id);
+    const [{ data: favorites }, { data: reactions }, { data: comments }, { data: creators }] = await Promise.all([
+      supabase.from("memory_favorites").select("memory_id,user_id").in("memory_id", memoryIds),
+      supabase.from("memory_reactions").select("memory_id,user_id,emoji,created_at").in("memory_id", memoryIds),
+      supabase.from("memory_comments").select("memory_id").in("memory_id", memoryIds),
+      supabase.from("profiles").select("id,display_name,username,avatar").in("id", [...new Set(rows.map((memory) => memory.created_by))]),
+    ]);
+
+    const creatorMap = new Map((creators ?? []).map((creator) => [creator.id, creator]));
+
+    return hydrateMemoryMeta(
+      rows.map((row) => {
+        const tags = (row.memory_tags ?? [])
+          .map((tagLink: { tags?: { id: string; name: string } | null }) => tagLink.tags)
+          .filter(Boolean);
+
+        return {
+          ...mapDatabaseMemory(row),
+          tags,
+          creator: creatorMap.get(row.created_by) ?? null,
+        } as Memory;
+      }),
+      user?.id ?? null,
+      favorites ?? [],
+      (reactions ?? []) as MemoryReaction[],
+      comments ?? [],
+    );
+  },
+
+  async listTimelineMemories(
+    options: {
+      filter?: MemoryFilter;
+      offset?: number;
+      limit?: number;
+      timezone?: string | null;
+    } = {}
+  ): Promise<TimelineMemoryPage> {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const relationshipId = await this.getCurrentRelationshipId();
+    if (!relationshipId) {
+      return { memories: [], nextOffset: null, hasMore: false };
+    }
+
+    const limit = Math.max(1, Math.min(options.limit ?? 24, 48));
+    const offset = Math.max(0, options.offset ?? 0);
+    const filter = options.filter ?? "all";
+    let query = supabase
+      .from("memories")
+      .select("*")
+      .eq("relationship_id", relationshipId)
+      .is("deleted_at", null)
+      .in("status", ACTIVE_MEMORY_STATUSES)
+      .order("memory_date", { ascending: false })
+      .order("created_at", { ascending: false })
+      .range(offset, offset + limit);
+
+    if (filter === "photos") query = query.eq("type", "photo");
+    if (filter === "videos") query = query.eq("type", "video");
+    if (filter === "letters") query = query.eq("type", "letter");
+    if (filter === "time_capsules") query = query.not("unlock_at", "is", null);
+    if (filter === "mine" && user?.id) query = query.eq("created_by", user.id);
+    if (filter === "partner" && user?.id) query = query.neq("created_by", user.id);
+    if (filter === "pinned") query = query.eq("is_pinned", true);
+
+    if (filter === "favorites" && user?.id) {
+      const { data: favoriteRows } = await supabase
+        .from("memory_favorites")
+        .select("memory_id")
+        .eq("user_id", user.id);
+
+      const favoriteIds = (favoriteRows ?? []).map((row) => row.memory_id);
+      if (favoriteIds.length === 0) {
+        return { memories: [], nextOffset: null, hasMore: false };
+      }
+      query = query.in("id", favoriteIds);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    const rows = (data ?? []).map((row) => mapDatabaseMemory(row)).filter((memory) => applyClientFilter(memory, filter, user?.id ?? null));
+    const hasMore = rows.length > limit;
+    const pageRows = rows.slice(0, limit);
+    const nextOffset = hasMore ? offset + limit : null;
+
+    return {
+      memories: pageRows,
+      nextOffset,
+      hasMore,
+    };
+  },
+
+  async getCoupleDashboardStats(timezone?: string | null): Promise<CoupleDashboardStats | null> {
+    const supabase = createClient();
+    const relationship = await this.getRelationshipContext();
+    if (!relationship) return null;
+    const safeTimezone = normalizeTimezone(timezone ?? relationship.relationshipTimezone);
+    const { data: memoriesData, error: memoriesError } = await supabase
+      .from("memories")
+      .select("id,title,type,memory_date,created_at,status,unlock_at")
+      .eq("relationship_id", relationship.relationshipId)
+      .is("deleted_at", null)
+      .in("status", ACTIVE_MEMORY_STATUSES)
+      .order("memory_date", { ascending: true })
+      .order("created_at", { ascending: true });
+
+    if (memoriesError) throw memoriesError;
+
+    const memories = (memoriesData ?? []) as Array<{
+      id: string;
+      title: string | null;
+      type: Memory["type"];
+      memory_date: string;
+      created_at: string;
+      status: Memory["status"];
+      unlock_at: string | null;
+    }>;
+
+    const memoryIds = memories.map((memory) => memory.id);
+    const [favoritesResult, reactionsResult] = await Promise.all([
+      memoryIds.length > 0
+        ? supabase.from("memory_favorites").select("memory_id").in("memory_id", memoryIds)
+        : Promise.resolve({ data: [], error: null }),
+      memoryIds.length > 0
+        ? supabase.from("memory_reactions").select("emoji,memory_id").in("memory_id", memoryIds)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+
+    const favoriteCount = new Set((favoritesResult.data ?? []).map((row) => row.memory_id)).size;
+    const reactionTallies = new Map<ReactionEmoji, number>();
+
+    for (const reaction of reactionsResult.data ?? []) {
+      const emoji = reaction.emoji as ReactionEmoji;
+      reactionTallies.set(emoji, (reactionTallies.get(emoji) ?? 0) + 1);
+    }
+
+    const mostCommonType = (() => {
+      const counts = new Map<Memory["type"], number>();
+      for (const memory of memories) {
+        counts.set(memory.type, (counts.get(memory.type) ?? 0) + 1);
+      }
+      return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+    })();
+
+    const mostActiveMonth = (() => {
+      const counts = new Map<string, number>();
+      for (const memory of memories) {
+        const yearMonth = memory.memory_date.slice(0, 7);
+        counts.set(yearMonth, (counts.get(yearMonth) ?? 0) + 1);
+      }
+      return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+    })();
+
+    const favoriteReaction = [...reactionTallies.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+    const todayDateOnly = todayDateOnlyInTimezone(safeTimezone);
+    const togetherDays = relationship.startDate
+      ? Math.max(
+          1,
+          Math.floor(
+            (new Date(todayDateOnly).getTime() - new Date(relationship.startDate).getTime()) /
+              (1000 * 60 * 60 * 24)
+          ) + 1
+        )
+      : 0;
+
+    return {
+      togetherDays,
+      totalMemories: memories.length,
+      totalPhotos: memories.filter((memory) => memory.type === "photo").length,
+      totalVideos: memories.filter((memory) => memory.type === "video").length,
+      totalVoices: memories.filter((memory) => memory.type === "voice").length,
+      totalLetters: memories.filter((memory) => memory.type === "letter").length,
+      waitingCapsules: memories.filter((memory) => {
+        const unlockAtMs = memory.unlock_at ? new Date(memory.unlock_at).getTime() : null;
+        return typeof unlockAtMs === "number" && Number.isFinite(unlockAtMs) && Date.now() < unlockAtMs;
+      }).length,
+      favorites: favoriteCount,
+      currentStreak: getCurrentMonthlyStreak(memories.map((memory) => memory.memory_date), safeTimezone),
+      newestMemory: memories.length > 0 ? toDashboardReference(memories[memories.length - 1]) : null,
+      oldestMemory: memories.length > 0 ? toDashboardReference(memories[0]) : null,
+      mostCommonMemoryType: mostCommonType,
+      mostActiveMonth,
+      favoriteReaction,
+    };
   },
 
   async saveMemory(memoryData: Partial<Memory>, tags: string[] = []): Promise<Memory> {

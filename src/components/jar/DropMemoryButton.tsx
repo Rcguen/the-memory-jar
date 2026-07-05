@@ -15,7 +15,7 @@ export function DropMemoryButton() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, delay: 0.6, ease: "easeOut" }}
-      className="relative mt-8 z-10"
+      className="relative z-10 mt-6 sm:mt-8"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -32,7 +32,7 @@ export function DropMemoryButton() {
       <Button
         onClick={openModal}
         size="lg"
-        className="relative overflow-hidden flex items-center justify-center gap-2 bg-gradient-to-br from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 dark:from-emerald-600 dark:to-emerald-700 text-white rounded-full px-8 py-4 h-auto text-lg font-semibold shadow-[0_8px_30px_rgb(16,185,129,0.3)] transition-all font-inter group border-0"
+        className="group relative flex h-auto w-[min(100vw-3rem,21rem)] items-center justify-center gap-2 overflow-hidden rounded-full border-0 bg-gradient-to-br from-emerald-500 to-emerald-600 px-6 py-4 text-base font-semibold text-white shadow-[0_8px_30px_rgb(16,185,129,0.3)] transition-all dark:from-emerald-600 dark:to-emerald-700 hover:from-emerald-400 hover:to-emerald-500 sm:w-auto sm:px-8 sm:text-lg font-inter"
       >
         <motion.div
           animate={{ rotate: isHovered ? 90 : 0 }}

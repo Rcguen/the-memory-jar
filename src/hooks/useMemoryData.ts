@@ -1,8 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { memoryService } from "@/services/memory";
 import { mapDatabaseMemory } from "@/lib/mappers/memory.mapper";
 import { createClient } from "@/lib/supabase/client";
-import { MemoryListOptions } from "@/types/memory";
+import { MemoryFilter, MemoryListOptions } from "@/types/memory";
+import { useRelationshipContext } from "./useRelationshipContext";
 
 export function useMemory(id: string | null) {
   return useQuery({
@@ -79,5 +80,37 @@ export function useUnreadNotificationCount() {
     queryKey: ['unread-notification-count'],
     queryFn: () => memoryService.getUnreadNotificationCount(),
     staleTime: 15 * 1000,
+  });
+}
+
+export function useOnThisDayMemories() {
+  const { data: relationship } = useRelationshipContext();
+
+  return useQuery({
+    queryKey: ["on-this-day", relationship?.relationshipTimezone],
+    queryFn: () => memoryService.getOnThisDayMemories(relationship?.relationshipTimezone),
+    enabled: !!relationship?.relationshipTimezone,
+    staleTime: 1000 * 60 * 10,
+  });
+}
+
+export function useTimelineMemories(filter: MemoryFilter = "all") {
+  return useInfiniteQuery({
+    queryKey: ["timeline-memories", filter],
+    queryFn: ({ pageParam }) => memoryService.listTimelineMemories({ filter, offset: pageParam as number }),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) => lastPage.nextOffset,
+    staleTime: 1000 * 30,
+  });
+}
+
+export function useCoupleDashboardStats() {
+  const { data: relationship } = useRelationshipContext();
+
+  return useQuery({
+    queryKey: ["dashboard-stats", relationship?.relationshipTimezone],
+    queryFn: () => memoryService.getCoupleDashboardStats(relationship?.relationshipTimezone),
+    enabled: !!relationship?.relationshipTimezone,
+    staleTime: 1000 * 60,
   });
 }

@@ -6,10 +6,11 @@ import { motion } from "framer-motion";
 import { Memory } from "@/types/memory";
 import { useUnlockScheduler } from "@/providers/unlock-scheduler";
 import { useAuth } from "@/providers/auth-provider";
-import { DoorOpen, KeyRound, Pencil, Trash2 } from "lucide-react";
+import { DoorOpen, KeyRound, Pencil, SkipForward, Trash2 } from "lucide-react";
 import { useKnockState } from "@/hooks/useKnockState";
 import { createClient } from "@/lib/supabase/client";
 import { daysUntil, formatInTimezone, normalizeTimezone } from "@/lib/timezone";
+import { usePresence } from "@/hooks/usePresence";
 
 interface TimeCapsuleViewerProps {
   memory: Memory;
@@ -21,9 +22,13 @@ interface TimeCapsuleViewerProps {
 export function TimeCapsuleViewer({ memory, onClose, onEdit, onDelete }: TimeCapsuleViewerProps) {
   const { now } = useUnlockScheduler();
   const { profile } = useAuth();
-  const { hasKnocked, partnerKnocked, knock } = useKnockState(memory.id, profile?.id);
+  const { hasKnocked, partnerKnocked, knock, openMemory } = useKnockState(memory.id, profile?.id);
   const [partnerName, setPartnerName] = useState<string>("your partner");
+  const [partnerId, setPartnerId] = useState<string | null>(null);
   const [relationshipTimezone, setRelationshipTimezone] = useState<string>("UTC");
+  const [ceremonyPhase, setCeremonyPhase] = useState<"idle" | "countdown" | "release" | "opening">("idle");
+  const [countdownValue, setCountdownValue] = useState(3);
+  const { partnerOnline } = usePresence(memory.relationship_id, profile?.id, partnerId);
 
 
   useEffect(() => {
@@ -57,22 +62,77 @@ export function TimeCapsuleViewer({ memory, onClose, onEdit, onDelete }: TimeCap
       if (memberData) {
         const { data: partnerData } = await supabase
           .from("relationship_members")
-          .select("display_name")
+          .select("profile_id, display_name")
           .eq("relationship_id", memberData.relationship_id)
           .neq("profile_id", profile!.id)
           .single();
-        if (partnerData) setPartnerName(partnerData.display_name);
+        if (partnerData) {
+          setPartnerName(partnerData.display_name);
+          setPartnerId(partnerData.profile_id);
+        }
       }
     }
     fetchPartnerName();
   }, [memory.is_collaborative, profile]);
 
+  useEffect(() => {
+    if (ceremonyPhase !== "countdown") return;
+
+    const ticks = [2, 1].map((value, index) => (
+      window.setTimeout(() => setCountdownValue(value), (index + 1) * 700)
+    ));
+    const releaseTimer = window.setTimeout(() => setCeremonyPhase("release"), 2200);
+    return () => {
+      ticks.forEach((tick) => window.clearTimeout(tick));
+      window.clearTimeout(releaseTimer);
+    };
+  }, [ceremonyPhase]);
+
+  useEffect(() => {
+    if (ceremonyPhase !== "release") return;
+
+    const openTimer = window.setTimeout(async () => {
+      setCeremonyPhase("opening");
+      if (memory.is_collaborative) {
+        await openMemory();
+      } else {
+        const supabase = createClient();
+        await supabase.from("memories").update({ status: "opening" }).eq("id", memory.id);
+        window.dispatchEvent(new CustomEvent("memory-opened", { detail: { id: memory.id } }));
+      }
+    }, 1100);
+
+    return () => window.clearTimeout(openTimer);
+  }, [ceremonyPhase, memory.id, memory.is_collaborative, openMemory]);
+
+  const beginCeremony = async () => {
+    setCountdownValue(3);
+    setCeremonyPhase("countdown");
+  };
+
   const handleKnock = async () => {
     if (!profile) return;
+
+    if (partnerKnocked) {
+      await knock({ autoOpen: false });
+      await beginCeremony();
+      return;
+    }
+
     await knock();
   };
 
   const handleOpenSolo = async () => {
+    await beginCeremony();
+  };
+
+  const handleSkipCeremony = async () => {
+    setCeremonyPhase("opening");
+    if (memory.is_collaborative) {
+      await openMemory();
+      return;
+    }
+
     const supabase = createClient();
     await supabase.from("memories").update({ status: "opening" }).eq("id", memory.id);
     window.dispatchEvent(new CustomEvent("memory-opened", { detail: { id: memory.id } }));
@@ -110,6 +170,12 @@ export function TimeCapsuleViewer({ memory, onClose, onEdit, onDelete }: TimeCap
         <p className="text-xl text-zinc-300 italic font-light">
           {isLocked ? "This memory\nhas been waiting patiently." : "This memory\nis ready to be opened."}
         </p>
+
+        {partnerOnline && (
+          <p className="text-sm tracking-[0.2em] uppercase text-emerald-300/80">
+            Opening together...
+          </p>
+        )}
 
         <div className="w-16 h-[1px] bg-amber-900/30 mx-auto my-6" />
 
@@ -156,7 +222,64 @@ export function TimeCapsuleViewer({ memory, onClose, onEdit, onDelete }: TimeCap
           </motion.div>
         )}
 
-        {!isLocked && memory.is_collaborative && (
+        {ceremonyPhase !== "idle" && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-8 space-y-4"
+          >
+            <div className="mx-auto w-full max-w-xs rounded-[1.6rem] border border-amber-200/15 bg-white/[0.04] p-5">
+              <div className="relative mx-auto mb-4 flex h-20 w-20 items-center justify-center">
+                <motion.div
+                  className="absolute inset-0 rounded-full bg-amber-200/20 blur-xl"
+                  animate={{ scale: [0.9, 1.12, 0.96], opacity: [0.45, 0.9, 0.55] }}
+                  transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+                />
+                <motion.div
+                  className="absolute inset-3 rounded-full border border-amber-100/30"
+                  animate={{ rotate: ceremonyPhase === "release" ? 12 : 0, scale: ceremonyPhase === "release" ? 1.05 : 1 }}
+                  transition={{ duration: 0.8, ease: "easeOut" }}
+                />
+                <span className="relative font-cormorant text-5xl text-amber-50">
+                  {ceremonyPhase === "countdown" ? countdownValue : "Open"}
+                </span>
+              </div>
+              <div className="space-y-3">
+                <motion.div
+                  className="h-2 rounded-full bg-rose-300/60"
+                  animate={{ width: ceremonyPhase === "release" ? ["100%", "35%"] : "100%", opacity: ceremonyPhase === "release" ? [1, 0.7] : 1 }}
+                  transition={{ duration: 0.9, ease: "easeInOut" }}
+                />
+                <motion.div
+                  className="mx-auto h-10 w-10 rounded-full bg-red-900/75 shadow-[0_0_22px_rgba(127,29,29,0.4)]"
+                  animate={ceremonyPhase === "release" ? { rotate: [0, -14, 10], scale: [1, 0.84, 0.76] } : { scale: 1 }}
+                  transition={{ duration: 0.8, ease: "easeInOut" }}
+                />
+                <motion.div
+                  className="mx-auto h-px w-28 bg-amber-100/30"
+                  animate={ceremonyPhase === "release" ? { scaleX: [1, 1.2, 0.6], opacity: [0.35, 0.9, 0.15] } : { scaleX: 1 }}
+                  transition={{ duration: 0.8, ease: "easeInOut" }}
+                />
+                <p className="text-sm text-amber-100/80">
+                  {ceremonyPhase === "countdown"
+                    ? "The ribbon loosens, the wax softens, and the paper begins to breathe."
+                    : "The seal gives way, and the memory unfolds."}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleSkipCeremony}
+              className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-zinc-200 transition-colors hover:bg-white/10"
+            >
+              <SkipForward className="h-4 w-4" />
+              Skip animation
+            </button>
+          </motion.div>
+        )}
+
+        {!isLocked && memory.is_collaborative && ceremonyPhase === "idle" && (
           <div className="mt-8 space-y-4">
             {!hasKnocked ? (
               <button
@@ -179,7 +302,7 @@ export function TimeCapsuleViewer({ memory, onClose, onEdit, onDelete }: TimeCap
           </div>
         )}
 
-        {!isLocked && !memory.is_collaborative && (
+        {!isLocked && !memory.is_collaborative && ceremonyPhase === "idle" && (
           <div className="mt-8 space-y-4">
             <button
               onClick={handleOpenSolo}
