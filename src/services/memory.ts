@@ -51,6 +51,7 @@ async function getProfilesByIds(ids: string[]): Promise<Map<string, CommentAutho
   if (uniqueIds.length === 0) return new Map();
 
   const supabase = createClient();
+  const authorMap = new Map<string, CommentAuthor>();
   const { data, error } = await supabase
     .from("profiles")
     .select("id,display_name,username,avatar")
@@ -58,10 +59,36 @@ async function getProfilesByIds(ids: string[]): Promise<Map<string, CommentAutho
 
   if (error) {
     console.warn("[comments] profile hydrate failed", error);
-    return new Map();
+  } else {
+    for (const profile of data ?? []) {
+      authorMap.set(profile.id, profile as CommentAuthor);
+    }
   }
 
-  return new Map((data ?? []).map((profile) => [profile.id, profile as CommentAuthor]));
+  const missingIds = uniqueIds.filter((id) => !authorMap.has(id));
+  if (missingIds.length === 0) return authorMap;
+
+  const { data: members, error: memberError } = await supabase
+    .from("relationship_members")
+    .select("profile_id,display_name")
+    .in("profile_id", missingIds);
+
+  if (memberError) {
+    console.warn("[comments] relationship member hydrate failed", memberError);
+    return authorMap;
+  }
+
+  for (const member of members ?? []) {
+    const fallbackName = member.display_name?.trim() || "Partner";
+    authorMap.set(member.profile_id, {
+      id: member.profile_id,
+      display_name: fallbackName,
+      username: fallbackName,
+      avatar: null,
+    });
+  }
+
+  return authorMap;
 }
 
 function hydrateMemoryMeta(memories: Memory[], userId: string | null, favorites: { memory_id: string; user_id: string }[], reactions: MemoryReaction[], comments: { memory_id: string }[]) {

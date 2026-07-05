@@ -99,8 +99,8 @@ export function MemoryComments({ memoryId }: { memoryId: string }) {
   });
 
   return (
-    <section className="relative z-10 border-t border-black/5 dark:border-white/5 bg-black/[0.015] dark:bg-white/[0.015] px-4 py-4 sm:px-6">
-      <h3 className="text-sm font-medium text-zinc-600 dark:text-zinc-300 mb-3">Comments</h3>
+    <section className="relative z-10 border-t border-black/10 bg-zinc-50/80 px-4 py-4 dark:border-white/5 dark:bg-zinc-950/35 sm:px-6">
+      <h3 className="mb-3 text-sm font-semibold text-zinc-800 dark:text-zinc-200">Comments</h3>
       <div className="max-h-44 overflow-y-auto space-y-2 pr-1">
         {isLoading && (
           <p className="text-xs text-zinc-500">Loading comments...</p>
@@ -123,11 +123,11 @@ export function MemoryComments({ memoryId }: { memoryId: string }) {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
-                className="rounded-xl bg-white/50 dark:bg-zinc-950/40 border border-white/40 dark:border-zinc-800/60 p-3"
+                className="rounded-xl border border-zinc-200/80 bg-white/90 p-3 shadow-sm dark:border-zinc-800/70 dark:bg-zinc-950/55"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs text-zinc-500 mb-1">
+                    <p className="mb-1 text-xs font-medium text-zinc-500 dark:text-zinc-400">
                       {authorName} · {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                     </p>
                     {isEditing ? (
@@ -198,13 +198,13 @@ export function MemoryComments({ memoryId }: { memoryId: string }) {
           }}
           placeholder="Add a comment"
           disabled={createMutation.isPending}
-          className="min-w-0 flex-1 h-9 rounded-full bg-white/70 dark:bg-zinc-900/70 border border-black/10 dark:border-white/10 px-4 text-sm outline-none"
+          className="h-10 min-w-0 flex-1 rounded-full border border-zinc-200 bg-white/95 px-4 text-sm text-zinc-800 outline-none placeholder:text-zinc-400 focus:border-emerald-400/70 focus:ring-2 focus:ring-emerald-400/15 dark:border-white/10 dark:bg-zinc-900/80 dark:text-zinc-100"
         />
         <button
           type="submit"
           disabled={!content.trim() || createMutation.isPending}
           aria-label="Send comment"
-          className="h-9 w-9 rounded-full bg-emerald-600 text-white inline-flex items-center justify-center disabled:opacity-40 transition active:scale-95"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-emerald-600 text-white shadow-sm transition active:scale-95 disabled:opacity-40"
         >
           <Send className={createMutation.isPending ? "w-4 h-4 animate-pulse" : "w-4 h-4"} />
         </button>
