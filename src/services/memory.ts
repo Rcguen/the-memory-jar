@@ -8,11 +8,14 @@ import {
   MemoryNotification,
   MemoryReaction,
   ReactionEmoji,
+  UserProfile,
 } from "@/types/memory";
 import { mapDatabaseMemory } from "@/lib/mappers/memory.mapper";
 
 const ACTIVE_MEMORY_STATUSES = ["sealed", "unlocked", "opening"];
 const REACTION_EMOJIS: ReactionEmoji[] = ["❤️", "🥹", "😂", "😭", "😍", "🔥"];
+type CommentAuthor = Pick<UserProfile, "id" | "display_name" | "username" | "avatar">;
+type CommentRow = Omit<MemoryComment, "author"> & { profiles?: CommentAuthor | null };
 
 function describeSupabaseError(error: { message?: string; details?: string | null; hint?: string | null; code?: string } | null) {
   if (!error) return "Unknown Supabase error";
@@ -29,6 +32,36 @@ function getStorageBucket(fileType: string): "memory-images" | "memory-voices" |
   if (fileType === "video") return "memory-videos";
   if (fileType === "thumbnail") return "memory-thumbnails";
   return "memory-images";
+}
+
+function mapComment(row: CommentRow, author?: CommentAuthor | null): MemoryComment {
+  return {
+    id: row.id,
+    memory_id: row.memory_id,
+    user_id: row.user_id,
+    content: row.content,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+    author: author ?? row.profiles ?? null,
+  };
+}
+
+async function getProfilesByIds(ids: string[]): Promise<Map<string, CommentAuthor>> {
+  const uniqueIds = [...new Set(ids.filter(Boolean))];
+  if (uniqueIds.length === 0) return new Map();
+
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id,display_name,username,avatar")
+    .in("id", uniqueIds);
+
+  if (error) {
+    console.warn("[comments] profile hydrate failed", error);
+    return new Map();
+  }
+
+  return new Map((data ?? []).map((profile) => [profile.id, profile as CommentAuthor]));
 }
 
 function hydrateMemoryMeta(memories: Memory[], userId: string | null, favorites: { memory_id: string; user_id: string }[], reactions: MemoryReaction[], comments: { memory_id: string }[]) {
@@ -329,15 +362,15 @@ export const memoryService = {
     if (favorite) {
       const { error } = await supabase
         .from("memory_favorites")
-        .upsert({ memory_id: memoryId, user_id: user.id }, { onConflict: "memory_id,user_id" });
-      if (error) throw error;
+        .insert({ memory_id: memoryId, user_id: user.id });
+      if (error && error.code !== "23505") throw new Error(describeSupabaseError(error));
     } else {
       const { error } = await supabase
         .from("memory_favorites")
         .delete()
         .eq("memory_id", memoryId)
         .eq("user_id", user.id);
-      if (error) throw error;
+      if (error) throw new Error(describeSupabaseError(error));
     }
   },
 
@@ -369,7 +402,7 @@ export const memoryService = {
       .from("memory_reactions")
       .upsert({ memory_id: memoryId, user_id: user.id, emoji }, { onConflict: "memory_id,user_id" });
 
-    if (error) throw error;
+    if (error) throw new Error(describeSupabaseError(error));
   },
 
   async getComments(memoryId: string): Promise<MemoryComment[]> {
@@ -381,15 +414,9 @@ export const memoryService = {
       .order("created_at", { ascending: true });
 
     if (error) throw error;
-    return (data ?? []).map((comment) => ({
-      id: comment.id,
-      memory_id: comment.memory_id,
-      user_id: comment.user_id,
-      content: comment.content,
-      created_at: comment.created_at,
-      updated_at: comment.updated_at,
-      author: comment.profiles ?? null,
-    }));
+    const rows = (data ?? []) as CommentRow[];
+    const authorMap = await getProfilesByIds(rows.map((comment) => comment.user_id));
+    return rows.map((comment) => mapComment(comment, authorMap.get(comment.user_id)));
   },
 
   async createComment(memoryId: string, content: string): Promise<MemoryComment | null> {
@@ -417,15 +444,10 @@ export const memoryService = {
       throw new Error(describeSupabaseError(error));
     }
 
-    return data ? {
-      id: data.id,
-      memory_id: data.memory_id,
-      user_id: data.user_id,
-      content: data.content,
-      created_at: data.created_at,
-      updated_at: data.updated_at,
-      author: data.profiles ?? null,
-    } : null;
+    if (!data) return null;
+
+    const authorMap = await getProfilesByIds([data.user_id]);
+    return mapComment(data as CommentRow, authorMap.get(data.user_id));
   },
 
   async updateComment(commentId: string, content: string): Promise<void> {

@@ -99,7 +99,7 @@ export function MemoryComments({ memoryId }: { memoryId: string }) {
   });
 
   return (
-    <section className="relative z-10 border-t border-black/5 dark:border-white/5 bg-black/[0.015] dark:bg-white/[0.015] px-6 py-4">
+    <section className="relative z-10 border-t border-black/5 dark:border-white/5 bg-black/[0.015] dark:bg-white/[0.015] px-4 py-4 sm:px-6">
       <h3 className="text-sm font-medium text-zinc-600 dark:text-zinc-300 mb-3">Comments</h3>
       <div className="max-h-44 overflow-y-auto space-y-2 pr-1">
         {isLoading && (
@@ -112,6 +112,10 @@ export function MemoryComments({ memoryId }: { memoryId: string }) {
           {comments.map((comment) => {
             const isAuthor = profile?.id === comment.user_id;
             const isEditing = editingId === comment.id;
+            const authorName = comment.author?.display_name
+              ?? comment.author?.username
+              ?? (isAuthor ? profile?.display_name : null)
+              ?? "Someone";
             return (
               <motion.div
                 key={comment.id}
@@ -124,7 +128,7 @@ export function MemoryComments({ memoryId }: { memoryId: string }) {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="text-xs text-zinc-500 mb-1">
-                      {comment.author?.display_name ?? "Someone"} · {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                      {authorName} · {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                     </p>
                     {isEditing ? (
                       <textarea
@@ -133,7 +137,9 @@ export function MemoryComments({ memoryId }: { memoryId: string }) {
                         className="w-full min-h-16 rounded-lg bg-white/70 dark:bg-zinc-900/70 border border-black/10 dark:border-white/10 p-2 text-sm outline-none"
                       />
                     ) : (
-                      <p className="text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap">{comment.content}</p>
+                      <p className="whitespace-pre-wrap break-words text-sm text-zinc-700 [overflow-wrap:anywhere] dark:text-zinc-300">
+                        {comment.content}
+                      </p>
                     )}
                   </div>
                   {isAuthor && (

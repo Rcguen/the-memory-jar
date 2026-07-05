@@ -12,27 +12,31 @@ interface Particle {
   delay: number;
 }
 
-export function FloatingParticles({ count = 8 }: { count?: number }) {
+export function FloatingParticles({ count = 5 }: { count?: number }) {
   const [particles, setParticles] = useState<Particle[]>([]);
   const reduceMotion = useReducedMotion();
 
   useEffect(() => {
-    if (reduceMotion) {
-      setParticles([]);
-      return;
-    }
+    const frame = window.requestAnimationFrame(() => {
+      const compactViewport = window.matchMedia("(max-width: 767px)").matches;
+      if (reduceMotion || compactViewport) {
+        setParticles([]);
+        return;
+      }
 
-    // Generate exactly 'count' particles once, then loop them via Framer Motion
-    const generatedParticles: Particle[] = Array.from({ length: count }).map((_, i) => ({
-      id: i,
-      x: Math.random() * 100, // percentage
-      y: Math.random() * 100, // percentage
-      size: Math.random() * 2 + 1, // 1px to 3px
-      duration: Math.random() * 20 + 20, // 20s to 40s (very slow)
-      delay: Math.random() * -20, // Negative delay to start at random points in animation
-    }));
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setParticles(generatedParticles);
+      // Generate exactly 'count' particles once, then loop them via Framer Motion
+      const generatedParticles: Particle[] = Array.from({ length: count }).map((_, i) => ({
+        id: i,
+        x: Math.random() * 100, // percentage
+        y: Math.random() * 100, // percentage
+        size: Math.random() * 2 + 1, // 1px to 3px
+        duration: Math.random() * 20 + 20, // 20s to 40s (very slow)
+        delay: Math.random() * -20, // Negative delay to start at random points in animation
+      }));
+      setParticles(generatedParticles);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
   }, [count, reduceMotion]);
 
   return (

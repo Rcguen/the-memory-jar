@@ -149,7 +149,7 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-emerald-50/30 dark:bg-emerald-950/20 transition-colors duration-700">
+    <main className="relative min-h-screen flex flex-col items-center justify-center overflow-x-hidden bg-emerald-50/30 dark:bg-emerald-950/20 transition-colors duration-700">
       
       {/* 1. Ambient Background Gradients & Vignette */}
       {/* Radial soft lighting */}

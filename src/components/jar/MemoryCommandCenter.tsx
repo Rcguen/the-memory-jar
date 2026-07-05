@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNow } from "date-fns";
 import {
@@ -47,6 +47,8 @@ const FILTERS: { id: MemoryFilter; label: string }[] = [
 const REACTIONS: ReactionEmoji[] = ["❤️", "🥹", "😂", "😭", "😍", "🔥"];
 const MAX_RENDERED_MEMORIES = 24;
 const MAX_RENDERED_ACTIVITIES = 24;
+const MAX_RENDERED_MOBILE_MEMORIES = 10;
+const MAX_RENDERED_MOBILE_ACTIVITIES = 10;
 
 type ShelfView = "memories" | "activity";
 
@@ -59,6 +61,24 @@ function useDebouncedValue(value: string, delay: number) {
   }, [value, delay]);
 
   return debounced;
+}
+
+function isCompactViewport() {
+  return typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
+}
+
+function useCompactViewport() {
+  const [compact, setCompact] = useState(isCompactViewport);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const media = window.matchMedia("(max-width: 767px)");
+    const handleChange = (event: MediaQueryListEvent) => setCompact(event.matches);
+    media.addEventListener("change", handleChange);
+    return () => media.removeEventListener("change", handleChange);
+  }, []);
+
+  return compact;
 }
 
 function activityLabel(activity: ActivityLog) {
@@ -126,6 +146,9 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
   const { profile } = useAuth();
   const { openViewer } = useMemoryViewer();
   const { removeMemory } = usePhysics();
+  const reduceMotion = useReducedMotion();
+  const isCompact = useCompactViewport();
+  const useSimpleMotion = reduceMotion || isCompact;
   const [isOpen, setIsOpen] = useState(true);
   const [activeView, setActiveView] = useState<ShelfView>("memories");
   const [search, setSearch] = useState("");
@@ -151,12 +174,12 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
     [memories, pendingDeleted],
   );
   const renderedMemories = useMemo(
-    () => visibleMemories.slice(0, MAX_RENDERED_MEMORIES),
-    [visibleMemories],
+    () => visibleMemories.slice(0, isCompact ? MAX_RENDERED_MOBILE_MEMORIES : MAX_RENDERED_MEMORIES),
+    [isCompact, visibleMemories],
   );
   const renderedActivities = useMemo(
-    () => activities.slice(0, MAX_RENDERED_ACTIVITIES),
-    [activities],
+    () => activities.slice(0, isCompact ? MAX_RENDERED_MOBILE_ACTIVITIES : MAX_RENDERED_ACTIVITIES),
+    [activities, isCompact],
   );
 
   const favoriteMutation = useMutation({
@@ -272,7 +295,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
   };
 
   return (
-    <div className={cn("mt-8 w-full max-w-3xl xl:mt-0 xl:max-w-none", className)}>
+    <div className={cn("mt-6 w-full max-w-[min(100%,42rem)] xl:mt-0 xl:max-w-none", className)}>
       <AnimatePresence mode="wait">
         {!isOpen ? (
           <motion.button
@@ -295,11 +318,11 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
             animate={{ opacity: 1, x: 0, scale: 1, filter: "blur(0px)" }}
             exit={{ opacity: 0, x: -28, scale: 0.985, filter: "blur(8px)" }}
             transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
-            className="relative overflow-hidden rounded-[1.35rem] border border-white/[0.08] bg-zinc-950/[0.34] shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-2xl"
+            className="relative overflow-hidden rounded-[1.1rem] border border-white/[0.08] bg-zinc-950/[0.42] shadow-[0_18px_60px_rgba(0,0,0,0.24)] backdrop-blur-2xl sm:rounded-[1.35rem] xl:bg-zinc-950/[0.34]"
           >
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.14),transparent_44%),linear-gradient(180deg,rgba(255,255,255,0.06),transparent_36%)]" />
 
-            <div className="relative flex items-center justify-between gap-3 border-b border-white/[0.07] px-4 py-3">
+            <div className="relative flex items-center justify-between gap-3 border-b border-white/[0.07] px-3 py-3 sm:px-4">
               <div>
                 <p className="font-cormorant text-xl text-zinc-100">Memory Shelf</p>
                 <p className="text-[11px] text-zinc-500">{visibleMemories.length} shown</p>
@@ -322,7 +345,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
               </div>
             </div>
 
-            <div className="relative p-4">
+            <div className="relative p-3 sm:p-4">
               <div className="grid grid-cols-2 rounded-full border border-white/[0.07] bg-black/20 p-1">
                 {[
                   { id: "memories" as const, label: "Memories", icon: BookOpen },
@@ -363,7 +386,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                     animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                     exit={{ opacity: 0, y: -10, filter: "blur(5px)" }}
                     transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-                    className="mt-4"
+                    className="mt-3 sm:mt-4"
                   >
                     <div className="flex gap-2">
                       <label className="relative min-w-0 flex-1">
@@ -383,13 +406,13 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                       </button>
                     </div>
 
-                    <div className="mt-3 flex flex-wrap gap-1.5">
+                    <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] sm:flex-wrap sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
                       {FILTERS.map((item) => (
                         <button
                           key={item.id}
                           onClick={() => setFilter(item.id)}
                           className={cn(
-                            "rounded-full px-2.5 py-1 text-[11px] transition-colors",
+                            "shrink-0 rounded-full px-2.5 py-1 text-[11px] transition-colors",
                             filter === item.id
                               ? "bg-emerald-500/95 text-white"
                               : "bg-white/[0.05] text-zinc-500 hover:bg-white/[0.08] hover:text-zinc-300",
@@ -400,7 +423,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                       ))}
                     </div>
 
-                    <div className="mt-4 max-h-[52vh] space-y-2 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.18)_transparent]">
+                    <div className="mt-3 max-h-[58vh] space-y-2 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.18)_transparent] sm:mt-4 sm:max-h-[52vh]">
                       {isLoading && <div className="px-2 py-8 text-center text-sm text-zinc-500">Searching the jar...</div>}
                       {!isLoading && visibleMemories.length === 0 && (
                         <div className="px-2 py-8 text-center text-sm text-zinc-500">No memories match this view.</div>
@@ -415,13 +438,13 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                           return (
                             <motion.article
                               key={memory.id}
-                              layout
-                              initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                              animate={{ opacity: 1, y: 0, scale: 1 }}
-                              exit={{ opacity: 0, x: -16, scale: 0.98 }}
-                              transition={{ duration: 0.22 }}
+                              layout={!useSimpleMotion}
+                              initial={useSimpleMotion ? false : { opacity: 0, y: 10, scale: 0.98 }}
+                              animate={useSimpleMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
+                              exit={useSimpleMotion ? { opacity: 0 } : { opacity: 0, x: -16, scale: 0.98 }}
+                              transition={{ duration: useSimpleMotion ? 0.12 : 0.22 }}
                               className={cn(
-                                "group rounded-2xl border border-white/[0.07] bg-white/[0.045] p-3 transition-colors hover:bg-white/[0.07]",
+                                "group rounded-xl border border-white/[0.07] bg-white/[0.045] p-3 transition-colors hover:bg-white/[0.07] sm:rounded-2xl",
                                 isLockedCapsule && "border-emerald-400/15 bg-emerald-950/[0.08]",
                               )}
                             >
@@ -469,7 +492,8 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                                 <div className="flex items-center gap-1">
                                   <button
                                     onClick={() => favoriteMutation.mutate({ memory, favorite: !memory.is_favorite })}
-                                    className="rounded-full p-1.5 text-zinc-500 transition-colors hover:bg-white/[0.08] hover:text-zinc-200"
+                                    disabled={favoriteMutation.isPending}
+                                    className="inline-flex h-9 w-9 items-center justify-center rounded-full text-zinc-500 transition-colors hover:bg-white/[0.08] hover:text-zinc-200 active:scale-95 disabled:opacity-50"
                                     aria-label={memory.is_favorite ? "Remove favorite" : "Favorite memory"}
                                   >
                                     <Star className={cn("h-4 w-4", memory.is_favorite && "fill-amber-400 text-amber-400")} />
@@ -477,7 +501,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                                   {profile?.id === memory.created_by && (
                                     <button
                                       onClick={() => pinMutation.mutate({ memory, pinned: !memory.is_pinned })}
-                                      className="rounded-full p-1.5 text-zinc-500 transition-colors hover:bg-white/[0.08] hover:text-zinc-200"
+                                      className="inline-flex h-9 w-9 items-center justify-center rounded-full text-zinc-500 transition-colors hover:bg-white/[0.08] hover:text-zinc-200 active:scale-95"
                                       aria-label={memory.is_pinned ? "Unpin memory" : "Pin memory"}
                                     >
                                       {memory.is_pinned ? <PinOff className="h-4 w-4 text-emerald-400" /> : <Pin className="h-4 w-4" />}
@@ -486,7 +510,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                                   {profile?.id === memory.created_by && (
                                     <button
                                       onClick={() => scheduleDelete(memory)}
-                                      className="rounded-full p-1.5 text-rose-500 transition-colors hover:bg-rose-500/10"
+                                      className="inline-flex h-9 w-9 items-center justify-center rounded-full text-rose-500 transition-colors hover:bg-rose-500/10 active:scale-95"
                                       aria-label="Delete memory"
                                     >
                                       <Trash2 className="h-4 w-4" />
@@ -496,14 +520,14 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                               </div>
 
                               <div className="mt-3 flex items-center justify-between gap-2">
-                                <div className="flex max-w-[70%] gap-1 overflow-hidden">
+                                <div className="flex max-w-[calc(100%-4rem)] gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                                   {REACTIONS.map((emoji) => (
                                     <motion.button
                                       key={emoji}
                                       whileTap={{ scale: 0.86 }}
                                       onClick={() => reactionMutation.mutate({ memory, emoji })}
                                       className={cn(
-                                        "h-7 min-w-7 rounded-full border border-white/[0.07] bg-black/20 px-2 text-xs",
+                                        "h-8 min-w-8 shrink-0 rounded-full border border-white/[0.07] bg-black/20 px-2 text-xs",
                                         memory.my_reaction === emoji && "border-rose-400/40 bg-rose-400/10",
                                       )}
                                     >
@@ -533,8 +557,8 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                     initial={{ opacity: 0, y: 12, filter: "blur(5px)" }}
                     animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                     exit={{ opacity: 0, y: -10, filter: "blur(5px)" }}
-                    transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
-                    className="mt-4 max-h-[58vh] space-y-2 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.18)_transparent]"
+                    transition={{ duration: useSimpleMotion ? 0.14 : 0.24, ease: [0.22, 1, 0.36, 1] }}
+                    className="mt-3 max-h-[58vh] space-y-2 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.18)_transparent] sm:mt-4"
                   >
                     {renderedActivities.map((activity) => (
                       <motion.div
