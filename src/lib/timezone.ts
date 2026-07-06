@@ -42,6 +42,25 @@ export function normalizeTimezone(tz: string | null | undefined): string {
   return isValidTimezone(tz) ? tz : "UTC";
 }
 
+export function getSupportedTimezones(): string[] {
+  if (typeof Intl.supportedValuesOf === "function") {
+    return Intl.supportedValuesOf("timeZone");
+  }
+
+  return [
+    "UTC",
+    "Asia/Ho_Chi_Minh",
+    "Asia/Manila",
+    "Asia/Tokyo",
+    "Europe/London",
+    "Europe/Paris",
+    "America/Los_Angeles",
+    "America/Denver",
+    "America/Chicago",
+    "America/New_York",
+  ];
+}
+
 function parseDateOnly(dateString: string): { year: number; month: number; day: number } {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString);
   if (!match) {

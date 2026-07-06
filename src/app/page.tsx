@@ -66,7 +66,7 @@ export default function Home() {
 
   const hasLoadedJar = useRef(false);
 
-  useRoutePrefetch(["/timeline", "/dashboard", "/on-this-day", "/trash"]);
+  useRoutePrefetch(["/timeline", "/dashboard", "/on-this-day", "/trash", "/profile"]);
 
   useEffect(() => {
     if (hasLoadedJar.current) return;
@@ -232,7 +232,10 @@ export default function Home() {
                 </DropdownMenuLabel>
               </DropdownMenuGroup>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="cursor-pointer">
+              <DropdownMenuItem
+                className="cursor-pointer"
+                onClick={() => router.push("/profile")}
+              >
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>
               </DropdownMenuItem>

@@ -40,21 +40,12 @@ export function GlassJar({ memoryCount }: GlassJarProps) {
     };
 
     window.addEventListener("jar-heartbeat-active", handleHeartbeat);
-    
-    // Debug toggle for the user to test the glow (Ctrl + G)
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'g' && e.ctrlKey) {
-        setPartnerOnline(prev => !prev);
-      }
-    };
-    window.addEventListener('keydown', handleKey);
 
     return () => {
       if (frameRef.current !== null) {
         cancelAnimationFrame(frameRef.current);
       }
       window.removeEventListener("jar-heartbeat-active", handleHeartbeat);
-      window.removeEventListener('keydown', handleKey);
     };
   }, []);
 

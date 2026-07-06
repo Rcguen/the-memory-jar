@@ -56,6 +56,7 @@ export function usePresence(relationshipId: string | null, userId: string | unde
     window.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
+      void untrackPresence(channelName);
       window.removeEventListener(`presence-${channelName}`, handlePresenceSync);
       window.removeEventListener("visibilitychange", handleVisibilityChange);
       unsubscribePresence(channelName);

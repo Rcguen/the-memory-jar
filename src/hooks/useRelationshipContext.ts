@@ -22,7 +22,7 @@ async function fetchRelationshipContext(profileId: string): Promise<Relationship
   const [{ data: settingsData }, { data: membersData }] = await Promise.all([
     supabase
       .from("relationship_settings")
-      .select("start_date, relationship_timezone")
+      .select("start_date, relationship_timezone, anniversary_type")
       .eq("id", relationshipId)
       .single(),
     supabase
@@ -39,6 +39,7 @@ async function fetchRelationshipContext(profileId: string): Promise<Relationship
     startDate: settingsData?.start_date ?? null,
     partnerId: partner?.profile_id ?? null,
     partnerName: partner?.display_name ?? null,
+    anniversaryType: settingsData?.anniversary_type ?? null,
   };
 }
 

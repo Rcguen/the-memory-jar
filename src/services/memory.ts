@@ -213,7 +213,7 @@ export const memoryService = {
     const [{ data: settingsData }, { data: membersData }] = await Promise.all([
       supabase
         .from("relationship_settings")
-        .select("start_date, relationship_timezone")
+        .select("start_date, relationship_timezone, anniversary_type")
         .eq("id", relationshipId)
         .single(),
       supabase
@@ -230,6 +230,7 @@ export const memoryService = {
       startDate: settingsData?.start_date ?? null,
       partnerId: partner?.profile_id ?? null,
       partnerName: partner?.display_name ?? null,
+      anniversaryType: settingsData?.anniversary_type ?? null,
     };
   },
 
@@ -446,7 +447,7 @@ export const memoryService = {
     const safeTimezone = normalizeTimezone(timezone ?? relationship.relationshipTimezone);
     const { data: memoriesData, error: memoriesError } = await supabase
       .from("memories")
-      .select("id,title,type,memory_date,created_at,status,unlock_at")
+      .select("id,title,type,memory_date,created_at,status,unlock_at,is_pinned")
       .eq("relationship_id", relationship.relationshipId)
       .is("deleted_at", null)
       .in("status", ACTIVE_MEMORY_STATUSES)
@@ -463,15 +464,19 @@ export const memoryService = {
       created_at: string;
       status: Memory["status"];
       unlock_at: string | null;
+      is_pinned?: boolean | null;
     }>;
 
     const memoryIds = memories.map((memory) => memory.id);
-    const [favoritesResult, reactionsResult] = await Promise.all([
+    const [favoritesResult, reactionsResult, commentsResult] = await Promise.all([
       memoryIds.length > 0
         ? supabase.from("memory_favorites").select("memory_id").in("memory_id", memoryIds)
         : Promise.resolve({ data: [], error: null }),
       memoryIds.length > 0
         ? supabase.from("memory_reactions").select("emoji,memory_id").in("memory_id", memoryIds)
+        : Promise.resolve({ data: [], error: null }),
+      memoryIds.length > 0
+        ? supabase.from("memory_comments").select("id,memory_id").in("memory_id", memoryIds)
         : Promise.resolve({ data: [], error: null }),
     ]);
 
@@ -519,6 +524,10 @@ export const memoryService = {
       totalVideos: memories.filter((memory) => memory.type === "video").length,
       totalVoices: memories.filter((memory) => memory.type === "voice").length,
       totalLetters: memories.filter((memory) => memory.type === "letter").length,
+      totalPinned: memories.filter((memory) => memory.is_pinned === true).length,
+      totalCapsules: memories.filter((memory) => !!memory.unlock_at).length,
+      totalComments: commentsResult.data?.length ?? 0,
+      totalReactions: reactionsResult.data?.length ?? 0,
       waitingCapsules: memories.filter((memory) => {
         const unlockAtMs = memory.unlock_at ? new Date(memory.unlock_at).getTime() : null;
         return typeof unlockAtMs === "number" && Number.isFinite(unlockAtMs) && Date.now() < unlockAtMs;

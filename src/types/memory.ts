@@ -251,6 +251,8 @@ export interface UserProfile {
   username: string;
   display_name: string;
   avatar: string | null;
+  email?: string | null;
+  created_at?: string | null;
   /** IANA timezone string, e.g. "Asia/Ho_Chi_Minh". NULL until auto-detected. */
   timezone: string | null;
 }
@@ -274,6 +276,7 @@ export interface RelationshipContext {
   startDate: string | null;
   partnerId: string | null;
   partnerName: string | null;
+  anniversaryType: string | null;
 }
 
 export interface TimelineMemoryPage {
@@ -297,6 +300,10 @@ export interface CoupleDashboardStats {
   totalVideos: number;
   totalVoices: number;
   totalLetters: number;
+  totalPinned: number;
+  totalCapsules: number;
+  totalComments: number;
+  totalReactions: number;
   waitingCapsules: number;
   favorites: number;
   currentStreak: number;

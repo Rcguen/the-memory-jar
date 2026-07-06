@@ -1,53 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useEffect } from "react";
 import { useAuth } from "@/providers/auth-provider";
 import { motion, AnimatePresence } from "framer-motion";
 import { Heart } from "lucide-react";
 import { usePresence } from "@/hooks/usePresence";
+import { useRelationshipContext } from "@/hooks/useRelationshipContext";
 
 export function JarHeartbeat() {
   const { profile } = useAuth();
-  const [relationshipId, setRelationshipId] = useState<string | null>(null);
-  const [partnerName, setPartnerName] = useState<string | null>(null);
-  const [partnerId, setPartnerId] = useState<string | null>(null);
-  
-  useEffect(() => {
-    async function fetchRelInfo() {
-      if (!profile) return;
-      const supabase = createClient();
-      const { data: memberData } = await supabase
-        .from("relationship_members")
-        .select("relationship_id")
-        .eq("profile_id", profile.id)
-        .single();
-      if (memberData) {
-        setRelationshipId(memberData.relationship_id);
-        const { data: partnerData } = await supabase
-          .from("relationship_members")
-          .select("profile_id, display_name")
-          .eq("relationship_id", memberData.relationship_id)
-          .neq("profile_id", profile.id)
-          .single();
-        if (partnerData) {
-          setPartnerName(partnerData.display_name);
-          setPartnerId(partnerData.profile_id);
-        }
-      }
-    }
-    fetchRelInfo();
-  }, [profile]);
-
-  const { partnerOnline } = usePresence(relationshipId, profile?.id, partnerId);
+  const { data: relationship } = useRelationshipContext();
+  const { partnerOnline } = usePresence(
+    relationship?.relationshipId ?? null,
+    profile?.id,
+    relationship?.partnerId ?? null,
+  );
 
   useEffect(() => {
     window.dispatchEvent(new CustomEvent("jar-heartbeat-active", { detail: { active: partnerOnline } }));
+    return () => {
+      window.dispatchEvent(new CustomEvent("jar-heartbeat-active", { detail: { active: false } }));
+    };
   }, [partnerOnline]);
 
   return (
     <AnimatePresence>
-      {partnerOnline && partnerName && (
+      {partnerOnline && relationship?.partnerName && (
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -61,7 +39,7 @@ export function JarHeartbeat() {
             <Heart className="w-4 h-4 text-rose-500 fill-rose-500" />
           </motion.div>
           <span className="text-sm font-medium text-rose-800 dark:text-rose-200">
-            {partnerName} is here
+            {relationship.partnerName} is here
           </span>
         </motion.div>
       )}
