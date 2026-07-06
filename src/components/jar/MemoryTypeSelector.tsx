@@ -14,6 +14,7 @@ import {
   MessageCircleQuestion,
   X,
 } from "lucide-react";
+import { useIsPhone } from "@/hooks/useIsPhone";
 
 interface MemoryTypeSelectorProps {
   onSelect: (type: MemoryType) => void;
@@ -75,13 +76,15 @@ const itemVariants: Variants = {
 };
 
 export function MemoryTypeSelector({ onSelect, onCancel }: MemoryTypeSelectorProps) {
+  const isPhone = useIsPhone();
+
   return (
     <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="show"
       exit="exit"
-      className="m-auto w-full max-w-4xl flex flex-col items-center justify-center min-h-[60vh] px-4 relative"
+      className="relative m-auto flex min-h-[60vh] w-full max-w-4xl flex-col items-center justify-center px-4 pb-8 pt-16 sm:pt-4"
     >
       {onCancel && (
         <motion.button
@@ -90,7 +93,7 @@ export function MemoryTypeSelector({ onSelect, onCancel }: MemoryTypeSelectorPro
           whileHover={{ scale: 1.08, rotate: 90 }}
           whileTap={{ scale: 0.92 }}
           transition={{ type: "spring", stiffness: 400, damping: 24 }}
-          className="absolute top-0 right-4 p-2 rounded-full hover:bg-white/10 dark:hover:bg-white/5 transition-colors z-50 group"
+          className="group absolute right-4 top-3 z-50 rounded-full p-3 transition-colors hover:bg-white/10 dark:hover:bg-white/5 sm:top-0 sm:p-2"
           aria-label="Close memory type selector"
         >
           <X className="w-6 h-6 text-zinc-500 group-hover:text-zinc-800 dark:text-zinc-400 dark:group-hover:text-zinc-200 transition-colors" />
@@ -99,35 +102,35 @@ export function MemoryTypeSelector({ onSelect, onCancel }: MemoryTypeSelectorPro
 
       <motion.h2
         variants={titleVariants}
-        className="text-3xl md:text-5xl font-cormorant text-zinc-800 dark:text-zinc-200 mb-4"
+        className="mb-3 text-center font-cormorant text-[2.35rem] leading-none text-zinc-800 dark:text-zinc-200 md:text-5xl"
       >
         What would you like to preserve?
       </motion.h2>
 
       <motion.p
         variants={subtitleVariants}
-        className="font-inter text-zinc-500 dark:text-zinc-400 mb-12 text-center"
+        className="mb-8 max-w-md text-center font-inter text-sm text-zinc-500 dark:text-zinc-400 md:mb-12"
       >
         Select a memory type to begin.
       </motion.p>
 
-      <motion.div variants={gridVariants} className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 w-full">
+      <motion.div variants={gridVariants} className="grid w-full grid-cols-2 gap-3 md:grid-cols-3 md:gap-6">
         {MEMORY_TYPES.map((type) => (
           <motion.button
             key={type.id}
             variants={itemVariants}
             onClick={() => onSelect(type.id)}
-            whileHover={{ scale: 1.02, y: -2 }}
+            whileHover={isPhone ? undefined : { scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
-            className="group relative flex flex-col items-center justify-center p-6 md:p-8 rounded-2xl bg-white/40 dark:bg-zinc-900/40 hover:bg-white/60 dark:hover:bg-zinc-800/60 border border-white/50 dark:border-zinc-800/50 backdrop-blur-md transition-colors text-center overflow-hidden"
+            className="group relative flex min-h-[132px] flex-col items-center justify-center overflow-hidden rounded-[1.4rem] border border-white/50 bg-white/55 p-4 text-center transition-colors backdrop-blur-md hover:bg-white/60 dark:border-zinc-800/50 dark:bg-zinc-900/40 dark:hover:bg-zinc-800/60 md:min-h-[150px] md:p-8"
           >
             <div className="absolute inset-0 -translate-x-[150%] skew-x-12 bg-gradient-to-r from-transparent via-white/20 to-transparent group-hover:animate-sweep pointer-events-none" />
 
-            <type.icon className="w-8 h-8 md:w-10 md:h-10 text-rose-500/70 dark:text-rose-400/70 mb-4 transition-transform group-hover:scale-110 duration-500" />
-            <h3 className="font-cormorant text-xl md:text-2xl font-semibold text-zinc-800 dark:text-zinc-200 mb-2">
+            <type.icon className="mb-3 h-7 w-7 text-rose-500/70 transition-transform duration-500 group-hover:scale-110 dark:text-rose-400/70 md:mb-4 md:h-10 md:w-10" />
+            <h3 className="mb-1 font-cormorant text-[1.4rem] font-semibold text-zinc-800 dark:text-zinc-200 md:mb-2 md:text-2xl">
               {type.label}
             </h3>
-            <p className="font-inter text-xs md:text-sm text-zinc-500 dark:text-zinc-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <p className="font-inter text-[11px] leading-4 text-zinc-500 opacity-100 transition-opacity duration-300 dark:text-zinc-400 md:text-sm md:opacity-0 md:group-hover:opacity-100">
               {type.description}
             </p>
           </motion.button>

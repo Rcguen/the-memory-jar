@@ -25,7 +25,7 @@ export function AuthProvider({ children, initialProfile }: { children: React.Rea
     setIsLoading(true);
     try {
       const p = await getProfile();
-      setProfile(p as UserProfile | null);
+      setProfile(p);
     } catch (e) {
       console.error("Failed to load profile", e);
     } finally {

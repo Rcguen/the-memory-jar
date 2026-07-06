@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import type { FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { motion } from "framer-motion";
@@ -21,6 +22,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { useIsPhone } from "@/hooks/useIsPhone";
 
 const validThemes = Object.keys(MEMORY_THEMES) as [MemoryThemeType, ...MemoryThemeType[]];
 const validDecorations = DECORATIONS.map(d => d.id) as [DecorationID, ...DecorationID[]];
@@ -38,6 +40,21 @@ const memorySchema = z.object({
 });
 
 export type MemoryFormData = z.infer<typeof memorySchema>;
+
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === "object" && error) {
+    const candidate = error as {
+      message?: unknown;
+      error_description?: unknown;
+      details?: unknown;
+    };
+    if (typeof candidate.message === "string" && candidate.message) return candidate.message;
+    if (typeof candidate.error_description === "string" && candidate.error_description) return candidate.error_description;
+    if (typeof candidate.details === "string" && candidate.details) return candidate.details;
+  }
+  return "Failed to save memory";
+}
 
 interface DynamicMemoryFormProps {
   type: MemoryType;
@@ -61,6 +78,7 @@ export function DynamicMemoryForm({
   const { draft, saveDraft, isLoaded } = useMemoryDraft();
   const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isPhone = useIsPhone();
 
   const form = useForm<MemoryFormData>({
     resolver: zodResolver(memorySchema),
@@ -107,15 +125,15 @@ export function DynamicMemoryForm({
     try {
       setIsSubmitting(true);
       await onSave(data, files);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Save Memory Error:", error);
-      toast.error(error.message || error.error_description || error.details || "Failed to save memory");
+      toast.error(getErrorMessage(error));
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const onInvalid = (errors: any) => {
+  const onInvalid = (errors: FieldErrors<MemoryFormData>) => {
     console.error("Form Validation Errors:", errors);
     toast.error("Please fill out all required fields.");
   };
@@ -141,7 +159,7 @@ export function DynamicMemoryForm({
           <Input 
             {...form.register("title")} 
             placeholder="Give this memory a title..." 
-            className="text-2xl md:text-3xl font-cormorant border-none shadow-none focus-visible:ring-0 px-0 h-auto bg-transparent placeholder:text-zinc-400"
+            className="h-auto border-none bg-transparent px-0 font-cormorant text-[2rem] shadow-none placeholder:text-zinc-400 focus-visible:ring-0 md:text-3xl"
           />
           {form.formState.errors.title && (
             <p className="text-red-500 text-xs mt-1 px-2">{form.formState.errors.title.message}</p>
@@ -154,7 +172,7 @@ export function DynamicMemoryForm({
             <Textarea 
               {...form.register("content")} 
               placeholder="Pour your heart out here..." 
-              className="min-h-[150px] resize-none font-inter border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 rounded-xl"
+              className="min-h-[220px] resize-none rounded-2xl border-zinc-200 bg-white/60 px-4 py-4 font-inter text-base leading-7 dark:border-zinc-800 dark:bg-zinc-900/50"
             />
             
             <ThemePicker 
@@ -195,7 +213,7 @@ export function DynamicMemoryForm({
               maxFiles={1}
               files={files} 
               onChange={setFiles} 
-              label="Upload Voice Recording"
+              label="Upload Existing Recording"
               existingAttachments={existingAttachments.filter(a => a.file_type === 'voice')}
               onRemoveExisting={onRemoveAttachment}
             />
@@ -226,18 +244,18 @@ export function DynamicMemoryForm({
         </div>
 
         {/* Date */}
-        <div className="pt-2 flex items-center justify-between">
-          <div className="flex flex-col gap-1 w-1/2 pr-2">
+        <div className={cn("pt-2 flex items-center justify-between", isPhone && "flex-col gap-4")}>
+          <div className={cn("flex flex-col gap-1 w-1/2 pr-2", isPhone && "w-full pr-0")}>
             <label className="text-xs text-zinc-500 px-2 uppercase tracking-wider font-semibold">Date</label>
             <Input 
               type="date" 
               {...form.register("memory_date")} 
-              className="bg-transparent border-none shadow-none font-inter text-sm"
+              className="h-12 rounded-2xl border-zinc-200 bg-white/60 px-4 font-inter text-sm shadow-none dark:border-zinc-800 dark:bg-zinc-900/50"
             />
           </div>
           
           
-          <div className="flex flex-col gap-1 w-1/2 pl-2 border-l border-zinc-200 dark:border-zinc-800">
+          <div className={cn("flex flex-col gap-1 w-1/2 pl-2 border-l border-zinc-200 dark:border-zinc-800", isPhone && "w-full border-l-0 border-t pt-4 pl-0")}>
             <label className="text-xs text-zinc-500 px-2 uppercase tracking-wider font-semibold">Time Capsule</label>
             <TimeCapsulePicker 
               value={form.watch("unlock_at") ?? undefined} 
@@ -279,7 +297,7 @@ export function DynamicMemoryForm({
       </div>
 
       {/* Actions */}
-      <div className="flex items-center justify-end gap-3 pt-6 border-t border-zinc-200 dark:border-zinc-800">
+      <div className={cn("flex items-center justify-end gap-3 border-t border-zinc-200 pt-6 dark:border-zinc-800", isPhone && "sticky bottom-0 -mx-6 mt-2 bg-white/92 px-6 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-4 backdrop-blur-xl dark:bg-zinc-950/92 md:static md:mx-0 md:bg-transparent md:px-0 md:pb-0 md:backdrop-blur-0")}>
         <Button 
           type="button" 
           variant="ghost" 
@@ -292,7 +310,7 @@ export function DynamicMemoryForm({
         <Button 
           type="submit" 
           disabled={isSubmitting}
-          className="bg-rose-600 hover:bg-rose-700 text-white rounded-full px-8 shadow-md transition-all"
+          className="rounded-full bg-rose-600 px-8 shadow-md transition-all hover:bg-rose-700 text-white min-h-11"
         >
           {isSubmitting ? "Carefully placing your memory..." : "Save Memory"}
         </Button>

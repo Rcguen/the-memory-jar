@@ -11,6 +11,7 @@ import { memoryService } from "@/services/memory";
 import { useMemoryDraft } from "@/hooks/useMemoryDraft";
 import { usePhysics } from "@/providers/physics-provider";
 import { uploadMemoryAttachments } from "@/lib/memory-upload";
+import { useIsPhone } from "@/hooks/useIsPhone";
 
 type ModalStep = "select_type" | "form" | "saving_animation";
 
@@ -20,6 +21,7 @@ export function MemoryModal() {
   const { dropMemory } = usePhysics();
   const [step, setStep] = useState<ModalStep>("select_type");
   const [selectedType, setSelectedType] = useState<MemoryType | null>(null);
+  const isPhone = useIsPhone();
 
   // Lock body scroll when modal is open
   useEffect(() => {
@@ -121,7 +123,7 @@ export function MemoryModal() {
             animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
             exit={{ opacity: 0, y: 18, scale: 0.985, filter: "blur(8px)" }}
             transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
-            className="relative w-full h-full flex p-4 sm:p-8 overflow-y-auto z-10"
+            className={isPhone ? "relative z-10 flex h-full w-full overflow-y-auto p-0" : "relative z-10 flex h-full w-full overflow-y-auto p-3 sm:p-8"}
           >
             <AnimatePresence mode="wait">
               {step === "select_type" && (
@@ -135,7 +137,7 @@ export function MemoryModal() {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: 20 }}
                   transition={{ duration: 0.8, ease: "easeOut" }}
-                  className="m-auto w-full max-w-2xl bg-white/80 dark:bg-zinc-950/80 backdrop-blur-2xl rounded-3xl p-6 md:p-10 shadow-2xl border border-white/40 dark:border-zinc-800/50"
+                  className={isPhone ? "m-auto min-h-full w-full rounded-none border-y border-white/30 bg-white/92 p-4 pb-0 shadow-2xl backdrop-blur-2xl dark:border-zinc-800/40 dark:bg-zinc-950/92" : "m-auto w-full max-w-2xl rounded-[2rem] border border-white/40 bg-white/85 p-5 shadow-2xl backdrop-blur-2xl dark:border-zinc-800/50 dark:bg-zinc-950/85 md:p-10"}
                 >
                   <DynamicMemoryForm 
                     type={selectedType} 

@@ -38,6 +38,7 @@ import { useRelationshipContext } from "@/hooks/useRelationshipContext";
 import { useRoutePrefetch } from "@/hooks/useRoutePrefetch";
 import { RelationshipAmbientBackdrop } from "@/components/experience/RelationshipAmbientBackdrop";
 import { OnThisDayCard } from "@/components/experience/OnThisDayCard";
+import { MobileBottomNav } from "@/components/mobile/MobileBottomNav";
 
 const MemoryCommandCenter = dynamic(
   () => import("@/components/jar/MemoryCommandCenter").then((mod) => mod.MemoryCommandCenter),
@@ -251,7 +252,7 @@ export default function Home() {
       </header>
 
       {/* 4. Main Content Area */}
-      <div className="relative z-10 flex w-full max-w-[23rem] flex-col items-center px-3 pb-8 pt-16 sm:max-w-2xl sm:px-4 sm:pb-10 sm:pt-24">
+      <div className="relative z-10 flex w-full max-w-[23rem] flex-col items-center px-3 pb-36 pt-16 sm:max-w-2xl sm:px-4 sm:pb-10 sm:pt-24">
         
         {/* Title / Mood Text */}
         <motion.div
@@ -310,15 +311,19 @@ export default function Home() {
         </ErrorBoundary>
 
         {/* Call to Action */}
-        <DropMemoryButton />
+        <div className="hidden sm:block">
+          <DropMemoryButton />
+        </div>
 
       </div>
 
-      <div className="relative z-10 mt-8 w-full max-w-[23rem] px-3 pb-8 sm:max-w-3xl sm:px-4 xl:absolute xl:bottom-6 xl:left-6 xl:top-24 xl:mt-0 xl:w-[28rem] xl:max-w-none xl:px-0 xl:pb-0 2xl:w-[34rem]">
+      <div className="relative z-10 mt-8 w-full max-w-[23rem] px-3 pb-32 sm:max-w-3xl sm:px-4 xl:absolute xl:bottom-6 xl:left-6 xl:top-24 xl:mt-0 xl:w-[28rem] xl:max-w-none xl:px-0 xl:pb-0 2xl:w-[34rem]">
         <ErrorBoundary fallbackMessage="Memory tools failed to load.">
           <MemoryCommandCenter className="xl:mt-0 xl:max-w-none" />
         </ErrorBoundary>
       </div>
+
+      <MobileBottomNav />
 
       {/* Global Modals & Portals for this route */}
       <ErrorBoundary fallbackMessage="Jar Heartbeat failed to load.">

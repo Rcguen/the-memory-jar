@@ -6,7 +6,7 @@ const AttachmentSchema = z.object({
   memory_id: z.string().uuid(),
   file_type: z.enum(["photo", "voice", "video", "thumbnail"]),
   url: z.string(),
-  metadata: z.record(z.string(), z.any()).optional().default({}),
+  metadata: z.record(z.string(), z.unknown()).optional().default({}),
   created_at: z.string()
 }).passthrough();
 
@@ -40,20 +40,21 @@ const MemorySchema = z.object({
   attachments: z.array(AttachmentSchema).default([])
 });
 
-export function mapDatabaseMemory(data: any): Memory {
+export function mapDatabaseMemory(data: unknown): Memory {
+  const raw = typeof data === "object" && data !== null ? data as Record<string, unknown> : {};
   // Gracefully provide fallbacks for missing DB-level default fields before Zod validation
-  const preProcessed = {
-    ...data,
-    theme: data.theme || 'modern',
-    paper_style: data.paper_style || 'letter',
-    decorations: Array.isArray(data.decorations) ? data.decorations : [],
-    attachments: Array.isArray(data.memory_attachments) ? data.memory_attachments : [],
+  const preProcessed: Record<string, unknown> = {
+    ...raw,
+    theme: typeof raw.theme === "string" ? raw.theme : "modern",
+    paper_style: typeof raw.paper_style === "string" ? raw.paper_style : "letter",
+    decorations: Array.isArray(raw.decorations) ? raw.decorations : [],
+    attachments: Array.isArray(raw.memory_attachments) ? raw.memory_attachments : [],
   };
 
   const parsed = MemorySchema.safeParse(preProcessed);
 
   if (!parsed.success) {
-    console.warn("Memory validation failed, using fallback mapper. Errors:", parsed.error.issues, data);
+    console.warn("Memory validation failed, using fallback mapper. Errors:", parsed.error.issues, raw);
     // Fallback: forcefully map what we can to avoid crashing the Viewer
     return {
       ...preProcessed,

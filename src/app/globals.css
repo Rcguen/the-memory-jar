@@ -134,3 +134,22 @@
     @apply font-sans;
   }
 }
+
+@layer utilities {
+  .mobile-safe-bottom {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 0px);
+  }
+
+  .mobile-safe-top {
+    padding-top: calc(env(safe-area-inset-top) + 0px);
+  }
+
+  .mobile-safe-y {
+    padding-top: calc(env(safe-area-inset-top) + 0px);
+    padding-bottom: calc(env(safe-area-inset-bottom) + 0px);
+  }
+
+  .mobile-keyboard-safe {
+    padding-bottom: max(env(safe-area-inset-bottom), 0.75rem);
+  }
+}

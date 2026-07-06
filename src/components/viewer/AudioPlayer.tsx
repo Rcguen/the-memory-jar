@@ -131,11 +131,11 @@ function AudioPlayerBody({ url }: AudioPlayerProps) {
   };
 
   return (
-    <div className="relative mt-5 w-full overflow-hidden rounded-[1.35rem] border border-amber-200/25 bg-[#1a1714] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_22px_70px_rgba(0,0,0,0.35)] sm:mt-6 sm:p-5">
+    <div className="relative mt-5 w-full overflow-hidden rounded-[1.5rem] border border-amber-200/25 bg-[#1a1714] p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_22px_70px_rgba(0,0,0,0.35)] sm:mt-6 sm:p-5">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_25%_0%,rgba(245,188,102,0.15),transparent_35%),linear-gradient(135deg,rgba(255,244,215,0.06),transparent_38%),repeating-linear-gradient(90deg,rgba(255,255,255,0.025)_0px,rgba(255,255,255,0.025)_1px,transparent_1px,transparent_6px)]" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-amber-100/30" />
 
-      <div className="relative rounded-[1rem] border border-amber-100/10 bg-[linear-gradient(160deg,#2a241d,#151515_52%,#241b16)] p-3 sm:p-5">
+      <div className="relative rounded-[1.1rem] border border-amber-100/10 bg-[linear-gradient(160deg,#2a241d,#151515_52%,#241b16)] p-3.5 sm:p-5">
         <div className="absolute inset-2 rounded-[0.8rem] border border-black/30 pointer-events-none" />
 
         <div className="relative mx-auto mb-4 w-[88%] max-w-xl -rotate-1 rounded-md border border-amber-700/35 bg-[#e9dcc9] px-3 py-2 text-center shadow-[0_4px_14px_rgba(0,0,0,0.28)] sm:mb-5 sm:w-3/4">
@@ -145,7 +145,7 @@ function AudioPlayerBody({ url }: AudioPlayerProps) {
           </p>
         </div>
 
-        <div className="relative mx-auto mb-4 grid w-full max-w-2xl grid-cols-[1fr_auto_1fr] items-center gap-3 sm:mb-5 sm:gap-6">
+        <div className="relative mx-auto mb-4 grid w-full max-w-2xl grid-cols-[1fr_auto_1fr] items-center gap-2 sm:mb-5 sm:gap-6">
           <div className="h-2 rounded-full bg-gradient-to-r from-transparent via-stone-700 to-stone-500 shadow-inner" />
           <div className="relative flex items-center gap-7 rounded-full border border-amber-100/10 bg-black/35 px-6 py-3 shadow-[inset_0_0_18px_rgba(0,0,0,0.55)] sm:gap-12 sm:px-9 sm:py-4">
             {[0, 1].map((index) => (
@@ -250,7 +250,7 @@ function AudioPlayerBody({ url }: AudioPlayerProps) {
         <button
           type="button"
           onClick={() => skipBy(-5)}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-amber-100/10 bg-black/25 text-stone-300 transition hover:bg-amber-100/10 hover:text-amber-50 active:scale-95 sm:h-11 sm:w-11"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-amber-100/10 bg-black/25 text-stone-300 transition hover:bg-amber-100/10 hover:text-amber-50 active:scale-95 sm:h-11 sm:w-11"
           aria-label="Rewind 5 seconds"
         >
           <Rewind className="h-5 w-5 fill-current" />
@@ -260,7 +260,7 @@ function AudioPlayerBody({ url }: AudioPlayerProps) {
           type="button"
           onClick={togglePlay}
           disabled={isLoading && !isPlaying}
-          className="inline-flex h-14 w-14 items-center justify-center rounded-full border border-emerald-200/35 bg-emerald-600 text-white shadow-[0_12px_26px_rgba(5,150,105,0.28),inset_0_1px_0_rgba(255,255,255,0.25)] transition hover:bg-emerald-500 active:scale-95 disabled:opacity-60 sm:h-16 sm:w-16"
+          className="inline-flex h-16 w-16 items-center justify-center rounded-full border border-emerald-200/35 bg-emerald-600 text-white shadow-[0_12px_26px_rgba(5,150,105,0.28),inset_0_1px_0_rgba(255,255,255,0.25)] transition hover:bg-emerald-500 active:scale-95 disabled:opacity-60 sm:h-16 sm:w-16"
         >
           {isLoading && !isPlaying ? (
             <span className="block h-6 w-6 rounded-full border-2 border-white/40 border-t-white animate-spin sm:h-7 sm:w-7" />
@@ -274,14 +274,14 @@ function AudioPlayerBody({ url }: AudioPlayerProps) {
         <button
           type="button"
           onClick={() => skipBy(5)}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-amber-100/10 bg-black/25 text-stone-300 transition hover:bg-amber-100/10 hover:text-amber-50 active:scale-95 sm:h-11 sm:w-11"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-amber-100/10 bg-black/25 text-stone-300 transition hover:bg-amber-100/10 hover:text-amber-50 active:scale-95 sm:h-11 sm:w-11"
           aria-label="Forward 5 seconds"
         >
           <FastForward className="h-5 w-5 fill-current" />
         </button>
       </div>
 
-        <div className="relative mt-4 overflow-hidden rounded-[1rem] border border-black/20 bg-stone-900/70 px-3 py-3 shadow-inner sm:mt-5">
+        <div className="relative mt-4 overflow-hidden rounded-[1rem] border border-black/20 bg-stone-900/70 px-3 py-3.5 shadow-inner sm:mt-5">
           {showLoadingState && !hasDuration && (
             <motion.div
               className="absolute inset-y-0 left-0 w-1/4 bg-gradient-to-r from-transparent via-amber-200/35 to-transparent"
@@ -290,7 +290,7 @@ function AudioPlayerBody({ url }: AudioPlayerProps) {
               transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }}
             />
           )}
-          <div className="relative flex h-16 items-end gap-[3px] sm:h-20">
+          <div className="relative flex h-[4.5rem] items-end gap-[3px] sm:h-20">
             {waveform.map((sample, index) => {
               const ratio = waveform.length <= 1 ? 0 : index / (waveform.length - 1);
               const played = progress >= ratio * 100;

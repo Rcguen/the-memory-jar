@@ -9,9 +9,13 @@ import { ArrowLeft, RotateCcw, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { useDeletedMemories } from "@/hooks/useMemoryData";
 import { useRoutePrefetch } from "@/hooks/useRoutePrefetch";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { useHaptics } from "@/hooks/useHaptics";
 import { usePhysics } from "@/providers/physics-provider";
 import { memoryService } from "@/services/memory";
 import { Memory } from "@/types/memory";
+import { MemoryModalPortal } from "@/components/jar/MemoryModalPortal";
+import { MobileBottomNav } from "@/components/mobile/MobileBottomNav";
 
 export default function TrashPage() {
   const queryClient = useQueryClient();
@@ -19,8 +23,15 @@ export default function TrashPage() {
   const { data: memories = [], isLoading } = useDeletedMemories();
   const [preview, setPreview] = useState<Memory | null>(null);
   const [confirming, setConfirming] = useState<Memory | null>(null);
+  const { trigger } = useHaptics();
 
   useRoutePrefetch(["/"]);
+  const pullToRefresh = usePullToRefresh({
+    onRefresh: async () => {
+      trigger("light");
+      await queryClient.invalidateQueries({ queryKey: ["memories", "trash"] });
+    },
+  });
 
   const restoreMutation = useMutation({
     mutationFn: (memory: Memory) => memoryService.restoreMemory(memory.id),
@@ -46,8 +57,19 @@ export default function TrashPage() {
   });
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-emerald-50/30 dark:bg-emerald-950/20 px-4 py-8">
+    <main
+      className="relative min-h-screen overflow-hidden bg-emerald-50/30 px-4 py-8 pb-36 dark:bg-emerald-950/20 sm:pb-8"
+      {...pullToRefresh.bind}
+    >
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-teal-100/40 via-emerald-50/20 to-transparent dark:from-teal-900/20 dark:via-emerald-950/30 dark:to-transparent pointer-events-none" />
+      <motion.div
+        className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center"
+        animate={{ opacity: pullToRefresh.pullDistance > 4 || pullToRefresh.isRefreshing ? 1 : 0, y: Math.min(pullToRefresh.pullDistance, 52) }}
+      >
+        <div className="mt-3 rounded-full border border-white/20 bg-zinc-950/65 px-4 py-2 text-[11px] uppercase tracking-[0.18em] text-zinc-100 shadow-lg backdrop-blur-xl">
+          {pullToRefresh.isRefreshing ? "Refreshing" : pullToRefresh.pullDistance > 64 ? "Release to refresh" : "Pull for a softer refresh"}
+        </div>
+      </motion.div>
       <div className="relative z-10 max-w-4xl mx-auto">
         <Link href="/" className="inline-flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300 mb-6">
           <ArrowLeft className="w-4 h-4" />
@@ -155,6 +177,8 @@ export default function TrashPage() {
           </motion.div>
         )}
       </AnimatePresence>
+      <MemoryModalPortal />
+      <MobileBottomNav />
     </main>
   );
 }

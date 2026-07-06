@@ -50,7 +50,7 @@ export default async function RootLayout({
         >
           <QueryProvider>
             <RealtimeProvider>
-              <AuthProvider initialProfile={profile as any}>
+              <AuthProvider initialProfile={profile}>
                 <MemoryModalProvider>
                   <PhysicsProvider>
                     <UnlockSchedulerProvider>

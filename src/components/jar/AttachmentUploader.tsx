@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { UploadCloud, X, FileAudio, FileVideo, Image as ImageIcon } from "lucide-react";
+import { Camera, FileAudio, FileVideo, Image as ImageIcon, Images, UploadCloud, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 import { MemoryAttachment } from "@/types/memory";
+import { useIsPhone } from "@/hooks/useIsPhone";
+import { useNativeCamera } from "@/hooks/useNativeCamera";
 
 interface AttachmentUploaderProps {
   accept: string;
@@ -28,7 +30,11 @@ export function AttachmentUploader({
   label = "Add Attachments"
 }: AttachmentUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const captureInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const isPhone = useIsPhone();
+  const prefersCameraCapture = accept.startsWith("image/");
+  const { canUseCamera, openCameraCapture } = useNativeCamera();
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -113,12 +119,33 @@ export function AttachmentUploader({
 
   return (
     <div className="w-full flex flex-col gap-3">
+      {isPhone && prefersCameraCapture && canUseCamera && (
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => openCameraCapture(captureInputRef.current)}
+            className="flex min-h-[52px] items-center justify-center gap-2 rounded-2xl border border-rose-200/35 bg-rose-50/80 px-4 py-3 text-sm font-medium text-rose-900 shadow-sm transition active:scale-[0.985] dark:border-rose-900/40 dark:bg-rose-950/25 dark:text-rose-100"
+          >
+            <Camera className="h-4 w-4" />
+            Use Camera
+          </button>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="flex min-h-[52px] items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/70 px-4 py-3 text-sm font-medium text-zinc-800 shadow-sm transition active:scale-[0.985] dark:bg-zinc-900/55 dark:text-zinc-100"
+          >
+            <Images className="h-4 w-4" />
+            Choose Library
+          </button>
+        </div>
+      )}
+
       <div 
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
-        className={`w-full relative border-2 border-dashed rounded-xl p-6 md:p-8 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 ${
+        className={`w-full relative border-2 border-dashed rounded-2xl p-6 md:p-8 flex flex-col items-center justify-center cursor-pointer transition-all duration-300 ${
           isDragging 
             ? "border-rose-400 bg-rose-50 dark:bg-rose-950/20" 
             : "border-zinc-300 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800/50 bg-white/40 dark:bg-zinc-900/40"
@@ -132,6 +159,15 @@ export function AttachmentUploader({
           multiple={maxFiles > 1}
           onChange={handleFileChange}
         />
+        <input
+          type="file"
+          ref={captureInputRef}
+          className="hidden"
+          accept={accept}
+          capture="environment"
+          multiple={false}
+          onChange={handleFileChange}
+        />
         
         <div className="bg-zinc-100 dark:bg-zinc-800 p-3 rounded-full mb-3">
           <UploadCloud className="w-6 h-6 text-zinc-500 dark:text-zinc-400" />
@@ -140,7 +176,7 @@ export function AttachmentUploader({
           {label}
         </p>
         <p className="font-inter text-xs text-zinc-500 dark:text-zinc-500 mt-1 text-center">
-          Drag and drop or click to browse
+          {isPhone && prefersCameraCapture && canUseCamera ? "Use camera first, or browse your gallery." : "Drag and drop or click to browse"}
         </p>
       </div>
 

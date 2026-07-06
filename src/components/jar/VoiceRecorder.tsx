@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { getPreferredAudioMimeType } from "@/lib/media-processing";
 import { cn } from "@/lib/utils";
+import { useIsPhone } from "@/hooks/useIsPhone";
+import { useNativeMicrophone } from "@/hooks/useNativeMicrophone";
 
 const MAX_AUDIO_BYTES = 25 * 1024 * 1024;
 const RECORDER_TIMESLICE_MS = 250;
@@ -112,6 +114,8 @@ async function inspectAudioObjectUrl(url: string) {
 }
 
 export function VoiceRecorder({ onRecordingReady, disabled }: VoiceRecorderProps) {
+  const isPhone = useIsPhone();
+  const { canUseMicrophone } = useNativeMicrophone();
   const [isSupported, setIsSupported] = useState(true);
   const [status, setStatus] = useState<"idle" | "preparing" | "recording" | "paused" | "ready">("idle");
   const [duration, setDuration] = useState(0);
@@ -595,7 +599,7 @@ export function VoiceRecorder({ onRecordingReady, disabled }: VoiceRecorderProps
     ? "Preparing microphone..."
     : "Your microphone is only requested when you start recording.";
 
-  if (!isSupported) {
+  if (!isSupported || !canUseMicrophone) {
     return (
       <div className="rounded-2xl border border-amber-400/20 bg-amber-50/60 p-4 text-sm text-amber-900 dark:bg-amber-950/20 dark:text-amber-200">
         Recording is not supported on this browser. You can still upload an audio file.
@@ -607,11 +611,14 @@ export function VoiceRecorder({ onRecordingReady, disabled }: VoiceRecorderProps
     <div className="rounded-2xl border border-rose-200/70 bg-rose-50/60 p-4 shadow-sm shadow-rose-950/5 dark:border-rose-900/40 dark:bg-rose-950/15">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-500/10 text-rose-600 ring-1 ring-rose-200/70 dark:bg-rose-400/10 dark:text-rose-200 dark:ring-rose-300/15">
+          <div className={cn(
+            "flex shrink-0 items-center justify-center rounded-full bg-rose-500/10 text-rose-600 ring-1 ring-rose-200/70 dark:bg-rose-400/10 dark:text-rose-200 dark:ring-rose-300/15",
+            isPhone ? "h-11 w-11" : "h-10 w-10",
+          )}>
             <Mic className="h-5 w-5" />
           </div>
           <div>
-            <p className="font-cormorant text-2xl leading-none text-zinc-800 dark:text-zinc-100">Record a voice keepsake</p>
+            <p className={cn("font-cormorant leading-none text-zinc-800 dark:text-zinc-100", isPhone ? "text-[1.8rem]" : "text-2xl")}>Record a voice keepsake</p>
             <p className={cn("mt-1 text-xs text-zinc-500", status === "preparing" && "text-rose-500 dark:text-rose-200")}>
               {helperText}
             </p>
@@ -722,43 +729,43 @@ export function VoiceRecorder({ onRecordingReady, disabled }: VoiceRecorderProps
 
       <div className="mt-4 flex flex-wrap gap-2">
         {status === "idle" || status === "ready" ? (
-          <Button type="button" onClick={startRecording} disabled={disabled} className="rounded-full bg-rose-600 hover:bg-rose-700">
+          <Button type="button" onClick={startRecording} disabled={disabled} className={cn("rounded-full bg-rose-600 hover:bg-rose-700", isPhone && "min-h-12 px-5 text-sm")}>
             <Mic className="mr-2 h-4 w-4" />
             {status === "ready" ? "Re-record" : "Start recording"}
           </Button>
         ) : null}
         {status === "preparing" && (
-          <Button type="button" disabled className="rounded-full bg-rose-600 text-white">
+          <Button type="button" disabled className={cn("rounded-full bg-rose-600 text-white", isPhone && "min-h-12 px-5 text-sm")}>
             <Mic className="mr-2 h-4 w-4 animate-pulse" />
             Preparing microphone...
           </Button>
         )}
         {status === "recording" && canPauseRecorder && (
-          <Button type="button" variant="outline" onClick={pauseRecording} className="rounded-full">
+          <Button type="button" variant="outline" onClick={pauseRecording} className={cn("rounded-full", isPhone && "min-h-12 px-5 text-sm")}>
             <Pause className="mr-2 h-4 w-4" />
             Pause
           </Button>
         )}
         {status === "paused" && (
-          <Button type="button" variant="outline" onClick={resumeRecording} className="rounded-full">
+          <Button type="button" variant="outline" onClick={resumeRecording} className={cn("rounded-full", isPhone && "min-h-12 px-5 text-sm")}>
             <Play className="mr-2 h-4 w-4" />
             Resume
           </Button>
         )}
         {(status === "recording" || status === "paused") && (
-          <Button type="button" variant="outline" onClick={stopRecording} className="rounded-full">
+          <Button type="button" variant="outline" onClick={stopRecording} className={cn("rounded-full", isPhone && "min-h-12 px-5 text-sm")}>
             <Square className="mr-2 h-4 w-4" />
             Stop
           </Button>
         )}
         {status === "ready" && (
-          <Button type="button" variant="ghost" onClick={discard} className="rounded-full text-zinc-500 hover:text-rose-600">
+          <Button type="button" variant="ghost" onClick={discard} className={cn("rounded-full text-zinc-500 hover:text-rose-600", isPhone && "min-h-12 px-5 text-sm")}>
             <Trash2 className="mr-2 h-4 w-4" />
             Discard
           </Button>
         )}
         {status === "paused" && (
-          <Button type="button" variant="ghost" onClick={discard} className="rounded-full text-zinc-500 hover:text-rose-600">
+          <Button type="button" variant="ghost" onClick={discard} className={cn("rounded-full text-zinc-500 hover:text-rose-600", isPhone && "min-h-12 px-5 text-sm")}>
             <RotateCcw className="mr-2 h-4 w-4" />
             Reset
           </Button>
@@ -775,7 +782,6 @@ export function VoiceRecorder({ onRecordingReady, disabled }: VoiceRecorderProps
             className="mt-4 rounded-xl border border-white/50 bg-white/70 p-3 shadow-sm dark:border-white/10 dark:bg-zinc-950/40"
           >
             <p className="mb-2 text-xs font-medium text-zinc-500">Preview your recording before saving</p>
-            {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
             <audio
               ref={previewAudioRef}
               controls

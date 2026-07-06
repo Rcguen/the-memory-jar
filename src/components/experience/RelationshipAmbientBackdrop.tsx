@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import { getTimezonePeriod } from "@/lib/timezone";
 import { useUnlockScheduler } from "@/providers/unlock-scheduler";
+import { useIsPhone } from "@/hooks/useIsPhone";
 
 interface Spark {
   id: number;
@@ -28,10 +29,28 @@ function createAmbientParticles(count: number, minSize: number, maxSize: number)
 export function RelationshipAmbientBackdrop({ timezone }: { timezone: string }) {
   const { now } = useUnlockScheduler();
   const reduceMotion = useReducedMotion();
+  const isPhone = useIsPhone();
   const period = getTimezonePeriod(timezone, now);
   const isNight = period === "night";
-  const stars = useMemo(() => (reduceMotion ? [] : createAmbientParticles(18, 1, 2.8)), [reduceMotion]);
-  const fireflies = useMemo(() => (reduceMotion ? [] : createAmbientParticles(7, 3, 6)), [reduceMotion]);
+  const isConstrainedDevice = useMemo(() => {
+    if (typeof navigator === "undefined") return false;
+    const memory = "deviceMemory" in navigator ? (navigator as Navigator & { deviceMemory?: number }).deviceMemory ?? 0 : 0;
+    const cores = navigator.hardwareConcurrency ?? 4;
+    const saveData = "connection" in navigator
+      ? Boolean((navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData)
+      : false;
+    return saveData || memory > 0 && memory <= 4 || cores <= 4;
+  }, []);
+  const stars = useMemo(() => {
+    if (reduceMotion) return [];
+    const count = isPhone ? (isConstrainedDevice ? 5 : 9) : 18;
+    return createAmbientParticles(count, 1, isPhone ? 2.2 : 2.8);
+  }, [isConstrainedDevice, isPhone, reduceMotion]);
+  const fireflies = useMemo(() => {
+    if (reduceMotion) return [];
+    const count = isPhone ? (isConstrainedDevice ? 2 : 4) : 7;
+    return createAmbientParticles(count, isPhone ? 2.4 : 3, isPhone ? 4.8 : 6);
+  }, [isConstrainedDevice, isPhone, reduceMotion]);
 
   const glowClass = useMemo(() => {
     if (period === "morning") {
@@ -56,7 +75,7 @@ export function RelationshipAmbientBackdrop({ timezone }: { timezone: string }) 
       {period === "morning" && (
         <motion.div
           aria-hidden="true"
-          className="absolute -top-24 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-amber-100/35 blur-3xl dark:bg-amber-300/10"
+          className="absolute left-1/2 top-[-5.5rem] h-64 w-64 -translate-x-1/2 rounded-full bg-amber-100/35 blur-3xl dark:bg-amber-300/10 sm:-top-24 sm:h-72 sm:w-72"
           animate={reduceMotion ? undefined : { scale: [1, 1.04, 1], opacity: [0.5, 0.72, 0.5] }}
           transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
         />

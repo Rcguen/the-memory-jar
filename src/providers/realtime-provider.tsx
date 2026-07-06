@@ -11,10 +11,12 @@ interface ChannelEntry {
   refs: number;
 }
 
+type PresencePayload = Record<string, unknown>;
+
 interface RealtimeContextType {
   subscribePresence: (channelName: string, onReady?: () => void) => void;
   unsubscribePresence: (channelName: string) => void;
-  trackPresence: (channelName: string, payload: any) => Promise<void>;
+  trackPresence: (channelName: string, payload: PresencePayload) => Promise<void>;
   untrackPresence: (channelName: string) => Promise<void>;
   
   subscribePostgres: (channelName: string, event: PostgresChangeEvent, schema: string, table: string, filter?: string) => void;
@@ -97,7 +99,7 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
     entry.refs += 1;
   };
 
-  const trackPresence = async (channelName: string, payload: any) => {
+  const trackPresence = async (channelName: string, payload: PresencePayload) => {
     const entry = channelsRef.current.get(channelName);
     if (!entry) return;
 

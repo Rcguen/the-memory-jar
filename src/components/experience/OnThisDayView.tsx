@@ -6,11 +6,15 @@ import { ArrowLeft, CalendarHeart, ChevronRight, Sparkles } from "lucide-react";
 import { useOnThisDayMemories } from "@/hooks/useMemoryData";
 import { useRelationshipContext } from "@/hooks/useRelationshipContext";
 import { useRoutePrefetch } from "@/hooks/useRoutePrefetch";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { useHaptics } from "@/hooks/useHaptics";
+import { useIsPhone } from "@/hooks/useIsPhone";
 import { useMemoryViewer } from "@/providers/memory-viewer-provider";
 import { useRealtimeMemory } from "@/hooks/useRealtimeMemory";
 import { EmojiText } from "@/components/ui/EmojiText";
 import { formatInTimezone } from "@/lib/timezone";
 import { RelationshipAmbientBackdrop } from "./RelationshipAmbientBackdrop";
+import { useQueryClient } from "@tanstack/react-query";
 
 function formatCurrentLabel(timezone: string) {
   return new Intl.DateTimeFormat("en", {
@@ -24,23 +28,41 @@ export function OnThisDayView() {
   const { data: relationship } = useRelationshipContext();
   const { data: memories = [], isLoading } = useOnThisDayMemories();
   const { openViewer } = useMemoryViewer();
+  const queryClient = useQueryClient();
+  const { trigger } = useHaptics();
+  const isPhone = useIsPhone();
 
   useRealtimeMemory(relationship?.relationshipId ?? null, { syncPhysics: false });
   useRoutePrefetch(["/", "/timeline", "/dashboard"]);
+  const pullToRefresh = usePullToRefresh({
+    disabled: !isPhone,
+    onRefresh: async () => {
+      trigger("light");
+      await queryClient.invalidateQueries({ queryKey: ["on-this-day", relationship?.relationshipTimezone] });
+    },
+  });
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-emerald-50/30 px-4 py-8 dark:bg-emerald-950/20">
+    <main className="relative min-h-screen overflow-hidden bg-emerald-50/30 px-4 py-8 pb-36 dark:bg-emerald-950/20 sm:pb-8" {...pullToRefresh.bind}>
       {relationship?.relationshipTimezone && (
         <RelationshipAmbientBackdrop timezone={relationship.relationshipTimezone} />
       )}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(251,191,36,0.16),transparent_48%),radial-gradient(circle_at_bottom,rgba(16,185,129,0.08),transparent_42%)]" />
+      <motion.div
+        className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center sm:hidden"
+        animate={{ opacity: pullToRefresh.pullDistance > 4 || pullToRefresh.isRefreshing ? 1 : 0, y: Math.min(pullToRefresh.pullDistance, 52) }}
+      >
+        <div className="mt-3 rounded-full border border-white/20 bg-zinc-950/65 px-4 py-2 text-[11px] uppercase tracking-[0.18em] text-zinc-100 shadow-lg backdrop-blur-xl">
+          {pullToRefresh.isRefreshing ? "Refreshing" : pullToRefresh.pullDistance > 64 ? "Release to refresh" : "Pull to revisit"}
+        </div>
+      </motion.div>
       <div className="relative z-10 mx-auto max-w-5xl">
         <Link href="/" className="inline-flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
           <ArrowLeft className="h-4 w-4" />
           Back to jar
         </Link>
 
-        <section className="mt-6 overflow-hidden rounded-[2rem] border border-white/15 bg-zinc-950/55 px-6 py-7 text-zinc-50 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-2xl sm:px-8">
+        <section className="mt-4 overflow-hidden rounded-[1.8rem] border border-white/15 bg-zinc-950/55 px-5 py-6 text-zinc-50 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-2xl sm:mt-6 sm:rounded-[2rem] sm:px-8 sm:py-7">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.16),transparent_40%),linear-gradient(135deg,rgba(255,255,255,0.08),transparent_55%)]" />
           <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -48,10 +70,10 @@ export function OnThisDayView() {
                 <CalendarHeart className="h-3.5 w-3.5 text-rose-300" />
                 On This Day
               </div>
-              <h1 className="mt-4 font-cormorant text-4xl leading-none sm:text-5xl">
+              <h1 className="mt-4 font-cormorant text-[2.5rem] leading-none sm:text-5xl">
                 {relationship ? formatCurrentLabel(relationship.relationshipTimezone) : "Today"}
               </h1>
-              <p className="mt-3 max-w-2xl text-zinc-300/85">
+              <p className="mt-3 max-w-2xl text-sm text-zinc-300/85 sm:text-base">
                 Memories from this date, across every year you have been collecting pieces of each other.
               </p>
             </div>

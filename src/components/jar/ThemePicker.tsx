@@ -7,13 +7,14 @@ import { MEMORY_THEMES } from "@/lib/memoryThemes";
 import { Check } from "lucide-react";
 
 import { MemoryThemeType } from "@/types/memory";
+import type { MemoryThemeDefinition } from "@/lib/themeDefinitions/types";
 
 interface ThemePickerProps {
   selectedTheme: MemoryThemeType;
   onChange: (theme: MemoryThemeType) => void;
 }
 
-function ThemeCard({ theme, isSelected, onClick }: { theme: any, isSelected: boolean, onClick: () => void }) {
+function ThemeCard({ theme, isSelected, onClick }: { theme: MemoryThemeDefinition; isSelected: boolean; onClick: () => void }) {
   const [imgError, setImgError] = useState(false);
 
   return (

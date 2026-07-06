@@ -1,6 +1,6 @@
 import { Memory, MemoryAttachment } from "@/types/memory";
 import { format } from "date-fns";
-import { X, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, AlertCircle, Heart, MessageCircle, Share2, Download, Sparkles } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useMemoryViewer } from "@/providers/memory-viewer-provider";
 import { usePhysics } from "@/providers/physics-provider";
@@ -20,6 +20,10 @@ import { MoreVertical, Trash2, Edit2, Pin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MemoryComments } from "./MemoryComments";
 import { EmojiText } from "@/components/ui/EmojiText";
+import { useIsPhone } from "@/hooks/useIsPhone";
+import { useHaptics } from "@/hooks/useHaptics";
+import { useNativeShare } from "@/hooks/useNativeShare";
+import { ReactionEmoji } from "@/types/memory";
 
 interface ViewerContentProps {
   memoryId: string;
@@ -35,12 +39,18 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
   const { states, removeMemory } = usePhysics();
   const { profile } = useAuth();
   const queryClient = useQueryClient();
+  const isPhone = useIsPhone();
+  const { trigger } = useHaptics();
+  const { canShare, share } = useNativeShare();
   
   const [showMenu, setShowMenu] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteConfirming, setIsDeleteConfirming] = useState(false);
+  const [isActionRailExpanded, setIsActionRailExpanded] = useState(false);
+  const [readingModeDismissedFor, setReadingModeDismissedFor] = useState<string | null>(null);
   const deleteTimerRef = useRef<number | null>(null);
+  const commentsAnchorRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     return () => {
@@ -115,6 +125,75 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
   const photoAttachments = attachments.filter((attachment) => attachment.file_type === "photo");
   const thumbnailAttachments = attachments.filter((attachment) => attachment.file_type === "thumbnail");
   const playableAttachments = attachments.filter((attachment) => attachment.file_type === "voice" || attachment.file_type === "video");
+  const quickReactions: ReactionEmoji[] = ["❤️", "🥹", "😂", "😍"];
+  const shouldFocusRead =
+    isPhone &&
+    !!fullMemory?.content &&
+    fullMemory.content.length > 420 &&
+    ["letter", "promise", "wish", "gratitude", "random_thought", "travel"].includes(fullMemory.type);
+  const isReadingMode = shouldFocusRead && readingModeDismissedFor !== memoryId;
+
+  const handleCommentJump = () => {
+    commentsAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const handleFavorite = async () => {
+    if (!fullMemory) return;
+    trigger("light");
+    try {
+      await memoryService.setFavorite(fullMemory.id, !fullMemory.is_favorite);
+      await queryClient.invalidateQueries({ queryKey: ["memory", fullMemory.id] });
+      await queryClient.invalidateQueries({ queryKey: ["memories"] });
+      await queryClient.invalidateQueries({ queryKey: ["activity-feed"] });
+    } catch (error) {
+      toast.error(`Favorite failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
+
+  const handleReaction = async (emoji: ReactionEmoji) => {
+    if (!fullMemory) return;
+    trigger("light");
+    try {
+      await memoryService.setReaction(fullMemory.id, emoji);
+      setIsActionRailExpanded(false);
+      await queryClient.invalidateQueries({ queryKey: ["memory", fullMemory.id] });
+      await queryClient.invalidateQueries({ queryKey: ["memories"] });
+      await queryClient.invalidateQueries({ queryKey: ["activity-feed"] });
+    } catch (error) {
+      toast.error(`Reaction failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
+
+  const handleShare = async () => {
+    if (!fullMemory) return;
+    trigger("light");
+    const shared = await share({
+      title: fullMemory.title || "A memory from The Memory Jar",
+      text: fullMemory.content || fullMemory.title || "A memory from The Memory Jar",
+      url: typeof window !== "undefined" ? window.location.href : undefined,
+    });
+
+    if (!shared && typeof navigator !== "undefined" && navigator.clipboard) {
+      await navigator.clipboard.writeText(typeof window !== "undefined" ? window.location.href : fullMemory.title || "");
+      toast.success("Link copied.");
+    }
+  };
+
+  const handleDownload = async () => {
+    if (!attachments[0]) return;
+    trigger("light");
+    try {
+      const url = await memoryService.getAttachmentUrlAsync(attachments[0].file_type, attachments[0].url);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = attachments[0].url.split("/").pop() || "memory-attachment";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      toast.error(`Download failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  };
 
   // If memory isn't fully loaded yet, show a beautiful skeleton or wait
   if (!fullMemory) {
@@ -144,12 +223,13 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
 
   return (
     <div className={cn(
-      "relative w-full mx-auto max-h-[80vh] flex flex-col overflow-hidden",
+      "relative mx-auto flex h-[100dvh] w-full max-h-[100dvh] flex-col overflow-hidden sm:max-h-[80vh]",
       paper.borderRadius,
       theme.backgroundClass,
       theme.borderClass,
       theme.fontClass,
-      paper.shadow
+      paper.shadow,
+      isPhone && "rounded-none border-x-0 border-y-0 shadow-none"
     )}>
       
       {/* Texture overlay */}
@@ -180,14 +260,14 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
       })}
 
       {/* Header Actions */}
-      <div className="absolute top-4 right-4 z-50 flex items-center gap-2">
+      <div className={cn("absolute right-4 top-4 z-50 flex items-center gap-2", isPhone && "top-[calc(env(safe-area-inset-top)+0.75rem)]")}>
         
         {/* Creator Menu */}
         {profile?.id === fullMemory.created_by && (
           <div className="relative">
             <button 
               onClick={() => setShowMenu(!showMenu)}
-              className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+              className="min-h-11 min-w-11 rounded-full bg-black/5 p-3 transition-colors hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10"
             >
               <MoreVertical className="w-5 h-5 text-zinc-500" />
             </button>
@@ -271,14 +351,14 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
 
         <button 
           onClick={onClose}
-          className="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+          className="min-h-11 min-w-11 rounded-full bg-black/5 p-3 transition-colors hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10"
         >
           <X className="w-5 h-5 text-zinc-500" />
         </button>
       </div>
 
       {/* Header */}
-      <div className={cn("flex-shrink-0 border-b relative z-10", paper.padding, "border-black/5 dark:border-white/5 pb-6")}>
+      <div className={cn("relative z-10 flex-shrink-0 border-b border-black/5 bg-inherit pb-6 dark:border-white/5", paper.padding, isPhone && "sticky top-0 px-5 pb-5 pt-[calc(env(safe-area-inset-top)+1.2rem)] backdrop-blur-xl")}>
         <p className={cn("text-sm font-medium tracking-widest uppercase mb-2 opacity-50", theme.textClass)}>
           {format(new Date(fullMemory.memory_date), "MMMM do, yyyy")}
           {fullMemory.is_pinned && (
@@ -287,17 +367,17 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
             </span>
           )}
         </p>
-        <h2 className={cn("text-4xl font-semibold", theme.textClass)}>
+        <h2 className={cn("font-semibold", theme.textClass, isPhone ? "max-w-[18rem] text-[2.5rem] leading-[0.92]" : "text-4xl")}>
           <EmojiText text={fullMemory.title || "Untitled memory"} />
         </h2>
       </div>
 
       {/* Scrollable Content */}
-      <div className={cn("flex-1 overflow-y-auto relative z-10 space-y-6", paper.padding, "pt-8")}>
+      <div className={cn("relative z-10 flex-1 overflow-y-auto space-y-6", paper.padding, isPhone ? "px-5 pb-40 pt-6" : "pt-8")}>
         
         {/* Main Text Content */}
         {fullMemory.content && (
-          <div className="prose prose-zinc dark:prose-invert prose-p:leading-relaxed prose-lg">
+          <div className={cn("prose prose-zinc dark:prose-invert prose-p:leading-relaxed", isPhone ? "mx-auto max-w-[32rem] prose-lg prose-p:text-[1.07rem] prose-p:leading-8" : "prose-lg")}>
             <p className={cn("whitespace-pre-wrap font-light", theme.textClass)}>
               <EmojiText text={fullMemory.content} />
             </p>
@@ -315,7 +395,7 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
       </div>
 
       {/* Footer & Navigation */}
-      <div className={cn("bg-black/[0.02] dark:bg-white/[0.02] border-t border-black/5 dark:border-white/5 relative z-10 flex items-center justify-between", paper.padding, "py-6")}>
+      <div className={cn("relative z-10 flex items-center justify-between border-t border-black/5 bg-black/[0.02] py-6 dark:border-white/5 dark:bg-white/[0.02]", paper.padding, isPhone && "hidden")}>
         
         {/* Navigation */}
         <div className="flex gap-4">
@@ -341,7 +421,84 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
         </div>
       </div>
 
-      <MemoryComments memoryId={memoryId} />
+      <div ref={commentsAnchorRef} />
+      {!isReadingMode && <MemoryComments memoryId={memoryId} />}
+
+      {isPhone && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
+          <div className="pointer-events-auto rounded-[1.6rem] border border-white/10 bg-zinc-950/78 p-2 shadow-[0_-14px_40px_rgba(0,0,0,0.32)] backdrop-blur-2xl">
+            {isActionRailExpanded && (
+              <div className="mb-2 flex items-center justify-center gap-2 rounded-[1.2rem] bg-white/[0.04] p-2">
+                {quickReactions.map((emoji) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onClick={() => handleReaction(emoji)}
+                    className="flex min-h-11 min-w-11 items-center justify-center rounded-full bg-white/[0.06] text-xl text-white transition active:scale-[0.96]"
+                    aria-label={`React with ${emoji}`}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <div className="grid grid-cols-5 gap-2">
+              <button
+                type="button"
+                onClick={handleFavorite}
+                className={cn("flex min-h-[52px] flex-col items-center justify-center rounded-[1.1rem] text-[11px] font-medium text-zinc-300", fullMemory.is_favorite ? "bg-rose-500/18 text-rose-100" : "bg-white/[0.05]")}
+              >
+                <Heart className={cn("mb-1 h-4 w-4", fullMemory.is_favorite ? "text-rose-300" : "text-zinc-300")} />
+                Favorite
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsActionRailExpanded((value) => !value)}
+                className={cn("flex min-h-[52px] flex-col items-center justify-center rounded-[1.1rem] bg-white/[0.05] text-[11px] font-medium text-zinc-300", isActionRailExpanded && "bg-amber-400/16 text-amber-100")}
+              >
+                <Sparkles className="mb-1 h-4 w-4 text-amber-300" />
+                React
+              </button>
+              <button
+                type="button"
+                onClick={handleCommentJump}
+                className="flex min-h-[52px] flex-col items-center justify-center rounded-[1.1rem] bg-white/[0.05] text-[11px] font-medium text-zinc-300"
+              >
+                <MessageCircle className="mb-1 h-4 w-4 text-emerald-300" />
+                Comment
+              </button>
+              <button
+                type="button"
+                onClick={handleShare}
+                className="flex min-h-[52px] flex-col items-center justify-center rounded-[1.1rem] bg-white/[0.05] text-[11px] font-medium text-zinc-300"
+              >
+                <Share2 className="mb-1 h-4 w-4 text-sky-300" />
+                {canShare ? "Share" : "Copy"}
+              </button>
+              <button
+                type="button"
+                onClick={handleDownload}
+                disabled={attachments.length === 0}
+                className="flex min-h-[52px] flex-col items-center justify-center rounded-[1.1rem] bg-white/[0.05] text-[11px] font-medium text-zinc-300 disabled:opacity-40"
+              >
+                <Download className="mb-1 h-4 w-4 text-amber-200" />
+                Save
+              </button>
+            </div>
+
+            {isReadingMode && (
+              <button
+                type="button"
+                onClick={() => setReadingModeDismissedFor(memoryId)}
+                className="mt-2 flex min-h-11 w-full items-center justify-center rounded-full bg-white/[0.05] px-4 text-sm text-zinc-200"
+              >
+                Show comments and details
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {isEditing && (
         <EditMemoryModal 

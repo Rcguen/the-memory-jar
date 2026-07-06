@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import type { UserProfile } from "@/types/memory";
 
 export async function lookupEmailByUsername(username: string): Promise<string | null> {
   const supabase = await createClient();
@@ -15,7 +16,7 @@ export async function lookupEmailByUsername(username: string): Promise<string | 
   return data as string;
 }
 
-export async function getProfile() {
+export async function getProfile(): Promise<UserProfile | null> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   

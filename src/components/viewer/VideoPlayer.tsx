@@ -135,10 +135,10 @@ export function VideoPlayer({ url, poster }: VideoPlayerProps) {
         </AnimatePresence>
 
         {/* Controls Overlay */}
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-4 opacity-100 transition-opacity duration-300 sm:opacity-0 sm:group-hover:opacity-100">
           
           {/* Progress Bar */}
-          <div className="w-full h-1.5 bg-white/30 rounded-full mb-4 cursor-pointer overflow-hidden"
+          <div className="mb-4 h-2.5 w-full cursor-pointer overflow-hidden rounded-full bg-white/30 sm:h-1.5"
                onClick={(e) => {
                  if (videoRef.current) {
                    const rect = e.currentTarget.getBoundingClientRect();
