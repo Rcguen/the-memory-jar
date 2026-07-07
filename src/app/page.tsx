@@ -331,7 +331,7 @@ export default function Home() {
         {relationship?.startDate && (
           <RelationshipCounter 
             startDate={new Date(relationship.startDate)} 
-            className="-mt-10 sm:-mt-16 md:-mt-20 mb-6 sm:mb-8" 
+            className="mt-0 sm:mt-0 md:-mt-2 mb-6 sm:mb-8" 
           />
         )}
 
@@ -343,7 +343,7 @@ export default function Home() {
         </ErrorBoundary>
 
         {/* Call to Action */}
-        <div className="hidden sm:block -mt-4 sm:-mt-2 relative z-10">
+        <div className="hidden sm:block mt-2 relative z-10">
           <DropMemoryButton />
         </div>
 
