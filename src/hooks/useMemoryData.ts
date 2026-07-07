@@ -104,6 +104,23 @@ export function useTimelineMemories(filter: MemoryFilter = "all") {
   });
 }
 
+export function useStorybookMemories() {
+  return useInfiniteQuery({
+    queryKey: ["storybook-memories"],
+    queryFn: async ({ pageParam }) => {
+      const limit = 500;
+      const memories = await memoryService.listMemories({ sort: "oldest", limit, offset: pageParam as number });
+      return {
+        memories,
+        nextOffset: memories.length === limit ? (pageParam as number) + limit : null,
+      };
+    },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) => lastPage.nextOffset,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+  });
+}
+
 export function useCoupleDashboardStats() {
   const { data: relationship } = useRelationshipContext();
 

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarHeart, Compass, Heart, LayoutDashboard } from "lucide-react";
+import { CalendarHeart, Compass, Heart, LayoutDashboard, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMemoryModal } from "@/providers/memory-modal-provider";
 import { useHaptics } from "@/hooks/useHaptics";
@@ -11,7 +11,8 @@ import { useIsPhone } from "@/hooks/useIsPhone";
 const ITEMS = [
   { href: "/", label: "Jar", icon: Heart, accent: "text-rose-300" },
   { href: "/timeline", label: "Timeline", icon: Compass, accent: "text-emerald-300" },
-  { href: "/on-this-day", label: "On This Day", icon: CalendarHeart, accent: "text-amber-300" },
+  { href: "/memory-book", label: "Book", icon: BookOpen, accent: "text-amber-300" },
+  { href: "/on-this-day", label: "On This Day", icon: CalendarHeart, accent: "text-purple-300" },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, accent: "text-sky-300" },
 ] as const;
 
@@ -48,7 +49,7 @@ export function MobileBottomNav() {
       </div>
 
       <nav className="mobile-safe-bottom fixed inset-x-0 bottom-0 z-[80] border-t border-white/10 bg-zinc-950/72 px-3 pb-[calc(env(safe-area-inset-bottom)+0.4rem)] pt-3 shadow-[0_-14px_50px_rgba(0,0,0,0.28)] backdrop-blur-2xl sm:hidden">
-        <div className="mx-auto grid max-w-md grid-cols-4 gap-2 rounded-[1.7rem] border border-white/10 bg-white/[0.045] p-2">
+        <div className="mx-auto grid max-w-md grid-cols-5 gap-1.5 rounded-[1.7rem] border border-white/10 bg-white/[0.045] p-2">
           {ITEMS.map((item) => {
             const Icon = item.icon;
             const active = pathname === item.href;
@@ -58,7 +59,7 @@ export function MobileBottomNav() {
                 href={item.href}
                 onClick={() => trigger("light")}
                 className={cn(
-                  "flex min-h-[56px] flex-col items-center justify-center rounded-[1.1rem] px-1.5 py-2 text-center transition-colors",
+                  "flex min-h-[56px] flex-col items-center justify-center rounded-[1.1rem] px-1 py-2 text-center transition-colors",
                   active ? "bg-white/10 text-white" : "text-zinc-400",
                 )}
                 aria-current={active ? "page" : undefined}

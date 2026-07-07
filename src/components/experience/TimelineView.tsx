@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, CalendarDays, ChevronRight, History } from "lucide-react";
+import { ArrowLeft, CalendarDays, ChevronRight, History, BookOpen } from "lucide-react";
 import { useTimelineMemories } from "@/hooks/useMemoryData";
 import { useRelationshipContext } from "@/hooks/useRelationshipContext";
 import { useRoutePrefetch } from "@/hooks/useRoutePrefetch";
@@ -167,8 +167,17 @@ export function TimelineView() {
                     Wander through the relationship like a journal: months, milestones, little notes, and all the days in between.
                   </p>
                 </div>
-                <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-zinc-200 sm:text-sm">
-                  {memories.length} memories loaded
+                <div className="flex flex-wrap items-center gap-2">
+                  <Link href="/memory-book" className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-xs font-medium text-amber-200 sm:text-sm hover:bg-amber-500/20 transition-colors">
+                    <BookOpen className="h-3.5 w-3.5" />
+                    Open Book
+                  </Link>
+                  <Link href="/year-recap" className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-zinc-200 sm:text-sm hover:bg-white/10 transition-colors">
+                    Year Recap
+                  </Link>
+                  <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-zinc-200 sm:text-sm">
+                    {memories.length} loaded
+                  </div>
                 </div>
               </div>
 

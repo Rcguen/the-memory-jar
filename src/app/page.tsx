@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
-import { Compass, LayoutDashboard, LogOut, User } from "lucide-react";
+import { Compass, LayoutDashboard, LogOut, User, BookOpen } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { logoutAction } from "@/app/actions/auth";
 import {
@@ -162,6 +162,7 @@ export default function Home() {
 
   const prefetchTimeline = () => router.prefetch("/timeline");
   const prefetchDashboard = () => router.prefetch("/dashboard");
+  const prefetchBook = () => router.prefetch("/memory-book");
 
   return (
     <main className="relative min-h-screen flex flex-col items-center justify-start overflow-x-hidden bg-emerald-50/30 dark:bg-emerald-950/20 transition-colors duration-700 xl:justify-center">
@@ -204,6 +205,16 @@ export default function Home() {
             <LayoutDashboard className="h-4 w-4 text-rose-300" />
             Dashboard
           </Link>
+            <Link
+              href="/memory-book"
+              onMouseEnter={prefetchBook}
+              onTouchStart={prefetchBook}
+              onFocus={prefetchBook}
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-zinc-950/35 px-4 py-2 text-sm text-zinc-200 shadow-lg backdrop-blur-xl transition-colors hover:bg-zinc-950/55"
+            >
+              <BookOpen className="h-4 w-4 text-amber-200" />
+              Memory Book
+            </Link>
         </div>
         {profile && (
           <div className="pointer-events-auto ml-auto flex items-center gap-2 rounded-full border border-white/10 bg-zinc-950/28 px-1.5 py-1 shadow-lg backdrop-blur-xl sm:gap-3 sm:bg-transparent sm:px-0 sm:py-0 sm:shadow-none">
@@ -290,6 +301,16 @@ export default function Home() {
             >
               <LayoutDashboard className="h-4 w-4 text-rose-300" />
               Dashboard
+            </Link>
+            <Link
+              href="/memory-book"
+              onMouseEnter={prefetchBook}
+              onTouchStart={prefetchBook}
+              onFocus={prefetchBook}
+              className="col-span-2 inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-zinc-950/35 px-4 py-2.5 text-sm text-zinc-200 shadow-lg backdrop-blur-xl transition-colors hover:bg-zinc-950/55"
+            >
+              <BookOpen className="h-4 w-4 text-amber-200" />
+              Open Memory Book
             </Link>
           </div>
         </motion.div>

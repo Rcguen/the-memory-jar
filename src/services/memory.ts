@@ -15,6 +15,7 @@ import {
   TimelineMemoryPage,
   UserProfile,
 } from "@/types/memory";
+import { YearRecapStats, MemoryHighlights } from "@/types/storybook";
 import { mapDatabaseMemory } from "@/lib/mappers/memory.mapper";
 import { getMonthDayInTimezone, normalizeTimezone, todayDateOnlyInTimezone } from "@/lib/timezone";
 
@@ -259,6 +260,13 @@ export const memoryService = {
       query = query.is("deleted_at", null).in("status", ACTIVE_MEMORY_STATUSES);
     }
 
+    if (options.limit !== undefined) {
+      query = query.limit(options.limit);
+      if (options.offset !== undefined) {
+        query = query.range(options.offset, options.offset + options.limit - 1);
+      }
+    }
+
     const { data, error } = await query.order("created_at", { ascending: false });
     if (error) throw error;
 
@@ -445,18 +453,27 @@ export const memoryService = {
     const relationship = await this.getRelationshipContext();
     if (!relationship) return null;
     const safeTimezone = normalizeTimezone(timezone ?? relationship.relationshipTimezone);
-    const { data: memoriesData, error: memoriesError } = await supabase
-      .from("memories")
-      .select("id,title,type,memory_date,created_at,status,unlock_at,is_pinned")
-      .eq("relationship_id", relationship.relationshipId)
-      .is("deleted_at", null)
-      .in("status", ACTIVE_MEMORY_STATUSES)
-      .order("memory_date", { ascending: true })
-      .order("created_at", { ascending: true });
+    const memoriesData: unknown[] = [];
+    let offset = 0;
+    const limit = 1000;
+    while (true) {
+      const { data, error } = await supabase
+        .from("memories")
+        .select("id,title,type,memory_date,created_at,status,unlock_at,is_pinned")
+        .eq("relationship_id", relationship.relationshipId)
+        .is("deleted_at", null)
+        .in("status", ACTIVE_MEMORY_STATUSES)
+        .order("memory_date", { ascending: true })
+        .order("created_at", { ascending: true })
+        .range(offset, offset + limit - 1);
+      
+      if (error) throw error;
+      if (data) memoriesData.push(...data);
+      if (!data || data.length < limit) break;
+      offset += limit;
+    }
 
-    if (memoriesError) throw memoriesError;
-
-    const memories = (memoriesData ?? []) as Array<{
+    const memories = memoriesData as Array<{
       id: string;
       title: string | null;
       type: Memory["type"];
@@ -541,6 +558,236 @@ export const memoryService = {
       favoriteReaction,
     };
   },
+
+  async getYearRecapStats(year: number, timezone?: string | null): Promise<YearRecapStats | null> {
+    const supabase = createClient();
+    const relationship = await this.getRelationshipContext();
+    if (!relationship) return null;
+    const safeTimezone = normalizeTimezone(timezone ?? relationship.relationshipTimezone);
+
+    // Fetch all memories for the year to accurately compute stats
+    // We use a date range for the year
+    const startDate = `${year}-01-01T00:00:00.000Z`;
+    const endDate = `${year}-12-31T23:59:59.999Z`;
+
+    const memoriesData: unknown[] = [];
+    let offset = 0;
+    const limit = 500;
+    while (true) {
+      const { data, error } = await supabase
+        .from("memories")
+        .select("*, memory_attachments(*)")
+        .eq("relationship_id", relationship.relationshipId)
+        .is("deleted_at", null)
+        .in("status", ACTIVE_MEMORY_STATUSES)
+        .gte("memory_date", startDate)
+        .lte("memory_date", endDate)
+        .order("memory_date", { ascending: true })
+        .order("created_at", { ascending: true })
+        .range(offset, offset + limit - 1);
+
+      if (error) throw error;
+      if (data) memoriesData.push(...data);
+      if (!data || data.length < limit) break;
+      offset += limit;
+    }
+
+    const memories = memoriesData.map(mapDatabaseMemory);
+
+    if (memories.length === 0) {
+      return {
+        year,
+        daysTogether: 0,
+        totalMemories: 0,
+        totalPhotos: 0,
+        totalVideos: 0,
+        totalVoices: 0,
+        totalLetters: 0,
+        openedCapsules: 0,
+        totalFavorites: 0,
+        totalPinned: 0,
+        mostActiveMonth: null,
+        longestStreak: 0,
+        firstMemory: null,
+        lastMemory: null,
+        mostCommonMood: null,
+        favoriteReaction: null,
+      };
+    }
+
+    const memoryIds = memories.map((memory) => memory.id);
+    const [favoritesResult, reactionsResult] = await Promise.all([
+      supabase.from("memory_favorites").select("memory_id").in("memory_id", memoryIds),
+      supabase.from("memory_reactions").select("emoji,memory_id").in("memory_id", memoryIds),
+    ]);
+
+    const favoriteCount = new Set((favoritesResult.data ?? []).map((row) => row.memory_id)).size;
+    
+    const reactionTallies = new Map<ReactionEmoji, number>();
+    for (const reaction of reactionsResult.data ?? []) {
+      const emoji = reaction.emoji as ReactionEmoji;
+      reactionTallies.set(emoji, (reactionTallies.get(emoji) ?? 0) + 1);
+    }
+    const favoriteReaction = [...reactionTallies.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+
+    const mostActiveMonth = (() => {
+      const counts = new Map<string, number>();
+      for (const memory of memories) {
+        const yearMonth = memory.memory_date.slice(0, 7);
+        counts.set(yearMonth, (counts.get(yearMonth) ?? 0) + 1);
+      }
+      return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+    })();
+
+    const mostCommonMoodId = (() => {
+      const counts = new Map<string, number>();
+      for (const memory of memories) {
+        if (memory.mood_id) {
+          counts.set(memory.mood_id, (counts.get(memory.mood_id) ?? 0) + 1);
+        }
+      }
+      return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+    })();
+
+    let mostCommonMood = null;
+    if (mostCommonMoodId) {
+      const { data: moodData } = await supabase.from("memory_moods").select("name,emoji").eq("id", mostCommonMoodId).maybeSingle();
+      if (moodData) mostCommonMood = { name: moodData.name, emoji: moodData.emoji };
+    }
+
+    const togetherDays = relationship.startDate
+      ? (() => {
+          const start = new Date(relationship.startDate);
+          const yearStart = new Date(`${year}-01-01T00:00:00Z`);
+          const yearEnd = new Date(`${year}-12-31T23:59:59Z`);
+          
+          if (start > yearEnd) return 0; // Not together yet in this year
+          
+          const effectiveStart = start > yearStart ? start : yearStart;
+          const today = new Date(todayDateOnlyInTimezone(safeTimezone));
+          const effectiveEnd = today < yearEnd ? today : yearEnd;
+          
+          return Math.max(1, Math.floor((effectiveEnd.getTime() - effectiveStart.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+        })()
+      : 0;
+
+    return {
+      year,
+      daysTogether: togetherDays,
+      totalMemories: memories.length,
+      totalPhotos: memories.filter((memory) => memory.type === "photo").length,
+      totalVideos: memories.filter((memory) => memory.type === "video").length,
+      totalVoices: memories.filter((memory) => memory.type === "voice").length,
+      totalLetters: memories.filter((memory) => memory.type === "letter").length,
+      totalPinned: memories.filter((memory) => memory.is_pinned === true).length,
+      openedCapsules: memories.filter((memory) => !!memory.unlocked_at).length,
+      totalFavorites: favoriteCount,
+      mostActiveMonth,
+      longestStreak: getCurrentMonthlyStreak(memories.map((memory) => memory.memory_date), safeTimezone),
+      firstMemory: memories[0] || null,
+      lastMemory: memories[memories.length - 1] || null,
+      mostCommonMood,
+      favoriteReaction,
+    };
+  },
+
+  async getMemoryHighlights(_timezone?: string | null): Promise<MemoryHighlights | null> {
+    const supabase = createClient();
+    const relationship = await this.getRelationshipContext();
+    if (!relationship) return null;
+
+    // Fetch all memories
+    const memoriesData: unknown[] = [];
+    let offset = 0;
+    const limit = 500;
+    while (true) {
+      const { data, error } = await supabase
+        .from("memories")
+        .select("*, memory_attachments(*)")
+        .eq("relationship_id", relationship.relationshipId)
+        .is("deleted_at", null)
+        .in("status", ACTIVE_MEMORY_STATUSES)
+        .order("memory_date", { ascending: true })
+        .order("created_at", { ascending: true })
+        .range(offset, offset + limit - 1);
+
+      if (error) throw error;
+      if (data) memoriesData.push(...data);
+      if (!data || data.length < limit) break;
+      offset += limit;
+    }
+
+    const memories = memoriesData.map(mapDatabaseMemory);
+
+    if (memories.length === 0) {
+      return {
+        mostLoved: [],
+        mostCommented: [],
+        mostReacted: [],
+        newest: [],
+        oldest: [],
+        hiddenGems: [],
+        waitingCapsules: [],
+      };
+    }
+
+    const memoryIds = memories.map((memory) => memory.id);
+    const [favoritesResult, commentsResult, reactionsResult] = await Promise.all([
+      supabase.from("memory_favorites").select("memory_id").in("memory_id", memoryIds),
+      supabase.from("memory_comments").select("id,memory_id").in("memory_id", memoryIds),
+      supabase.from("memory_reactions").select("id,memory_id").in("memory_id", memoryIds),
+    ]);
+
+    const favoriteCounts = new Map<string, number>();
+    for (const row of favoritesResult.data ?? []) {
+      favoriteCounts.set(row.memory_id, (favoriteCounts.get(row.memory_id) ?? 0) + 1);
+    }
+
+    const commentCounts = new Map<string, number>();
+    for (const row of commentsResult.data ?? []) {
+      commentCounts.set(row.memory_id, (commentCounts.get(row.memory_id) ?? 0) + 1);
+    }
+
+    const reactionCounts = new Map<string, number>();
+    for (const row of reactionsResult.data ?? []) {
+      reactionCounts.set(row.memory_id, (reactionCounts.get(row.memory_id) ?? 0) + 1);
+    }
+
+    // Sort functions
+    const sortByCountDesc = (map: Map<string, number>) => (a: Memory, b: Memory) => (map.get(b.id) ?? 0) - (map.get(a.id) ?? 0);
+
+    const mostLoved = [...memories].sort(sortByCountDesc(favoriteCounts)).filter(m => (favoriteCounts.get(m.id) ?? 0) > 0).slice(0, 10);
+    const mostCommented = [...memories].sort(sortByCountDesc(commentCounts)).filter(m => (commentCounts.get(m.id) ?? 0) > 0).slice(0, 10);
+    const mostReacted = [...memories].sort(sortByCountDesc(reactionCounts)).filter(m => (reactionCounts.get(m.id) ?? 0) > 0).slice(0, 10);
+
+    const oldest = memories.slice(0, 10);
+    const newest = [...memories].reverse().slice(0, 10);
+
+    const waitingCapsules = memories.filter(m => {
+      const unlockAtMs = m.unlock_at ? new Date(m.unlock_at).getTime() : null;
+      return typeof unlockAtMs === "number" && Number.isFinite(unlockAtMs) && Date.now() < unlockAtMs;
+    });
+
+    // Hidden Gems: Oldest memories with >= 1 favorite or reaction, but not necessarily the highest
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    const hiddenGems = memories.filter(m => {
+      const isOld = new Date(m.memory_date) < oneYearAgo;
+      const hasInteraction = (favoriteCounts.get(m.id) ?? 0) > 0 || (reactionCounts.get(m.id) ?? 0) > 0;
+      return isOld && hasInteraction;
+    }).sort(() => 0.5 - Math.random()).slice(0, 10); // Randomize hidden gems
+
+    return {
+      mostLoved,
+      mostCommented,
+      mostReacted,
+      newest,
+      oldest,
+      hiddenGems,
+      waitingCapsules,
+    };
+  },
+
 
   async saveMemory(memoryData: Partial<Memory>, tags: string[] = []): Promise<Memory> {
     const supabase = createClient();
@@ -806,7 +1053,10 @@ export const memoryService = {
     const { data, error } = await query;
     if (error) throw error;
 
-    return (data ?? []).map((activity) => ({
+    const rows = data ?? [];
+    const authorMap = await getProfilesByIds(rows.map((row) => row.actor_id));
+
+    return rows.map((activity) => ({
       id: activity.id,
       relationship_id: activity.relationship_id,
       actor_id: activity.actor_id,
@@ -814,8 +1064,8 @@ export const memoryService = {
       target_memory_id: activity.target_memory_id,
       metadata: activity.metadata ?? {},
       created_at: activity.created_at,
-      actor: activity.profiles ?? null,
-      memory: activity.memories ?? null,
+      actor: authorMap.get(activity.actor_id) ?? (Array.isArray(activity.profiles) ? activity.profiles[0] : activity.profiles) ?? null,
+      memory: Array.isArray(activity.memories) ? activity.memories[0] : activity.memories ?? null,
     })) as ActivityLog[];
   },
 
@@ -829,7 +1079,10 @@ export const memoryService = {
 
     if (error) throw error;
 
-    return (data ?? []).map((notification) => ({
+    const rows = data ?? [];
+    const authorMap = await getProfilesByIds(rows.map((row) => row.actor_id).filter(Boolean) as string[]);
+
+    return rows.map((notification) => ({
       id: notification.id,
       user_id: notification.user_id,
       relationship_id: notification.relationship_id,
@@ -841,8 +1094,8 @@ export const memoryService = {
       metadata: notification.metadata ?? {},
       read_at: notification.read_at,
       created_at: notification.created_at,
-      actor: notification.profiles ?? null,
-      memory: notification.memories ?? null,
+      actor: (notification.actor_id ? authorMap.get(notification.actor_id) : null) ?? (Array.isArray(notification.profiles) ? notification.profiles[0] : notification.profiles) ?? null,
+      memory: Array.isArray(notification.memories) ? notification.memories[0] : notification.memories ?? null,
     })) as MemoryNotification[];
   },
 
@@ -1067,3 +1320,4 @@ export const memoryService = {
     return mapDatabaseMemory(data);
   }
 };
+

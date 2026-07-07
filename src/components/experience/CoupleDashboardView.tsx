@@ -14,6 +14,7 @@ import {
   Star,
   TimerReset,
   Video,
+  BookOpen,
 } from "lucide-react";
 import { useCoupleDashboardStats } from "@/hooks/useMemoryData";
 import { useRelationshipContext } from "@/hooks/useRelationshipContext";
@@ -117,6 +118,12 @@ export function CoupleDashboardView() {
             <p className="mt-3 max-w-3xl text-sm text-zinc-300/85 sm:text-base">
               Not analytics for productivity. Just a gentle portrait of how your love has been unfolding inside the jar.
             </p>
+            <div className="mt-6">
+              <Link href="/memory-book" className="inline-flex items-center gap-2 rounded-full bg-rose-500 hover:bg-rose-600 text-white px-5 py-2.5 text-sm font-medium transition-colors shadow-lg">
+                <BookOpen className="h-4 w-4" />
+                Turn these memories into a book
+              </Link>
+            </div>
           </div>
         </section>
 

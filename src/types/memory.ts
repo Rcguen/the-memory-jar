@@ -240,6 +240,8 @@ export interface MemoryListOptions {
   filter?: MemoryFilter;
   sort?: MemorySort;
   includeDeleted?: boolean;
+  limit?: number;
+  offset?: number;
 }
 
 /**
