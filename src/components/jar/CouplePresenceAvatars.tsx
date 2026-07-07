@@ -37,6 +37,7 @@ export function CouplePresenceAvatars() {
     >
       <motion.div 
         className="flex items-center justify-center"
+        style={{ gap: gapSize }}
         animate={{ gap: gapSize, scale: prefersReducedMotion ? 1 : scale }}
         transition={{ type: "spring", stiffness: 100, damping: 20 }}
       >

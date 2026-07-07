@@ -219,7 +219,7 @@ export const memoryService = {
         .single(),
       supabase
         .from("relationship_members")
-        .select("profile_id, display_name, profiles!inner(avatar)")
+        .select("profile_id, display_name, profiles(avatar)")
         .eq("relationship_id", relationshipId),
     ]);
 
