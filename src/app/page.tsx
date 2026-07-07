@@ -165,7 +165,7 @@ export default function Home() {
   const prefetchBook = () => router.prefetch("/memory-book");
 
   return (
-    <main className="relative min-h-screen flex flex-col items-center justify-start overflow-x-hidden bg-emerald-50/30 dark:bg-emerald-950/20 transition-colors duration-700 xl:justify-center">
+    <main className="relative min-h-screen flex flex-col items-center justify-start bg-emerald-50/30 dark:bg-emerald-950/20 transition-colors duration-700 xl:justify-center w-full">
       
       {/* 1. Ambient Background Gradients & Vignette */}
       {relationship?.relationshipTimezone && (

@@ -40,7 +40,7 @@ export default async function RootLayout({
       <head />
       <body
         suppressHydrationWarning
-        className={`${cormorantGaramond.variable} ${inter.variable} font-sans antialiased min-h-screen bg-background text-foreground flex flex-col`}
+        className={`${cormorantGaramond.variable} ${inter.variable} font-sans antialiased min-h-screen bg-background text-foreground flex flex-col overflow-x-hidden`}
       >
         <ThemeProvider
           attribute="class"
