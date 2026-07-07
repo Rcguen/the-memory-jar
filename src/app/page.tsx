@@ -343,7 +343,7 @@ export default function Home() {
         </ErrorBoundary>
 
         {/* Call to Action */}
-        <div className="hidden sm:block mt-6">
+        <div className="hidden sm:block -mt-4 sm:-mt-2 relative z-10">
           <DropMemoryButton />
         </div>
 
