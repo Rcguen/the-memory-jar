@@ -26,6 +26,7 @@ import { useMemoryViewer } from "@/providers/memory-viewer-provider";
 import { useRealtimeMemory } from "@/hooks/useRealtimeMemory";
 import { EmojiText } from "@/components/ui/EmojiText";
 import { MemoryType } from "@/types/memory";
+import { AmbientParticles } from "@/components/ui/AmbientParticles";
 import { RelationshipAmbientBackdrop } from "./RelationshipAmbientBackdrop";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -90,6 +91,7 @@ export function CoupleDashboardView() {
       {relationship?.relationshipTimezone && (
         <RelationshipAmbientBackdrop timezone={relationship.relationshipTimezone} />
       )}
+      <AmbientParticles />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(244,114,182,0.14),transparent_48%),radial-gradient(circle_at_bottom,rgba(16,185,129,0.08),transparent_42%)]" />
       <motion.div
         className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center sm:hidden"
@@ -105,8 +107,8 @@ export function CoupleDashboardView() {
           Back to jar
         </Link>
 
-        <section className="mt-4 overflow-hidden rounded-[1.8rem] border border-white/15 bg-zinc-950/55 px-5 py-6 text-zinc-50 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-2xl sm:mt-6 sm:rounded-[2rem] sm:px-8 sm:py-7">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.15),transparent_40%),linear-gradient(135deg,rgba(255,255,255,0.08),transparent_55%)]" />
+        <section className="mt-4 overflow-hidden rounded-[1.8rem] border border-white/15 bg-zinc-950/55 px-5 py-6 text-zinc-50 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-2xl sm:mt-6 sm:rounded-[2rem] sm:px-8 sm:py-7 relative">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.15),transparent_40%),linear-gradient(135deg,rgba(255,255,255,0.08),transparent_55%)] pointer-events-none" />
           <div className="relative">
             <div className="inline-flex items-center gap-2 rounded-full border border-rose-200/15 bg-rose-400/10 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-rose-100/80">
               <Heart className="h-3.5 w-3.5 text-rose-300" />

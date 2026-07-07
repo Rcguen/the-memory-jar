@@ -4,11 +4,10 @@ import { useActionState, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2 } from "lucide-react";
 
-import { loginAction } from "@/app/actions/auth";
+import { resetPasswordRequestAction } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -20,15 +19,14 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 
-const loginSchema = z.object({
+const resetSchema = z.object({
   username: z.string().min(1, "Please enter your name."),
-  password: z.string().min(1, "Please enter the key."),
 });
 
-type LoginValues = z.infer<typeof loginSchema>;
+type ResetValues = z.infer<typeof resetSchema>;
 
-export function LoginForm() {
-  const [state, formAction, isPending] = useActionState(loginAction, {});
+export function ResetPasswordForm() {
+  const [state, formAction, isPending] = useActionState(resetPasswordRequestAction, {});
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -36,15 +34,25 @@ export function LoginForm() {
     setMounted(true);
   }, []);
 
-  const form = useForm<LoginValues>({
-    resolver: zodResolver(loginSchema),
+  const form = useForm<ResetValues>({
+    resolver: zodResolver(resetSchema),
     defaultValues: {
       username: "",
-      password: "",
     },
   });
 
   if (!mounted) return null;
+
+  if (state?.success) {
+    return (
+      <div className="text-center space-y-4">
+        <h2 className="text-2xl font-cormorant text-zinc-900 dark:text-zinc-50">Check your email</h2>
+        <p className="text-zinc-600 dark:text-zinc-400 font-inter text-sm">
+          We&apos;ve sent a magical link to reset your key. Please check your inbox.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <Form {...form}>
@@ -63,31 +71,6 @@ export function LoginForm() {
                   placeholder="Your name"
                 />
               </FormControl>
-              <FormMessage className="text-rose-500" />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-zinc-600 dark:text-zinc-400 font-inter">Key</FormLabel>
-              <FormControl>
-                <Input
-                  type="password"
-                  {...field}
-                  className="bg-white/50 dark:bg-zinc-800/50 backdrop-blur-sm border-white/60 dark:border-zinc-700/50 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus-visible:ring-rose-500/30"
-                  autoComplete="current-password"
-                  placeholder="••••••••"
-                />
-              </FormControl>
-              <div className="flex justify-end mt-1">
-                <Link href="/reset-password" className="text-sm font-medium text-rose-500 hover:text-rose-400 font-inter">
-                  Forgot password?
-                </Link>
-              </div>
               <FormMessage className="text-rose-500" />
             </FormItem>
           )}
@@ -114,7 +97,7 @@ export function LoginForm() {
           {isPending ? (
             <Loader2 className="w-5 h-5 animate-spin" />
           ) : (
-            "Enter"
+            "Send Reset Link"
           )}
         </Button>
       </form>

@@ -17,6 +17,7 @@ import { MEMORY_FILTER_OPTIONS } from "@/lib/memoryFilterOptions";
 import { Memory, MemoryFilter } from "@/types/memory";
 import { EmojiText } from "@/components/ui/EmojiText";
 import { cn } from "@/lib/utils";
+import { AmbientParticles } from "@/components/ui/AmbientParticles";
 import { RelationshipAmbientBackdrop } from "./RelationshipAmbientBackdrop";
 
 type TimelineMonthGroup = {
@@ -119,6 +120,7 @@ export function TimelineView() {
       {relationship?.relationshipTimezone && (
         <RelationshipAmbientBackdrop timezone={relationship.relationshipTimezone} />
       )}
+      <AmbientParticles />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(59,130,246,0.12),transparent_45%),radial-gradient(circle_at_bottom,rgba(16,185,129,0.08),transparent_40%)]" />
       <motion.div
         className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center sm:hidden"
@@ -145,7 +147,7 @@ export function TimelineView() {
           </div>
         </aside>
 
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 relative">
           <Link href="/" className="inline-flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-300">
             <ArrowLeft className="h-4 w-4" />
             Back to jar

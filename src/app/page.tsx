@@ -23,7 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 // New specialized components
 import { GlassJar } from "@/components/jar/GlassJar";
-import { FloatingParticles } from "@/components/jar/FloatingParticles";
+import { AmbientParticles } from "@/components/ui/AmbientParticles";
 import { RelationshipCounter } from "@/components/jar/RelationshipCounter";
 import { DropMemoryButton } from "@/components/jar/DropMemoryButton";
 import { WritingDesk } from "@/components/jar/WritingDesk";
@@ -179,7 +179,7 @@ export default function Home() {
       <div className="absolute top-0 inset-x-0 h-96 bg-gradient-to-b from-white/20 to-transparent dark:from-white/5 dark:to-transparent pointer-events-none z-0 blur-2xl" />
 
       {/* 2. Ambient Particles */}
-      <FloatingParticles />
+      <AmbientParticles />
 
       {/* 3. Top Navigation */}
       <header className="pointer-events-none absolute inset-x-0 top-0 z-20 px-3 pt-3 sm:p-6">
@@ -317,9 +317,11 @@ export default function Home() {
 
         {/* The Physical Glass Jar */}
         {memoryCount !== null && (
-          <ErrorBoundary fallbackMessage="The Jar engine crashed. Physics might be temporarily disabled.">
-            <GlassJar memoryCount={memoryCount} />
-          </ErrorBoundary>
+          <div className="relative">
+            <ErrorBoundary fallbackMessage="The Jar engine crashed. Physics might be temporarily disabled.">
+              <GlassJar memoryCount={memoryCount} />
+            </ErrorBoundary>
+          </div>
         )}
 
         {/* Relationship Time Elapsed */}
