@@ -54,11 +54,20 @@ export function usePresence(relationshipId: string | null, userId: string | unde
     };
 
     window.addEventListener("visibilitychange", handleVisibilityChange);
+    
+    // Attempt immediate untrack on tab close/unload
+    const handleUnload = () => {
+      void untrackPresence(channelName);
+    };
+    window.addEventListener("beforeunload", handleUnload);
+    window.addEventListener("pagehide", handleUnload);
 
     return () => {
       void untrackPresence(channelName);
       window.removeEventListener(`presence-${channelName}`, handlePresenceSync);
       window.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", handleUnload);
+      window.removeEventListener("pagehide", handleUnload);
       unsubscribePresence(channelName);
     };
   }, [relationshipId, userId, partnerId, subscribePresence, unsubscribePresence, trackPresence, untrackPresence]);

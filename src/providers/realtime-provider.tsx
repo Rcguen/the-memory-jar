@@ -69,6 +69,16 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
           detail: entry.channel.presenceState() 
         }));
       });
+      entry.channel.on('presence', { event: 'join' }, () => {
+        window.dispatchEvent(new CustomEvent(`presence-${channelName}`, { 
+          detail: entry.channel.presenceState() 
+        }));
+      });
+      entry.channel.on('presence', { event: 'leave' }, () => {
+        window.dispatchEvent(new CustomEvent(`presence-${channelName}`, { 
+          detail: entry.channel.presenceState() 
+        }));
+      });
       if (entry.channel.state !== 'joined' && entry.channel.state !== 'joining') {
         entry.channel.subscribe((status) => {
           if (status === 'SUBSCRIBED' && onReady) {
