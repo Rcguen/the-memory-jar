@@ -6,9 +6,10 @@ import { motion } from "framer-motion";
 
 interface RelationshipCounterProps {
   startDate: Date;
+  className?: string;
 }
 
-export function RelationshipCounter({ startDate }: RelationshipCounterProps) {
+export function RelationshipCounter({ startDate, className = "" }: RelationshipCounterProps) {
   const [timeElapsed, setTimeElapsed] = useState("");
 
   useEffect(() => {
@@ -46,7 +47,7 @@ export function RelationshipCounter({ startDate }: RelationshipCounterProps) {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 1, ease: "easeOut", delay: 0.5 }}
-      className="z-10 mt-5 flex flex-col items-center gap-1 font-inter sm:mt-6"
+      className={`z-10 flex flex-col items-center gap-1 font-inter ${className}`}
     >
       <span className="text-[11px] font-medium uppercase tracking-[0.22em] text-zinc-400 dark:text-zinc-500 sm:text-sm sm:tracking-widest">
         ❤️ Together for

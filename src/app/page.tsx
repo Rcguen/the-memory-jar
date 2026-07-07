@@ -329,7 +329,10 @@ export default function Home() {
 
         {/* Relationship Time Elapsed */}
         {relationship?.startDate && (
-          <RelationshipCounter startDate={new Date(relationship.startDate)} />
+          <RelationshipCounter 
+            startDate={new Date(relationship.startDate)} 
+            className="-mt-10 sm:-mt-16 md:-mt-20 mb-6 sm:mb-8" 
+          />
         )}
 
         <OnThisDayCard className="mt-8" />
@@ -340,7 +343,7 @@ export default function Home() {
         </ErrorBoundary>
 
         {/* Call to Action */}
-        <div className="hidden sm:block">
+        <div className="hidden sm:block mt-6">
           <DropMemoryButton />
         </div>
 
