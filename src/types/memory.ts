@@ -278,6 +278,7 @@ export interface RelationshipContext {
   startDate: string | null;
   partnerId: string | null;
   partnerName: string | null;
+  partnerAvatar: string | null;
   anniversaryType: string | null;
 }
 

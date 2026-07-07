@@ -21,8 +21,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-// New specialized components
 import { GlassJar } from "@/components/jar/GlassJar";
+import { CouplePresenceAvatars } from "@/components/jar/CouplePresenceAvatars";
 import { AmbientParticles } from "@/components/ui/AmbientParticles";
 import { RelationshipCounter } from "@/components/jar/RelationshipCounter";
 import { DropMemoryButton } from "@/components/jar/DropMemoryButton";
@@ -314,6 +314,9 @@ export default function Home() {
             </Link>
           </div>
         </motion.div>
+
+        {/* Couple Presence Avatars */}
+        <CouplePresenceAvatars />
 
         {/* The Physical Glass Jar */}
         {memoryCount !== null && (

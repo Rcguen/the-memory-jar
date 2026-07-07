@@ -219,7 +219,7 @@ export const memoryService = {
         .single(),
       supabase
         .from("relationship_members")
-        .select("profile_id, display_name")
+        .select("profile_id, display_name, profiles!inner(avatar)")
         .eq("relationship_id", relationshipId),
     ]);
 
@@ -231,6 +231,7 @@ export const memoryService = {
       startDate: settingsData?.start_date ?? null,
       partnerId: partner?.profile_id ?? null,
       partnerName: partner?.display_name ?? null,
+      partnerAvatar: ((partner as unknown as { profiles: { avatar: string | null } })?.profiles)?.avatar ?? null,
       anniversaryType: settingsData?.anniversary_type ?? null,
     };
   },
