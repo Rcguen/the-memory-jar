@@ -266,14 +266,14 @@ export default function Home() {
       </header>
 
       {/* 4. Main Content Area */}
-      <div className="relative z-10 flex w-full max-w-[23rem] flex-col items-center px-3 pb-36 pt-16 sm:max-w-2xl sm:px-4 sm:pb-10 sm:pt-24">
+      <div className="relative z-10 flex w-full max-w-[23rem] flex-col items-center px-3 pb-36 pt-12 sm:max-w-2xl sm:px-4 sm:pb-10 sm:pt-16 lg:pt-8 xl:pt-4">
         
         {/* Title / Mood Text */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease: "easeOut" }}
-          className="mb-6 w-full text-center sm:mb-10"
+          className="mb-4 w-full text-center sm:mb-6 lg:mb-4"
         >
           <h1 className="font-cormorant text-[2rem] leading-none tracking-[0.18em] text-zinc-800 opacity-80 sm:text-3xl sm:tracking-widest md:text-4xl dark:text-zinc-200">
             The Memory Jar
@@ -331,7 +331,7 @@ export default function Home() {
         {relationship?.startDate && (
           <RelationshipCounter 
             startDate={new Date(relationship.startDate)} 
-            className="mt-0 sm:mt-0 md:-mt-2 mb-6 sm:mb-8" 
+            className="-mt-4 sm:-mt-6 md:-mt-10 lg:-mt-12 mb-4 sm:mb-6" 
           />
         )}
 
@@ -343,7 +343,7 @@ export default function Home() {
         </ErrorBoundary>
 
         {/* Call to Action */}
-        <div className="hidden sm:block mt-2 relative z-10">
+        <div className="hidden sm:block mt-0 relative z-10">
           <DropMemoryButton />
         </div>
 
