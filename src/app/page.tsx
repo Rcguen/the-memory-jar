@@ -191,10 +191,10 @@ export default function Home() {
           >
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-200/30 via-transparent to-transparent dark:from-emerald-800/20 pointer-events-none" />
             <div className="relative flex flex-col items-center justify-center p-8 z-10">
-              <div className="relative flex items-center justify-center mb-8">
+              <div className="relative flex w-16 h-16 items-center justify-center mb-8">
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full border border-emerald-300/30 dark:border-emerald-700/30 animate-[ping_3s_cubic-bezier(0,0,0.2,1)_infinite]" />
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full border border-emerald-400/20 dark:border-emerald-600/20 animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite_0.5s]" />
-                <div className="relative flex w-16 h-16 items-center justify-center bg-white/40 dark:bg-zinc-900/40 rounded-full border border-white/50 dark:border-zinc-800/50 shadow-2xl backdrop-blur-md">
+                <div className="relative z-10 flex w-full h-full items-center justify-center bg-white/40 dark:bg-zinc-900/40 rounded-full border border-white/50 dark:border-zinc-800/50 shadow-2xl backdrop-blur-md">
                   <Loader2 className="w-7 h-7 animate-spin text-emerald-600/80 dark:text-emerald-400/80" />
                 </div>
               </div>
@@ -312,7 +312,7 @@ export default function Home() {
       </header>
 
       {/* 4. Main Content Area */}
-      <div className="relative z-10 flex w-full max-w-[23rem] flex-col items-center px-3 pb-36 pt-12 sm:max-w-2xl sm:px-4 sm:pb-10 sm:pt-16 lg:pt-8 xl:pt-4">
+      <div className="relative z-10 flex w-full max-w-[23rem] flex-col items-center px-3 pb-8 pt-12 sm:max-w-2xl sm:px-4 sm:pb-10 sm:pt-16 lg:pt-8 xl:pt-4">
         
         {/* Title / Mood Text */}
         <motion.div
