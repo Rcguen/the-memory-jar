@@ -9,6 +9,7 @@ export type PostgresChangeEvent = 'INSERT' | 'UPDATE' | 'DELETE' | '*';
 interface ChannelEntry {
   channel: RealtimeChannel;
   refs: number;
+  presenceRefs: number;
 }
 
 type PresencePayload = Record<string, unknown>;
@@ -42,7 +43,7 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
   const getOrCreateChannel = (name: string): ChannelEntry => {
     let entry = channelsRef.current.get(name);
     if (!entry) {
-      entry = { channel: supabase.channel(name), refs: 0 };
+      entry = { channel: supabase.channel(name), refs: 0, presenceRefs: 0 };
       channelsRef.current.set(name, entry);
     }
     return entry;
@@ -113,20 +114,29 @@ export function RealtimeProvider({ children }: { children: React.ReactNode }) {
     const entry = channelsRef.current.get(channelName);
     if (!entry) return;
 
-    if (entry.channel.state === 'joined') {
-      await entry.channel.track(payload);
-    } else if (entry.channel.state === 'joining') {
-      // Retry in 500ms if channel is currently joining
-      setTimeout(() => {
-        trackPresence(channelName, payload);
-      }, 500);
+    entry.presenceRefs += 1;
+
+    if (entry.presenceRefs === 1) {
+      if (entry.channel.state === 'joined') {
+        await entry.channel.track(payload);
+      } else if (entry.channel.state === 'joining') {
+        // Retry in 500ms if channel is currently joining
+        setTimeout(() => {
+          if (entry.presenceRefs > 0) {
+            entry.channel.track(payload).catch(console.error);
+          }
+        }, 500);
+      }
     }
   };
 
   const untrackPresence = async (channelName: string) => {
     const entry = channelsRef.current.get(channelName);
-    if (entry && entry.channel.state === 'joined') {
-      await entry.channel.untrack();
+    if (entry) {
+      entry.presenceRefs = Math.max(0, entry.presenceRefs - 1);
+      if (entry.presenceRefs === 0 && entry.channel.state === 'joined') {
+        await entry.channel.untrack();
+      }
     }
   };
 

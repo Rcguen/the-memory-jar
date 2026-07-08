@@ -36,6 +36,11 @@ export function AuthProvider({ children, initialProfile }: { children: React.Rea
   };
 
   useEffect(() => {
+    if (initialProfile !== undefined) {
+      setProfile(initialProfile);
+      setIsLoading(false);
+    }
+    
     if (initialProfile) return;
 
     const timeoutId = window.setTimeout(() => {

@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { lookupEmailByUsername } from "@/services/auth";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 const loginSchema = z.object({
@@ -50,6 +51,7 @@ export async function loginAction(
 
   // Login successful, Next.js requires redirect to be called outside try/catch 
   // or before returning standard values.
+  revalidatePath("/", "layout");
   redirect("/");
 }
 

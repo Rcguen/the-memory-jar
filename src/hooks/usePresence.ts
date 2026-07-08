@@ -17,8 +17,6 @@ export function usePresence(relationshipId: string | null, userId: string | unde
   const evaluatePresenceState = useCallback(
     (state: PresenceState) => {
       const uniqueUsers = new Set<string>();
-      const freshnessWindowMs = 6_500;
-      const now = Date.now();
       let partnerIsFresh = false;
 
       for (const key in state) {
@@ -28,10 +26,7 @@ export function usePresence(relationshipId: string | null, userId: string | unde
           uniqueUsers.add(presence.user);
 
           if (partnerId && presence.user === partnerId) {
-            const trackedAt = presence.online_at ? new Date(presence.online_at).getTime() : 0;
-            if (Number.isFinite(trackedAt) && now - trackedAt <= freshnessWindowMs) {
-              partnerIsFresh = true;
-            }
+            partnerIsFresh = true;
           }
         }
       }
@@ -66,12 +61,20 @@ export function usePresence(relationshipId: string | null, userId: string | unde
     };
     subscribePresence(channelName, onChannelReady);
 
+    let visibilityTimeout: number | null = null;
+
     const handleVisibilityChange = async () => {
       if (!document.hidden) {
+        if (visibilityTimeout !== null) {
+          window.clearTimeout(visibilityTimeout);
+          visibilityTimeout = null;
+        }
         await trackPresence(channelName, { online_at: new Date().toISOString(), user: userId });
         evaluatePresenceState(presenceStateRef.current);
       } else {
-        await untrackPresence(channelName);
+        visibilityTimeout = window.setTimeout(async () => {
+          await untrackPresence(channelName);
+        }, 45_000);
       }
     };
 
@@ -83,18 +86,10 @@ export function usePresence(relationshipId: string | null, userId: string | unde
     window.addEventListener("beforeunload", handleUnload);
     window.addEventListener("pagehide", handleUnload);
 
-    const heartbeatInterval = window.setInterval(() => {
-      if (document.hidden) return;
-      void trackPresence(channelName, { online_at: new Date().toISOString(), user: userId });
-    }, 3_000);
-
-    const freshnessInterval = window.setInterval(() => {
-      evaluatePresenceState(presenceStateRef.current);
-    }, 1_000);
-
     return () => {
-      window.clearInterval(heartbeatInterval);
-      window.clearInterval(freshnessInterval);
+      if (visibilityTimeout !== null) {
+        window.clearTimeout(visibilityTimeout);
+      }
       void untrackPresence(channelName);
       window.removeEventListener(`presence-${channelName}`, handlePresenceSync);
       window.removeEventListener("visibilitychange", handleVisibilityChange);

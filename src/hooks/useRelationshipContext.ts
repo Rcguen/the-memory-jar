@@ -15,11 +15,18 @@ async function fetchRelationshipContext(profileId: string): Promise<Relationship
     .eq("profile_id", profileId)
     .single();
 
-  if (memberError || !memberData?.relationship_id) return null;
+  if (memberError) {
+    if (memberError.code !== "PGRST116") { // Not found error
+      console.error("fetchRelationshipContext: memberError", memberError);
+      throw memberError;
+    }
+  }
+
+  if (!memberData?.relationship_id) return null;
 
   const relationshipId = memberData.relationship_id;
 
-  const [{ data: settingsData }, { data: membersData }] = await Promise.all([
+  const [settingsRes, membersRes] = await Promise.all([
     supabase
       .from("relationship_settings")
       .select("start_date, relationship_timezone, anniversary_type")
@@ -31,7 +38,27 @@ async function fetchRelationshipContext(profileId: string): Promise<Relationship
       .eq("relationship_id", relationshipId),
   ]);
 
+  if (settingsRes.error) {
+    console.error("fetchRelationshipContext: settingsRes.error", settingsRes.error);
+    throw settingsRes.error;
+  }
+  if (membersRes.error) {
+    console.error("fetchRelationshipContext: membersRes.error", membersRes.error);
+    throw membersRes.error;
+  }
+
+  const settingsData = settingsRes.data;
+  const membersData = membersRes.data;
+
   const partner = (membersData ?? []).find((member) => member.profile_id !== profileId) ?? null;
+
+  let partnerAvatar: string | null = null;
+  const partnerProfiles = (partner as any)?.profiles;
+  if (Array.isArray(partnerProfiles)) {
+    partnerAvatar = partnerProfiles[0]?.avatar ?? null;
+  } else if (partnerProfiles && typeof partnerProfiles === "object") {
+    partnerAvatar = partnerProfiles.avatar ?? null;
+  }
 
   return {
     relationshipId,
@@ -39,7 +66,7 @@ async function fetchRelationshipContext(profileId: string): Promise<Relationship
     startDate: settingsData?.start_date ?? null,
     partnerId: partner?.profile_id ?? null,
     partnerName: partner?.display_name ?? null,
-    partnerAvatar: ((partner as unknown as { profiles: { avatar: string | null } })?.profiles)?.avatar ?? null,
+    partnerAvatar,
     anniversaryType: settingsData?.anniversary_type ?? null,
   };
 }
