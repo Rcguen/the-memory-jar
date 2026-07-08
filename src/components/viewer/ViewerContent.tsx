@@ -373,7 +373,7 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
       </div>
 
       {/* Scrollable Content */}
-      <div className={cn("relative z-10 flex-1 overflow-y-auto space-y-6", paper.padding, isPhone ? "px-5 pb-40 pt-6" : "pt-8")}>
+      <div className={cn("relative z-10 flex-1 overflow-y-auto custom-scrollbar space-y-6", paper.padding, isPhone ? "px-5 pb-40 pt-6" : "pt-8")}>
         
         {/* Main Text Content */}
         {fullMemory.content && (

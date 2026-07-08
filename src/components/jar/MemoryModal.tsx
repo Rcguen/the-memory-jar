@@ -123,7 +123,7 @@ export function MemoryModal() {
             animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
             exit={{ opacity: 0, y: 18, scale: 0.985, filter: "blur(8px)" }}
             transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
-            className={isPhone ? "relative z-10 flex h-full w-full overflow-y-auto p-0" : "relative z-10 flex h-full w-full overflow-y-auto p-3 sm:p-8"}
+            className={isPhone ? "relative z-10 flex h-full w-full overflow-y-auto custom-scrollbar p-0" : "relative z-10 flex h-full w-full overflow-y-auto custom-scrollbar p-3 sm:p-8"}
           >
             <AnimatePresence mode="wait">
               {step === "select_type" && (
