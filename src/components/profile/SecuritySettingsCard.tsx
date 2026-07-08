@@ -184,7 +184,7 @@ export function SecuritySettingsCard() {
 
         {/* Other Details */}
         <DetailRow label="Last login" value="Current session" tone="default" />
-        <DetailRow label="Current device" value={typeof navigator !== 'undefined' ? navigator.userAgent.split(' ')[0] : 'This Browser'} tone="muted" />
+        <DetailRow label="Current device" value="This Browser" tone="muted" />
 
         {/* Sign Out Devices */}
         <div className="flex flex-col gap-1 rounded-[1.1rem] border border-white/8 bg-white/[0.03] px-4 py-3 sm:flex-row sm:items-center sm:justify-between overflow-hidden">
