@@ -1,8 +1,9 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { getProfile } from "@/services/auth";
 import { useTimezoneDetection } from "@/hooks/useTimezoneDetection";
+import { createClient } from "@/lib/supabase/client";
 import { UserProfile } from "@/types/memory";
 
 type AuthContextType = {
@@ -20,6 +21,7 @@ const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children, initialProfile }: { children: React.ReactNode, initialProfile?: UserProfile | null }) {
   const [profile, setProfile] = useState<UserProfile | null>(initialProfile || null);
   const [isLoading, setIsLoading] = useState(!initialProfile);
+  const supabase = useMemo(() => createClient(), []);
 
   const refreshProfile = async () => {
     setIsLoading(true);
@@ -34,15 +36,38 @@ export function AuthProvider({ children, initialProfile }: { children: React.Rea
   };
 
   useEffect(() => {
-    if (!initialProfile) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      refreshProfile();
-    }
+    if (initialProfile) return;
+
+    const timeoutId = window.setTimeout(() => {
+      void refreshProfile();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, [initialProfile]);
 
-  // Auto-detect and save timezone once when profile.timezone is NULL
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!session?.user) {
+        setProfile(null);
+        setIsLoading(false);
+        return;
+      }
+
+      if (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "USER_UPDATED") {
+        void refreshProfile();
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
+
   useTimezoneDetection(profile, (detectedTz) => {
-    // Optimistically update the local React state without needing a full refreshProfile()
     setProfile((prev) => (prev ? { ...prev, timezone: detectedTz } : null));
   });
 
