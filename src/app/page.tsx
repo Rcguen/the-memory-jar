@@ -364,7 +364,7 @@ export default function Home() {
       </div>
 
       {/* LEFT PANEL: Memory Shelf (Primary Actions) */}
-      <div className="relative z-10 mt-8 w-full max-w-[23rem] px-3 sm:max-w-3xl sm:px-4 xl:absolute xl:bottom-6 xl:left-6 xl:top-24 xl:mt-0 xl:w-[28rem] xl:max-w-none xl:px-0 xl:pb-0 2xl:w-[34rem] xl:overflow-y-auto xl:overscroll-contain xl:scrollbar-hide">
+      <div className="relative z-10 mt-8 w-full max-w-[23rem] px-3 sm:max-w-3xl sm:px-4 xl:absolute xl:bottom-6 xl:left-6 xl:top-24 xl:mt-0 xl:w-[28rem] xl:max-w-none xl:px-0 xl:pb-0 2xl:w-[34rem] xl:overflow-y-auto xl:overscroll-contain custom-scrollbar">
         <div className="flex flex-col relative z-10 xl:pr-3 xl:pb-12 min-h-full">
           <LivingMemoryShelf className="relative min-h-[500px] flex-1">
             <DeskCat />
@@ -376,7 +376,7 @@ export default function Home() {
       </div>
 
       {/* RIGHT PANEL: Storytelling & Ambient Cards */}
-      <div className="relative z-10 mt-4 w-full max-w-[23rem] px-3 pb-32 sm:max-w-3xl sm:px-4 xl:absolute xl:bottom-6 xl:right-6 xl:top-24 xl:mt-0 xl:w-[28rem] xl:max-w-none xl:px-0 xl:pb-0 2xl:w-[32rem] xl:overflow-y-auto xl:overscroll-contain xl:scrollbar-hide">
+      <div className="relative z-10 mt-4 w-full max-w-[23rem] px-3 pb-32 sm:max-w-3xl sm:px-4 xl:absolute xl:bottom-6 xl:right-6 xl:top-24 xl:mt-0 xl:w-[28rem] xl:max-w-none xl:px-0 xl:pb-0 2xl:w-[32rem] xl:overflow-y-auto xl:overscroll-contain custom-scrollbar">
         <CozyDetails />
         <AmbientManager />
         
