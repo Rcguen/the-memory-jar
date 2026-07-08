@@ -27,7 +27,6 @@ import { AmbientParticles } from "@/components/ui/AmbientParticles";
 import { RelationshipCounter } from "@/components/jar/RelationshipCounter";
 import { DropMemoryButton } from "@/components/jar/DropMemoryButton";
 import { WritingDesk } from "@/components/jar/WritingDesk";
-import { JarHeartbeat } from "@/components/jar/JarHeartbeat";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { usePhysics } from "@/providers/physics-provider";
@@ -357,11 +356,7 @@ export default function Home() {
 
       <MobileBottomNav />
 
-      {/* Global Modals & Portals for this route */}
-      <ErrorBoundary fallbackMessage="Jar Heartbeat failed to load.">
-        <JarHeartbeat />
-      </ErrorBoundary>
-      <ErrorBoundary fallbackMessage="Memory Creation failed to load.">
+      {/* Global Modals & Portals for this route */}      <ErrorBoundary fallbackMessage="Memory Creation failed to load.">
         <MemoryModal />
       </ErrorBoundary>
       <ErrorBoundary fallbackMessage="Memory Viewer crashed. Try opening a different memory.">
@@ -370,3 +365,4 @@ export default function Home() {
     </main>
   );
 }
+

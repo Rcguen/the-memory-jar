@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useMotionValue, useReducedMotion, useSpring, useTransform, AnimatePresence } from "framer-motion";
+import { motion, useMotionValue, useReducedMotion, useSpring, useTransform } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { usePhysics } from "@/providers/physics-provider";
@@ -19,15 +19,12 @@ export function GlassJar({ memoryCount }: GlassJarProps) {
   const { states, setContainerRef } = usePhysics();
   const { viewingMemoryId, openViewer } = useMemoryViewer();
   const reduceMotion = useReducedMotion();
-  
-  // Cinematic zoom state
-  const [isZoomed, setIsZoomed] = useState(false);
-  
-  // Mouse position values for the sweeping highlight and 3D rotation
-  const mouseX = useMotionValue(0.5); // 0 to 1
-  const mouseY = useMotionValue(0.5); // 0 to 1
 
-  // Smooth springs for rotation (very subtle, max 2-3 degrees)
+  const [isZoomed, setIsZoomed] = useState(false);
+
+  const mouseX = useMotionValue(0.5);
+  const mouseY = useMotionValue(0.5);
+
   const rotateX = useSpring(useTransform(mouseY, [0, 1], [2, -2]), { stiffness: 100, damping: 30 });
   const rotateY = useSpring(useTransform(mouseX, [0, 1], [-2, 2]), { stiffness: 100, damping: 30 });
 
@@ -35,8 +32,8 @@ export function GlassJar({ memoryCount }: GlassJarProps) {
 
   useEffect(() => {
     const handleHeartbeat = (e: Event) => {
-      const customEvent = e as CustomEvent;
-      setPartnerOnline(customEvent.detail.active);
+      const customEvent = e as CustomEvent<{ active?: boolean }>;
+      setPartnerOnline(Boolean(customEvent.detail?.active));
     };
 
     window.addEventListener("jar-heartbeat-active", handleHeartbeat);
@@ -66,7 +63,6 @@ export function GlassJar({ memoryCount }: GlassJarProps) {
   };
 
   const handleMouseLeave = () => {
-    // Return to center when mouse leaves
     mouseX.set(0.5);
     mouseY.set(0.5);
   };
@@ -172,26 +168,25 @@ export function GlassJar({ memoryCount }: GlassJarProps) {
       animate={{ opacity: 1, scale: isZoomed ? 1.05 : 1 }}
       transition={{ duration: 1, ease: "easeOut" }}
     >
-      {/* Background Blur Overlay for Cinematic Zoom */}
       {isZoomed && (
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm -z-10 transition-opacity duration-700" />
       )}
 
-      {/* Glow when partner is online - Outside preserve-3d to avoid clipping bugs */}
-      <AnimatePresence>
-        {partnerOnline && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.85 }}
-            animate={{ opacity: 1, scale: 1.15 }}
-            exit={{ opacity: 0, scale: 0.85 }}
-            transition={{ duration: 2, ease: "easeInOut", repeat: Infinity, repeatType: "mirror" }}
-            className="absolute inset-0 z-[-1] bg-emerald-400/50 blur-[50px] rounded-full pointer-events-none"
-          />
-        )}
-      </AnimatePresence>
+      <motion.div
+        className="absolute inset-0 z-[-1] rounded-full bg-emerald-400/50 blur-[52px] pointer-events-none"
+        initial={false}
+        animate={{
+          opacity: partnerOnline ? 0.88 : 0,
+          scale: partnerOnline ? 1.14 : 0.94,
+        }}
+        transition={
+          partnerOnline
+            ? { duration: 0.45, ease: "easeOut" }
+            : { duration: 1.8, ease: "easeOut" }
+        }
+      />
 
-      {/* Container for 3D Transform and Breathing Animation */}
-      <motion.div 
+      <motion.div
         className="w-full h-full relative"
         style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
         animate={reduceMotion ? undefined : { y: [0, -2, 0] }}
@@ -203,15 +198,14 @@ export function GlassJar({ memoryCount }: GlassJarProps) {
       >
         <div className="absolute inset-0 pointer-events-none" />
 
-        {/* The custom Jar image loaded via Next.js Image for instant preloading */}
         <div className="absolute inset-0 pointer-events-none z-10">
-          <Image 
-            src="/Jar-Background-PNG.png" 
-            alt="Jar" 
-            fill 
+          <Image
+            src="/Jar-Background-PNG.png"
+            alt="Jar"
+            fill
             sizes="(min-width: 768px) 20rem, 18rem"
             className="object-contain"
-            priority 
+            priority
           />
         </div>
 
@@ -221,7 +215,6 @@ export function GlassJar({ memoryCount }: GlassJarProps) {
           xmlns="http://www.w3.org/2000/svg"
         >
           <defs>
-            {/* Gradients to simulate premium crystal glass */}
             <linearGradient id="backGlassGrad" x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="#ffffff" stopOpacity="0.1" />
               <stop offset="50%" stopColor="#ffffff" stopOpacity="0.02" />
@@ -247,18 +240,17 @@ export function GlassJar({ memoryCount }: GlassJarProps) {
               <stop offset="50%" stopColor="#b6895b" />
               <stop offset="100%" stopColor="#5c3a21" />
             </linearGradient>
-            
+
             <filter id="glowFilter" x="-20%" y="-20%" width="140%" height="140%">
               <feGaussianBlur stdDeviation="15" result="blur" />
               <feComposite in="SourceGraphic" in2="blur" operator="over" />
             </filter>
-            
+
             <filter id="heavyShadow" x="-30%" y="-10%" width="160%" height="150%">
               <feGaussianBlur stdDeviation="20" />
             </filter>
           </defs>
 
-          {/* 1. Contents (Where the memories go - Behind the jar glass!) */}
           <g id="layer-contents">
             <foreignObject x="0" y="0" width="400" height="500">
               <div
@@ -268,7 +260,7 @@ export function GlassJar({ memoryCount }: GlassJarProps) {
                 onPointerUp={handleContentsPointerUp}
                 onPointerCancel={handleContentsPointerCancel}
               >
-                {states.map(state => (
+                {states.map((state) => (
                   <MemoryObjectFactory key={state.id} state={state} onClick={handleOpenMemory} />
                 ))}
               </div>
@@ -280,7 +272,6 @@ export function GlassJar({ memoryCount }: GlassJarProps) {
                 animate={{ opacity: [0, 0.8, 0], scale: [0.5, 1.2, 0.5] }}
                 transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", repeatDelay: 2 }}
               >
-                {/* Tiny sparkle waiting for a memory */}
                 <path d="M200 380 L202 388 L210 390 L202 392 L200 400 L198 392 L190 390 L198 388 Z" fill="#ffffff" filter="url(#glowFilter)" />
               </motion.g>
             )}

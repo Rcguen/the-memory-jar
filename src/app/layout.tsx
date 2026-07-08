@@ -8,6 +8,7 @@ import { MemoryViewerProvider } from "@/providers/memory-viewer-provider";
 import { UnlockSchedulerProvider } from "@/providers/unlock-scheduler";
 import { QueryProvider } from "@/providers/query-provider";
 import { RealtimeProvider } from "@/providers/realtime-provider";
+import { JarHeartbeat } from "@/components/jar/JarHeartbeat";
 import { getProfile } from "@/services/auth";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -55,6 +56,7 @@ export default async function RootLayout({
                   <PhysicsProvider>
                     <UnlockSchedulerProvider>
                       <MemoryViewerProvider>
+                        <JarHeartbeat />
                         {children}
                       </MemoryViewerProvider>
                     </UnlockSchedulerProvider>
