@@ -106,7 +106,7 @@ export function MemoryModal() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-          className="fixed inset-0 z-50 flex items-center justify-center pointer-events-auto"
+          className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-auto"
         >
           {/* Background Darken & Blur */}
           <motion.div
