@@ -11,8 +11,8 @@ export default function Loading() {
         
         {/* Animated rings */}
         <div className="relative flex items-center justify-center mb-8">
-          <div className="absolute inset-0 w-24 h-24 rounded-full border border-emerald-300/30 dark:border-emerald-700/30 animate-[ping_3s_cubic-bezier(0,0,0.2,1)_infinite]" />
-          <div className="absolute inset-0 w-24 h-24 rounded-full border border-emerald-400/20 dark:border-emerald-600/20 animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite_0.5s]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full border border-emerald-300/30 dark:border-emerald-700/30 animate-[ping_3s_cubic-bezier(0,0,0.2,1)_infinite]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full border border-emerald-400/20 dark:border-emerald-600/20 animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite_0.5s]" />
           
           <div className="relative flex w-16 h-16 items-center justify-center bg-white/40 dark:bg-zinc-900/40 rounded-full border border-white/50 dark:border-zinc-800/50 shadow-2xl backdrop-blur-md">
             <Loader2 className="w-7 h-7 animate-spin text-emerald-600/80 dark:text-emerald-400/80" />
