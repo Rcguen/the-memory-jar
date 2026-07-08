@@ -55,14 +55,16 @@ export function AvatarUploader({ currentAvatarUrl, displayName, onAvatarChange }
 
       if (uploadError) throw uploadError;
 
-      // 2. Get Signed URL for private bucket (valid for 10 years)
-      const { data: signedData, error: signError } = await supabase.storage
+      // 2. Get Public URL for public bucket
+      const { data: publicData } = supabase.storage
         .from("avatars")
-        .createSignedUrl(filePath, 60 * 60 * 24 * 365 * 10);
+        .getPublicUrl(filePath);
 
-      if (signError || !signedData) throw signError || new Error("Could not generate signed URL");
+      if (!publicData?.publicUrl) throw new Error("Could not generate public URL");
 
-      onAvatarChange(signedData.signedUrl);
+      // Add a timestamp cache-buster to force the browser to reload the new image
+      const urlWithCacheBuster = `${publicData.publicUrl}?t=${Date.now()}`;
+      onAvatarChange(urlWithCacheBuster);
       toast.success("Avatar updated successfully");
 
     } catch (error) {

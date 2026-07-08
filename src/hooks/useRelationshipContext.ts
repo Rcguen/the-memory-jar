@@ -54,11 +54,17 @@ async function fetchRelationshipContext(profileId: string): Promise<Relationship
 
   let partnerAvatar: string | null = null;
   const partnerProfiles = (partner as any)?.profiles;
+  
+  console.log("DEBUG: membersData = ", membersData);
+  console.log("DEBUG: partnerProfiles = ", partnerProfiles);
+
   if (Array.isArray(partnerProfiles)) {
     partnerAvatar = partnerProfiles[0]?.avatar ?? null;
   } else if (partnerProfiles && typeof partnerProfiles === "object") {
     partnerAvatar = partnerProfiles.avatar ?? null;
   }
+
+  console.log("DEBUG: extracted partnerAvatar = ", partnerAvatar);
 
   return {
     relationshipId,
