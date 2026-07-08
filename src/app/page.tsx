@@ -363,49 +363,49 @@ export default function Home() {
 
       </div>
 
+      {/* LEFT PANEL: Memory Shelf (Primary Actions) */}
       <div className="relative z-10 mt-8 w-full max-w-[23rem] px-3 sm:max-w-3xl sm:px-4 xl:absolute xl:bottom-6 xl:left-6 xl:top-24 xl:mt-0 xl:w-[28rem] xl:max-w-none xl:px-0 xl:pb-0 2xl:w-[34rem] xl:overflow-y-auto xl:overscroll-contain xl:scrollbar-hide">
-        <CozyDetails />
-        <AmbientManager />
-        
-        <div className="flex flex-col gap-3 sm:gap-4 relative z-10 xl:pr-3 xl:pb-12 min-h-full">
-          
-          <div className="flex justify-between items-end mb-2">
-            <JarWeather />
-          </div>
-
-          <MemoryWhisper />
-          <MemoryOfTheDay />
-
-          <div className="flex gap-3">
-            <TodayCard className="flex-1" />
-            <NextMomentCard className="w-[35%]" />
-          </div>
-
-          <div className="flex gap-3">
-            <TodaysLetter className="flex-1" />
-            <ContinueReadingCard className="w-[35%]" />
-          </div>
-
-          <div className="flex gap-3">
-            <DailyReflection className="flex-1" />
-          </div>
-
-          <LittleMoments />
-
-          <MemoryReel />
-          
-          <RelationshipPlant />
-        </div>
-      </div>
-
-      <div className="relative z-10 mt-4 w-full max-w-[23rem] px-3 pb-32 sm:max-w-3xl sm:px-4 xl:absolute xl:bottom-6 xl:right-6 xl:top-24 xl:mt-0 xl:w-[28rem] xl:max-w-none xl:px-0 xl:pb-0 2xl:w-[34rem] xl:overflow-y-auto xl:overscroll-contain xl:scrollbar-hide">
-        <div className="flex flex-col relative z-10 xl:pl-3 xl:pb-12 min-h-full">
+        <div className="flex flex-col relative z-10 xl:pr-3 xl:pb-12 min-h-full">
           <LivingMemoryShelf className="relative min-h-[500px] flex-1">
             <DeskCat />
             <ErrorBoundary fallbackMessage="Memory tools failed to load.">
               <MemoryCommandCenter className="xl:mt-0 xl:max-w-none h-full" />
             </ErrorBoundary>
           </LivingMemoryShelf>
+        </div>
+      </div>
+
+      {/* RIGHT PANEL: Storytelling & Ambient Cards */}
+      <div className="relative z-10 mt-4 w-full max-w-[23rem] px-3 pb-32 sm:max-w-3xl sm:px-4 xl:absolute xl:bottom-6 xl:right-6 xl:top-24 xl:mt-0 xl:w-[28rem] xl:max-w-none xl:px-0 xl:pb-0 2xl:w-[32rem] xl:overflow-y-auto xl:overscroll-contain xl:scrollbar-hide">
+        <CozyDetails />
+        <AmbientManager />
+        
+        <div className="flex flex-col gap-2.5 sm:gap-3 relative z-10 xl:pl-3 xl:pr-2 xl:pb-12 min-h-full">
+          
+          <div className="flex justify-between items-end mb-1">
+            <JarWeather />
+          </div>
+
+          <MemoryWhisper />
+          <MemoryOfTheDay />
+
+          <div className="flex gap-2.5">
+            <TodayCard className="flex-1" />
+            <NextMomentCard className="w-[35%]" />
+          </div>
+
+          <div className="flex gap-2.5">
+            <TodaysLetter className="flex-1" />
+            <ContinueReadingCard className="w-[35%]" />
+          </div>
+
+          <DailyReflection />
+
+          <LittleMoments />
+
+          <MemoryReel />
+          
+          <RelationshipPlant />
         </div>
       </div>
 
