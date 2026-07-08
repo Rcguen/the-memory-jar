@@ -38,6 +38,21 @@ import { useRoutePrefetch } from "@/hooks/useRoutePrefetch";
 import { RelationshipAmbientBackdrop } from "@/components/experience/RelationshipAmbientBackdrop";
 import { OnThisDayCard } from "@/components/experience/OnThisDayCard";
 import { MobileBottomNav } from "@/components/mobile/MobileBottomNav";
+import { TodayCard } from "@/components/home/TodayCard";
+import { DailyReflection } from "@/components/home/DailyReflection";
+import { ContinueReadingCard } from "@/components/home/ContinueReadingCard";
+import { NextMomentCard } from "@/components/home/NextMomentCard";
+import { MemoryReel } from "@/components/home/MemoryReel";
+import { LittleMoments } from "@/components/home/LittleMoments";
+import { RelationshipPlant } from "@/components/home/RelationshipPlant";
+import { CozyDetails } from "@/components/home/CozyDetails";
+import { DeskCat } from "@/components/home/DeskCat";
+import { AmbientManager } from "@/components/home/AmbientManager";
+import { JarWeather } from "@/components/home/JarWeather";
+import { MemoryWhisper } from "@/components/home/MemoryWhisper";
+import { MemoryOfTheDay } from "@/components/home/MemoryOfTheDay";
+import { TodaysLetter } from "@/components/home/TodaysLetter";
+import { LivingMemoryShelf } from "@/components/home/LivingMemoryShelf";
 
 const MemoryCommandCenter = dynamic(
   () => import("@/components/jar/MemoryCommandCenter").then((mod) => mod.MemoryCommandCenter),
@@ -348,10 +363,46 @@ export default function Home() {
 
       </div>
 
-      <div className="relative z-10 mt-8 w-full max-w-[23rem] px-3 pb-32 sm:max-w-3xl sm:px-4 xl:absolute xl:bottom-6 xl:left-6 xl:top-24 xl:mt-0 xl:w-[28rem] xl:max-w-none xl:px-0 xl:pb-0 2xl:w-[34rem]">
-        <ErrorBoundary fallbackMessage="Memory tools failed to load.">
-          <MemoryCommandCenter className="xl:mt-0 xl:max-w-none" />
-        </ErrorBoundary>
+      <div className="relative z-10 mt-8 w-full max-w-[23rem] px-3 pb-32 sm:max-w-3xl sm:px-4 xl:absolute xl:bottom-6 xl:left-6 xl:top-24 xl:mt-0 xl:w-[28rem] xl:max-w-none xl:px-0 xl:pb-0 2xl:w-[34rem] xl:overflow-y-auto xl:overscroll-contain xl:scrollbar-hide">
+        <CozyDetails />
+        <AmbientManager />
+        
+        <div className="flex flex-col gap-3 sm:gap-4 relative z-10 xl:pr-3 xl:pb-12 min-h-full">
+          
+          <div className="flex justify-between items-end mb-2">
+            <JarWeather />
+          </div>
+
+          <MemoryWhisper />
+          <MemoryOfTheDay />
+
+          <div className="flex gap-3">
+            <TodayCard className="flex-1" />
+            <NextMomentCard className="w-[35%]" />
+          </div>
+
+          <div className="flex gap-3">
+            <TodaysLetter className="flex-1" />
+            <ContinueReadingCard className="w-[35%]" />
+          </div>
+
+          <div className="flex gap-3">
+            <DailyReflection className="flex-1" />
+          </div>
+
+          <LittleMoments />
+
+          <LivingMemoryShelf className="relative mt-2">
+            <DeskCat />
+            <ErrorBoundary fallbackMessage="Memory tools failed to load.">
+              <MemoryCommandCenter className="xl:mt-0 xl:max-w-none" />
+            </ErrorBoundary>
+          </LivingMemoryShelf>
+
+          <MemoryReel />
+          
+          <RelationshipPlant />
+        </div>
       </div>
 
       <MobileBottomNav />

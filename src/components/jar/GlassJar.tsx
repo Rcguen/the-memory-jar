@@ -155,6 +155,20 @@ export function GlassJar({ memoryCount }: GlassJarProps) {
     releasePointer(event.currentTarget, event.pointerId);
   };
 
+  const [jarClicks, setJarClicks] = useState(0);
+  const [hiddenWhisper, setHiddenWhisper] = useState<string | null>(null);
+
+  const handleJarClick = () => {
+    setJarClicks((prev) => {
+      const next = prev + 1;
+      if (next === 7) {
+        setHiddenWhisper("The jar feels warm today.");
+        setTimeout(() => setHiddenWhisper(null), 4000);
+      }
+      return next;
+    });
+  };
+
   return (
     <motion.div
       ref={(node) => {
@@ -164,10 +178,22 @@ export function GlassJar({ memoryCount }: GlassJarProps) {
       className={`relative mx-auto h-[21rem] w-[15.5rem] cursor-pointer perspective-[1000px] z-20 transition-all duration-700 ease-in-out sm:h-96 sm:w-72 md:h-[28rem] md:w-80 ${isZoomed ? "scale-[1.05] drop-shadow-2xl" : ""}`}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
+      onClick={handleJarClick}
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: isZoomed ? 1.05 : 1 }}
       transition={{ duration: 1, ease: "easeOut" }}
     >
+      {hiddenWhisper && (
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] text-amber-100/60 font-cormorant italic whitespace-nowrap pointer-events-none"
+        >
+          {hiddenWhisper}
+        </motion.div>
+      )}
+
       {isZoomed && (
         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm -z-10 transition-opacity duration-700" />
       )}
@@ -184,6 +210,20 @@ export function GlassJar({ memoryCount }: GlassJarProps) {
             ? { duration: 0.45, ease: "easeOut" }
             : { duration: 1.8, ease: "easeOut" }
         }
+      />
+
+      {/* Layer 2: Subtle Ambient Emotion Light */}
+      <motion.div
+        className="absolute inset-0 z-[-2] rounded-full bg-amber-400/20 blur-[60px] pointer-events-none"
+        animate={reduceMotion ? undefined : { 
+          opacity: [0.3, 0.4, 0.3],
+          scale: [1, 1.05, 1]
+        }}
+        transition={{
+          duration: 8,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
       />
 
       <motion.div

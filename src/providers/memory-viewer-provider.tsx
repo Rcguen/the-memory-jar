@@ -21,6 +21,15 @@ export function MemoryViewerProvider({ children }: { children: ReactNode }) {
     setNavigateDirection(direction || null);
     setViewingMemoryId(id);
     pauseEngine();
+    
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("lastOpenedMemoryId", id);
+        localStorage.setItem("lastOpenedAt", Date.now().toString());
+      } catch (e) {
+        // Ignore localStorage errors
+      }
+    }
   };
 
   const closeViewer = () => {
