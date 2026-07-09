@@ -53,6 +53,7 @@ import { MemoryWhisper } from "@/components/home/MemoryWhisper";
 import { MemoryOfTheDay } from "@/components/home/MemoryOfTheDay";
 import { TodaysLetter } from "@/components/home/TodaysLetter";
 import { LivingMemoryShelf } from "@/components/home/LivingMemoryShelf";
+import { RelationshipOnboarding } from "@/components/onboarding/RelationshipOnboarding";
 
 const MemoryCommandCenter = dynamic(
   () => import("@/components/jar/MemoryCommandCenter").then((mod) => mod.MemoryCommandCenter),
@@ -177,6 +178,10 @@ export default function Home() {
   const prefetchTimeline = () => router.prefetch("/timeline");
   const prefetchDashboard = () => router.prefetch("/dashboard");
   const prefetchBook = () => router.prefetch("/memory-book");
+
+  if (profile && !profile.active_relationship_id) {
+    return <RelationshipOnboarding />;
+  }
 
   return (
     <main className="relative min-h-screen flex flex-col items-center justify-start bg-emerald-50/30 dark:bg-emerald-950/20 transition-colors duration-700 xl:justify-center w-full">

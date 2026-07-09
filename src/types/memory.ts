@@ -257,6 +257,7 @@ export interface UserProfile {
   created_at?: string | null;
   /** IANA timezone string, e.g. "Asia/Ho_Chi_Minh". NULL until auto-detected. */
   timezone: string | null;
+  active_relationship_id?: string | null;
 }
 
 /**
@@ -268,6 +269,7 @@ export interface RelationshipSettings {
   anniversary_type: string;
   /** Shared couple timezone for anniversary calculations. */
   relationship_timezone: string;
+  invite_code?: string;
   created_at: string;
   updated_at: string;
 }
@@ -280,6 +282,8 @@ export interface RelationshipContext {
   partnerName: string | null;
   partnerAvatar: string | null;
   anniversaryType: string | null;
+  inviteCode?: string;
+  memberCount?: number;
 }
 
 export interface TimelineMemoryPage {

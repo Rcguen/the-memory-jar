@@ -13,6 +13,7 @@ CREATE INDEX IF NOT EXISTS idx_memories_relationship_deleted_pinned_created
 CREATE INDEX IF NOT EXISTS idx_memories_search_title
   ON public.memories USING gin (to_tsvector('simple', coalesce(title, '') || ' ' || coalesce(content, '')));
 
+DROP POLICY IF EXISTS "Creators can view their own trashed memories" ON public.memories;
 CREATE POLICY "Creators can view their own trashed memories"
   ON public.memories FOR SELECT
   TO authenticated
@@ -78,6 +79,7 @@ ALTER TABLE public.memory_reactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.memory_comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.activity_logs ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Relationship members can view favorites" ON public.memory_favorites;
 CREATE POLICY "Relationship members can view favorites"
   ON public.memory_favorites FOR SELECT
   TO authenticated
@@ -88,6 +90,7 @@ CREATE POLICY "Relationship members can view favorites"
     )
   );
 
+DROP POLICY IF EXISTS "Users can manage their own favorites" ON public.memory_favorites;
 CREATE POLICY "Users can manage their own favorites"
   ON public.memory_favorites FOR ALL
   TO authenticated
@@ -100,6 +103,7 @@ CREATE POLICY "Users can manage their own favorites"
     )
   );
 
+DROP POLICY IF EXISTS "Relationship members can view reactions" ON public.memory_reactions;
 CREATE POLICY "Relationship members can view reactions"
   ON public.memory_reactions FOR SELECT
   TO authenticated
@@ -110,6 +114,7 @@ CREATE POLICY "Relationship members can view reactions"
     )
   );
 
+DROP POLICY IF EXISTS "Users can manage their own reactions" ON public.memory_reactions;
 CREATE POLICY "Users can manage their own reactions"
   ON public.memory_reactions FOR ALL
   TO authenticated
@@ -122,6 +127,7 @@ CREATE POLICY "Users can manage their own reactions"
     )
   );
 
+DROP POLICY IF EXISTS "Relationship members can view comments" ON public.memory_comments;
 CREATE POLICY "Relationship members can view comments"
   ON public.memory_comments FOR SELECT
   TO authenticated
@@ -132,6 +138,7 @@ CREATE POLICY "Relationship members can view comments"
     )
   );
 
+DROP POLICY IF EXISTS "Users can add comments" ON public.memory_comments;
 CREATE POLICY "Users can add comments"
   ON public.memory_comments FOR INSERT
   TO authenticated
@@ -143,42 +150,50 @@ CREATE POLICY "Users can add comments"
     )
   );
 
+DROP POLICY IF EXISTS "Authors can edit comments" ON public.memory_comments;
 CREATE POLICY "Authors can edit comments"
   ON public.memory_comments FOR UPDATE
   TO authenticated
   USING (user_id = auth.uid())
   WITH CHECK (user_id = auth.uid());
 
+DROP POLICY IF EXISTS "Authors can delete comments" ON public.memory_comments;
 CREATE POLICY "Authors can delete comments"
   ON public.memory_comments FOR DELETE
   TO authenticated
   USING (user_id = auth.uid());
 
+DROP POLICY IF EXISTS "Relationship members can view activity" ON public.activity_logs;
 CREATE POLICY "Relationship members can view activity"
   ON public.activity_logs FOR SELECT
   TO authenticated
   USING (public.is_relationship_member(relationship_id));
 
+DROP POLICY IF EXISTS "Authenticated users can delete memory-images" ON storage.objects;
 CREATE POLICY "Authenticated users can delete memory-images"
   ON storage.objects FOR DELETE
   TO authenticated
   USING (bucket_id = 'memory-images');
 
+DROP POLICY IF EXISTS "Authenticated users can delete memory-voices" ON storage.objects;
 CREATE POLICY "Authenticated users can delete memory-voices"
   ON storage.objects FOR DELETE
   TO authenticated
   USING (bucket_id = 'memory-voices');
 
+DROP POLICY IF EXISTS "Authenticated users can delete memory-videos" ON storage.objects;
 CREATE POLICY "Authenticated users can delete memory-videos"
   ON storage.objects FOR DELETE
   TO authenticated
   USING (bucket_id = 'memory-videos');
 
+DROP POLICY IF EXISTS "Authenticated users can delete memory-thumbnails" ON storage.objects;
 CREATE POLICY "Authenticated users can delete memory-thumbnails"
   ON storage.objects FOR DELETE
   TO authenticated
   USING (bucket_id = 'memory-thumbnails');
 
+DROP POLICY IF EXISTS "Members can insert activity" ON public.activity_logs;
 CREATE POLICY "Members can insert activity"
   ON public.activity_logs FOR INSERT
   TO authenticated

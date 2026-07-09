@@ -37,6 +37,7 @@ export function AuthProvider({ children, initialProfile }: { children: React.Rea
 
   useEffect(() => {
     if (initialProfile !== undefined) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setProfile(initialProfile);
       setIsLoading(false);
     }

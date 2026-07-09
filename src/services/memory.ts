@@ -187,14 +187,16 @@ export const memoryService = {
     if (!user) return null;
 
     const { data, error } = await supabase
-      .from("relationship_members")
-      .select("relationship_id")
-      .eq("profile_id", user.id)
-      .limit(1)
-      .maybeSingle();
+      .from("profiles")
+      .select("active_relationship_id")
+      .eq("id", user.id)
+      .single();
 
-    if (error) throw error;
-    return data?.relationship_id ?? null;
+    if (error) {
+      console.warn("Failed to get active relationship", error);
+      return null;
+    }
+    return data?.active_relationship_id ?? null;
   },
 
   async getRelationshipContext(): Promise<RelationshipContext | null> {
@@ -202,15 +204,8 @@ export const memoryService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
-    const { data: memberData, error: memberError } = await supabase
-      .from("relationship_members")
-      .select("relationship_id")
-      .eq("profile_id", user.id)
-      .single();
-
-    if (memberError || !memberData?.relationship_id) return null;
-
-    const relationshipId = memberData.relationship_id;
+    const relationshipId = await this.getCurrentRelationshipId();
+    if (!relationshipId) return null;
     const [{ data: settingsData }, { data: membersData }] = await Promise.all([
       supabase
         .from("relationship_settings")
@@ -796,12 +791,7 @@ export const memoryService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Not authenticated");
 
-    const { data: memberData } = await supabase
-      .from("relationship_members")
-      .select("relationship_id")
-      .eq("profile_id", user.id)
-      .limit(1)
-      .maybeSingle();
+    const relationshipId = await this.getCurrentRelationshipId();
 
     const memoryPayload: Partial<Memory> & { version: number; created_by: string; relationship_id?: string } = { 
       ...memoryData, 
@@ -809,8 +799,8 @@ export const memoryService = {
       created_by: user.id
     };
 
-    if (memberData) {
-      memoryPayload.relationship_id = memberData.relationship_id;
+    if (relationshipId) {
+      memoryPayload.relationship_id = relationshipId;
     }
 
     // 1. Insert memory
@@ -928,10 +918,13 @@ export const memoryService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Not authenticated");
 
+    const relationshipId = await this.getCurrentRelationshipId();
+    if (!relationshipId) throw new Error("No active relationship");
+
     if (favorite) {
       const { error } = await supabase
         .from("memory_favorites")
-        .insert({ memory_id: memoryId, user_id: user.id });
+        .insert({ memory_id: memoryId, user_id: user.id, relationship_id: relationshipId });
       if (error && error.code !== "23505") throw new Error(describeSupabaseError(error));
     } else {
       const { error } = await supabase
@@ -945,20 +938,14 @@ export const memoryService = {
 
   async setPinned(memoryId: string, pinned: boolean): Promise<void> {
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Not authenticated");
+    
+    // Uses the secure RPC instead of directly updating
+    const { error } = await supabase.rpc("toggle_memory_pin", { 
+      p_memory_id: memoryId, 
+      p_is_pinned: pinned 
+    });
 
-    const { error } = await supabase
-      .from("memories")
-      .update({
-        is_pinned: pinned,
-        pinned_at: pinned ? new Date().toISOString() : null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", memoryId)
-      .eq("created_by", user.id);
-
-    if (error) throw error;
+    if (error) throw new Error(describeSupabaseError(error));
   },
 
   async setReaction(memoryId: string, emoji: ReactionEmoji): Promise<void> {
@@ -967,9 +954,12 @@ export const memoryService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Not authenticated");
 
+    const relationshipId = await this.getCurrentRelationshipId();
+    if (!relationshipId) throw new Error("No active relationship");
+
     const { error } = await supabase
       .from("memory_reactions")
-      .upsert({ memory_id: memoryId, user_id: user.id, emoji }, { onConflict: "memory_id,user_id" });
+      .upsert({ memory_id: memoryId, user_id: user.id, emoji, relationship_id: relationshipId }, { onConflict: "memory_id,user_id" });
 
     if (error) throw new Error(describeSupabaseError(error));
   },
@@ -995,9 +985,12 @@ export const memoryService = {
     const trimmed = content.trim();
     if (!trimmed) return null;
 
+    const relationshipId = await this.getCurrentRelationshipId();
+    if (!relationshipId) throw new Error("No active relationship");
+
     const { data, error } = await supabase
       .from("memory_comments")
-      .insert({ memory_id: memoryId, user_id: user.id, content: trimmed })
+      .insert({ memory_id: memoryId, user_id: user.id, content: trimmed, relationship_id: relationshipId })
       .select("*, profiles(id,display_name,username,avatar)")
       .single();
 
@@ -1156,6 +1149,8 @@ export const memoryService = {
     index: number = 1
   ): Promise<string> {
     const supabase = createClient();
+    const relationshipId = await this.getCurrentRelationshipId();
+    if (!relationshipId) throw new Error("No active relationship");
     const fileExt = file.name.split('.').pop();
     
     let prefix = "file";
@@ -1164,7 +1159,7 @@ export const memoryService = {
     if (bucket === "memory-videos") prefix = "video";
     if (bucket === "memory-thumbnails") prefix = "thumbnail";
     
-    const fileName = `${memoryId}/${prefix}-${index}-${Date.now()}.${fileExt}`;
+    const fileName = `${relationshipId}/${memoryId}/${prefix}-${index}-${Date.now()}.${fileExt}`;
 
     const { error } = await supabase.storage
       .from(bucket)
@@ -1182,10 +1177,14 @@ export const memoryService = {
     metadata: Record<string, unknown> = {}
   ): Promise<void> {
     const supabase = createClient();
+    const relationshipId = await this.getCurrentRelationshipId();
+    if (!relationshipId) throw new Error("No active relationship");
+
     const { error } = await supabase
       .from("memory_attachments")
       .insert([{
         memory_id: memoryId,
+        relationship_id: relationshipId,
         file_type: fileType,
         url: path,
         metadata

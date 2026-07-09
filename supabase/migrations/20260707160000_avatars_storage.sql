@@ -14,6 +14,7 @@ ON CONFLICT (id) DO UPDATE SET
 
 -- RLS Policies for avatars bucket
 -- 1. Users can upload their own avatar (only to their folder `avatars/{userId}/...`)
+DROP POLICY IF EXISTS "Users can upload their own avatar" ON storage.objects;
 CREATE POLICY "Users can upload their own avatar" ON storage.objects
   FOR INSERT
   WITH CHECK (
@@ -23,6 +24,7 @@ CREATE POLICY "Users can upload their own avatar" ON storage.objects
   );
 
 -- 2. Users can update/replace their own avatar
+DROP POLICY IF EXISTS "Users can update their own avatar" ON storage.objects;
 CREATE POLICY "Users can update their own avatar" ON storage.objects
   FOR UPDATE
   USING (
@@ -36,6 +38,7 @@ CREATE POLICY "Users can update their own avatar" ON storage.objects
   );
 
 -- 3. Users can delete their own avatar
+DROP POLICY IF EXISTS "Users can delete their own avatar" ON storage.objects;
 CREATE POLICY "Users can delete their own avatar" ON storage.objects
   FOR DELETE
   USING (
@@ -44,6 +47,7 @@ CREATE POLICY "Users can delete their own avatar" ON storage.objects
   );
 
 -- 4. Users can read their own avatar (signed URLs will be used for display)
+DROP POLICY IF EXISTS "Users can read own avatar" ON storage.objects;
 CREATE POLICY "Users can read own avatar" ON storage.objects
   FOR SELECT
   USING (
@@ -52,6 +56,7 @@ CREATE POLICY "Users can read own avatar" ON storage.objects
   );
 
 -- 5. Partners can read the avatar
+DROP POLICY IF EXISTS "Partners can read avatar" ON storage.objects;
 CREATE POLICY "Partners can read avatar" ON storage.objects
   FOR SELECT
   USING (

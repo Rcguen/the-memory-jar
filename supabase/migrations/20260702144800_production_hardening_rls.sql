@@ -33,13 +33,14 @@ DROP POLICY IF EXISTS "Public can view memory-thumbnails" ON storage.objects;
 -- ==========================================
 
 -- Check if user is part of a relationship
-CREATE OR REPLACE FUNCTION public.is_relationship_member(rel_id uuid)
+CREATE OR REPLACE FUNCTION public.is_relationship_member(target_relationship_id uuid)
 RETURNS boolean AS $$
 BEGIN
   RETURN EXISTS (
-    SELECT 1 FROM public.relationship_members 
-    WHERE relationship_id = rel_id 
-    AND profile_id = auth.uid()
+    SELECT 1
+    FROM public.relationship_members
+    WHERE relationship_id = target_relationship_id
+      AND profile_id = auth.uid()
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -190,6 +191,7 @@ CREATE POLICY "Users can read their own relationship members"
 
 -- Existing "Users can view their own profile." & "Users can update their own profile." are fine for strictly own-profile access.
 -- But members of a relationship need to view their partner's profile.
+DROP POLICY IF EXISTS "Users can view partner profiles" ON public.profiles;
 CREATE POLICY "Users can view partner profiles"
   ON public.profiles FOR SELECT
   TO authenticated
@@ -197,7 +199,8 @@ CREATE POLICY "Users can view partner profiles"
     EXISTS (
       SELECT 1 FROM public.relationship_members rm1
       JOIN public.relationship_members rm2 ON rm1.relationship_id = rm2.relationship_id
-      WHERE rm1.profile_id = id AND rm2.profile_id = auth.uid()
+      WHERE rm1.profile_id = public.profiles.id
+  AND rm2.profile_id = auth.uid()
     )
   );
 

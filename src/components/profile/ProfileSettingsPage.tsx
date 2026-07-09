@@ -32,6 +32,8 @@ import { useRoutePrefetch } from "@/hooks/useRoutePrefetch";
 import { useRelationshipContext } from "@/hooks/useRelationshipContext";
 import { useCoupleDashboardStats } from "@/hooks/useMemoryData";
 import { usePresence } from "@/hooks/usePresence";
+import { updateRelationshipSettings, regenerateInviteCode } from "@/services/relationship";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   detectTimezone,
   formatInTimezone,
@@ -141,10 +143,27 @@ export function ProfileSettingsPage() {
   const [isAccountPending, startAccountTransition] = useTransition();
   const [isTimezonePending, startTimezoneTransition] = useTransition();
   const [isLogoutPending, startLogoutTransition] = useTransition();
+  const [isRelationshipPending, startRelationshipTransition] = useTransition();
 
-  useRoutePrefetch(["/", "/timeline", "/dashboard", "/on-this-day"]);
+  const queryClient = useQueryClient();
+
+  // Relationship edit state
+  const [relStartDateDraft, setRelStartDateDraft] = useState<string | undefined>(undefined);
+  const [relTimezoneDraft, setRelTimezoneDraft] = useState<string | undefined>(undefined);
+  const [relAnniversaryDraft, setRelAnniversaryDraft] = useState<"yearly" | "monthly" | undefined>(undefined);
 
   const detectedTimezone = useMemo(() => detectTimezone(), []);
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => {
+    if (relationship) {
+      setRelStartDateDraft(prev => prev === undefined ? (relationship.startDate ? new Date(relationship.startDate).toISOString().split('T')[0] : "") : prev);
+      setRelTimezoneDraft(prev => prev === undefined ? (relationship.relationshipTimezone || detectedTimezone) : prev);
+      setRelAnniversaryDraft(prev => prev === undefined ? (relationship.anniversaryType as "yearly" | "monthly" || "yearly") : prev);
+    }
+  }, [relationship, detectedTimezone]);
+
+  useRoutePrefetch(["/", "/timeline", "/dashboard", "/on-this-day"]);
   const supportedTimezones = useMemo(() => {
     const base = getSupportedTimezones();
     const boosted = new Set([
@@ -249,6 +268,41 @@ export function ProfileSettingsPage() {
         toast.success("Timezone updated.");
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "Could not update timezone.");
+      }
+    });
+  };
+
+  const handleRelationshipSave = () => {
+    if (!relationship?.relationshipId) return;
+    if (!relStartDateDraft || !relTimezoneDraft || !relAnniversaryDraft) {
+      toast.error("Please fill in all relationship fields.");
+      return;
+    }
+    startRelationshipTransition(async () => {
+      try {
+        await updateRelationshipSettings(
+          relationship.relationshipId,
+          new Date(relStartDateDraft).toISOString(),
+          relTimezoneDraft,
+          relAnniversaryDraft
+        );
+        toast.success("Relationship settings updated.");
+        queryClient.invalidateQueries({ queryKey: ["relationship-context"] });
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Failed to update settings.");
+      }
+    });
+  };
+
+  const handleRegenerateInviteCode = () => {
+    if (!relationship?.relationshipId) return;
+    startRelationshipTransition(async () => {
+      try {
+        await regenerateInviteCode(relationship.relationshipId);
+        toast.success("New invite code generated.");
+        queryClient.invalidateQueries({ queryKey: ["relationship-context"] });
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Failed to generate invite code.");
       }
     });
   };
@@ -449,37 +503,98 @@ export function ProfileSettingsPage() {
                 <p className="text-sm text-rose-200/70">Since {relationshipStarted}</p>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <DetailRow
-                  label="Partner"
-                  value={
-                    <div className="inline-flex items-center gap-2">
-                      <span>{relationship?.partnerName ?? "Waiting for your person"}</span>
-                      {relationship?.partnerId && (
-                        <span
-                          className={cn(
-                            "inline-flex h-2.5 w-2.5 rounded-full",
-                            partnerOnline ? "bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.65)]" : "bg-zinc-500",
-                          )}
-                          aria-label={partnerOnline ? "Partner online" : "Partner offline"}
-                        />
-                      )}
-                    </div>
-                  }
-                />
-                <DetailRow
-                  label="Relationship timezone"
-                  value={relationship?.relationshipTimezone ?? "UTC"}
-                />
-                <DetailRow
-                  label="Anniversary type"
-                  value={relationship?.anniversaryType ?? "yearly"}
-                />
-                <DetailRow
-                  label="Invite code"
-                  value="Not needed while you're already together."
-                  tone="muted"
-                />
+              <div className="space-y-4">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label className="text-zinc-200">Start Date</Label>
+                    <Input
+                      type="date"
+                      value={relStartDateDraft || ""}
+                      onChange={(e) => setRelStartDateDraft(e.target.value)}
+                      className="h-11 rounded-[1rem] border-white/10 bg-white/[0.03] px-3 text-zinc-100"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-zinc-200">Relationship Timezone</Label>
+                    <Input
+                      list="profile-timezone-options"
+                      value={relTimezoneDraft || ""}
+                      onChange={(e) => setRelTimezoneDraft(e.target.value)}
+                      className="h-11 rounded-[1rem] border-white/10 bg-white/[0.03] px-3 text-zinc-100"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-zinc-200">Anniversary Type</Label>
+                    <select
+                      value={relAnniversaryDraft || "yearly"}
+                      onChange={(e) => setRelAnniversaryDraft(e.target.value as "yearly" | "monthly")}
+                      className="flex h-11 w-full rounded-[1rem] border border-white/10 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-100"
+                    >
+                      <option value="yearly">Yearly</option>
+                      <option value="monthly">Monthly</option>
+                    </select>
+                  </div>
+                  <DetailRow
+                    label="Partner"
+                    value={
+                      <div className="inline-flex items-center gap-2">
+                        <span>{relationship?.partnerName ?? "Waiting for your person"}</span>
+                        {relationship?.partnerId && (
+                          <span
+                            className={cn(
+                              "inline-flex h-2.5 w-2.5 rounded-full",
+                              partnerOnline ? "bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.65)]" : "bg-zinc-500",
+                            )}
+                            aria-label={partnerOnline ? "Partner online" : "Partner offline"}
+                          />
+                        )}
+                      </div>
+                    }
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1 rounded-[1.1rem] border border-white/8 bg-white/[0.03] px-4 py-3 sm:flex-row sm:items-center sm:justify-between overflow-hidden">
+                  <span className="text-xs uppercase tracking-[0.18em] text-zinc-500 whitespace-nowrap shrink-0">Invite code</span>
+                  <div className="flex items-center gap-2 mt-2 sm:mt-0">
+                    <span className="font-mono text-sm text-emerald-300">
+                      {relationship?.memberCount === 1 ? relationship?.inviteCode : "Hidden (Full)"}
+                    </span>
+                    {relationship?.memberCount === 1 && relationship?.inviteCode && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          navigator.clipboard.writeText(relationship.inviteCode || "");
+                          toast.success("Invite code copied!");
+                        }}
+                        className="h-7 text-xs rounded border border-white/10 hover:bg-white/10"
+                      >
+                        Copy
+                      </Button>
+                    )}
+                    {relationship?.memberCount === 1 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleRegenerateInviteCode}
+                        disabled={isRelationshipPending}
+                        className="h-7 text-xs rounded border border-white/10 hover:bg-white/10 text-rose-300 hover:text-rose-200"
+                      >
+                        Refresh
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-end gap-3 rounded-[1.1rem] border border-white/8 bg-white/[0.03] px-4 py-3">
+                  <Button
+                    onClick={handleRelationshipSave}
+                    disabled={isRelationshipPending || !relationship}
+                    className="h-10 rounded-full px-5"
+                  >
+                    {isRelationshipPending ? "Saving..." : "Save Relationship"}
+                  </Button>
+                </div>
               </div>
             </SectionShell>
           </div>

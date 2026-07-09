@@ -144,7 +144,7 @@ export function useRealtimeMemory(relationshipId: string | null, options?: { syn
     };
 
     window.addEventListener(`postgres-${memoriesChannel}`, handleMemoryChange);
-    subscribePostgres(memoriesChannel, '*', 'public', 'memories', undefined);
+    subscribePostgres(memoriesChannel, '*', 'public', 'memories', `relationship_id=eq.${relationshipId}`);
 
     // ── Channel 2: memory_attachments table ───────────────────────────────
     // When attachments change, invalidate the memory detail cache to reload with fresh attachments
@@ -166,7 +166,7 @@ export function useRealtimeMemory(relationshipId: string | null, options?: { syn
     };
 
     window.addEventListener(`postgres-${attachmentsChannel}`, handleAttachmentChange);
-    subscribePostgres(attachmentsChannel, '*', 'public', 'memory_attachments', undefined);
+    subscribePostgres(attachmentsChannel, '*', 'public', 'memory_attachments', `relationship_id=eq.${relationshipId}`);
 
     const relatedTables = [
       { table: 'memory_favorites', channel: `favorites_${relationshipId}` },
@@ -194,7 +194,7 @@ export function useRealtimeMemory(relationshipId: string | null, options?: { syn
 
     for (const entry of relatedTables) {
       window.addEventListener(`postgres-${entry.channel}`, handleRelatedChange);
-      subscribePostgres(entry.channel, '*', 'public', entry.table, undefined);
+      subscribePostgres(entry.channel, '*', 'public', entry.table, `relationship_id=eq.${relationshipId}`);
     }
 
     const notificationsChannel = profile?.id ? `notifications_${profile.id}` : null;
