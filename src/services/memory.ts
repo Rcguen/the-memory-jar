@@ -326,7 +326,51 @@ export const memoryService = {
     });
   },
 
-  async listDeletedMemories(): Promise<Memory[]> {
+  async listStorybookMemoriesPage(options: { offset?: number; limit?: number } = {}): Promise<Memory[]> {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const relationshipId = await this.getCurrentRelationshipId();
+    if (!relationshipId) return [];
+    const limit = Math.max(1, Math.min(options.limit ?? 60, 120));
+    const offset = Math.max(0, options.offset ?? 0);
+    const { data, error } = await supabase
+      .from("memories")
+      .select("*, memory_attachments(*), memory_tags(tags(*))")
+      .eq("relationship_id", relationshipId)
+      .is("deleted_at", null)
+      .in("status", ACTIVE_MEMORY_STATUSES)
+      .order("memory_date", { ascending: true })
+      .order("created_at", { ascending: true })
+      .range(offset, offset + limit - 1);
+    if (error) throw error;
+    const memoryRows = data ?? [];
+    const memoryIds = memoryRows.map((memory) => memory.id);
+    if (memoryIds.length === 0) return [];
+    const creatorIds = [...new Set(memoryRows.map((memory) => memory.created_by))];
+    const [{ data: favorites }, { data: reactions }, { data: comments }, { data: creators }] = await Promise.all([
+      supabase.from("memory_favorites").select("memory_id,user_id").in("memory_id", memoryIds),
+      supabase.from("memory_reactions").select("memory_id,user_id,emoji,created_at").in("memory_id", memoryIds),
+      supabase.from("memory_comments").select("memory_id").in("memory_id", memoryIds),
+      supabase.from("profiles").select("id,display_name,username,avatar").in("id", creatorIds),
+    ]);
+    const creatorMap = new Map((creators ?? []).map((creator) => [creator.id, creator]));
+    return hydrateMemoryMeta(
+      memoryRows.map((row) => {
+        const tags = (row.memory_tags ?? [])
+          .map((tagLink: { tags?: { id: string; name: string } | null }) => tagLink.tags)
+          .filter(Boolean);
+        return {
+          ...mapDatabaseMemory(row),
+          tags,
+          creator: creatorMap.get(row.created_by) ?? null,
+        } as Memory;
+      }),
+      user?.id ?? null,
+      favorites ?? [],
+      (reactions ?? []) as MemoryReaction[],
+      comments ?? [],
+    );
+  },  async listDeletedMemories(): Promise<Memory[]> {
     return this.listMemories({ includeDeleted: true, sort: "newest" });
   },
 
@@ -1320,4 +1364,5 @@ export const memoryService = {
     return mapDatabaseMemory(data);
   }
 };
+
 

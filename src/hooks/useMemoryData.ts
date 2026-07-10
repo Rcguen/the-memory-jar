@@ -108,8 +108,8 @@ export function useStorybookMemories() {
   return useInfiniteQuery({
     queryKey: ["storybook-memories"],
     queryFn: async ({ pageParam }) => {
-      const limit = 500;
-      const memories = await memoryService.listMemories({ sort: "oldest", limit, offset: pageParam as number });
+      const limit = 60;
+      const memories = await memoryService.listStorybookMemoriesPage({ limit, offset: pageParam as number });
       return {
         memories,
         nextOffset: memories.length === limit ? (pageParam as number) + limit : null,
@@ -131,3 +131,4 @@ export function useCoupleDashboardStats() {
     staleTime: 1000 * 60,
   });
 }
+

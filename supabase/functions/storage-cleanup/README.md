@@ -1,37 +1,56 @@
-# Storage Cleanup Cron Job
+# Storage Cleanup
 
-This Supabase Edge Function is designed to run automatically every day to clean up soft-deleted memories that have exceeded the 30-day retention period.
+This Edge Function permanently removes only memories that were already soft-deleted and have aged past the retention window.
 
-## 1. Deploy the Function
+## Safety model
 
-Deploy the function to your Supabase project:
+- Requires `POST`
+- Requires a server-side secret in either `x-cleanup-secret` or `Authorization: Bearer ...`
+- Defaults to `dryRun: true` unless explicitly disabled by env or request body
+- Refuses to delete attachment objects that are still referenced by any non-deleted memory
+- Reports missing attachment objects and orphan storage objects separately
+- Writes every run to `public.storage_cleanup_runs` and `public.storage_cleanup_items`
+
+## Required secrets
+
+Configure these in Supabase Edge Function secrets, not in the frontend and not in Git:
+
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `STORAGE_CLEANUP_SECRET`
+- Optional: `STORAGE_CLEANUP_RETENTION_DAYS`
+- Optional: `STORAGE_CLEANUP_BATCH_LIMIT`
+- Optional: `STORAGE_CLEANUP_DEFAULT_DRY_RUN`
+
+## Deploy
+
 ```bash
 supabase functions deploy storage-cleanup --no-verify-jwt
 ```
-*Note: We disable JWT verification so `pg_net` can call it without passing an auth user token. The function relies on the `SUPABASE_SERVICE_ROLE_KEY` to authenticate with the database.*
 
-## 2. Schedule using pg_cron
+JWT verification stays disabled because the scheduler will call this function with a server-side shared secret header, not with an end-user JWT.
 
-Run the following SQL in your Supabase SQL Editor to schedule the function to run daily at 3:00 AM using `pg_cron` and `pg_net`.
+## Dry run request
 
-```sql
--- Enable the necessary extensions
-CREATE EXTENSION IF NOT EXISTS pg_net;
-CREATE EXTENSION IF NOT EXISTS pg_cron;
-
--- Create the cron job
-SELECT cron.schedule(
-  'storage-cleanup-job', 
-  '0 3 * * *', -- Run at 3:00 AM every day
-  $$
-  SELECT net.http_post(
-      url:='https://<YOUR_PROJECT_REF>.supabase.co/functions/v1/storage-cleanup',
-      headers:='{"Content-Type": "application/json", "Authorization": "Bearer <YOUR_ANON_OR_SERVICE_KEY>"}'::jsonb,
-      body:='{}'::jsonb
-  ) as request_id;
-  $$
-);
+```bash
+curl -X POST \
+  "https://<PROJECT_REF>.supabase.co/functions/v1/storage-cleanup" \
+  -H "Content-Type: application/json" \
+  -H "x-cleanup-secret: <STORAGE_CLEANUP_SECRET>" \
+  -d '{"dryRun":true,"limit":100}'
 ```
 
-### Checking Logs
-You can view the cleanup logs in your Supabase Dashboard under Edge Functions -> `storage-cleanup` -> Logs.
+Expected response includes:
+
+- `summary.candidateMemories`
+- `summary.candidateAttachments`
+- `summary.orphanObjects`
+- `summary.missingObjects`
+- `summary.protectedObjects`
+- `blockedMemoryIds`
+
+## Scheduling
+
+Use the SQL template in `supabase/functions/storage-cleanup/schedule.sql`.
+
+The prepared schedule is dry-run only by default. Do not switch the scheduled body to `{"dryRun":false}` until the dry-run report is reviewed and explicitly approved.

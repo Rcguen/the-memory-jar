@@ -10,10 +10,26 @@ interface BookLayoutProps {
   subtitle: string;
   dateStr?: string;
   pages: BookPageData[];
+  hasMorePages?: boolean;
+  isFetchingMore?: boolean;
+  fetchMoreError?: boolean;
+  onRetryFetchMore?: () => void;
+  onPageChange?: (pageIndex: number, renderedPageCount: number) => void;
   onClose?: () => void;
 }
 
-export function BookLayout({ title, subtitle, dateStr, pages, onClose }: BookLayoutProps) {
+export function BookLayout({
+  title,
+  subtitle,
+  dateStr,
+  pages,
+  hasMorePages = false,
+  isFetchingMore = false,
+  fetchMoreError = false,
+  onRetryFetchMore,
+  onPageChange,
+  onClose,
+}: BookLayoutProps) {
   const [skipEntrance, setSkipEntrance] = useState(false);
   const [entranceSettled, setEntranceSettled] = useState(skipEntrance);
   const [isOpen, setIsOpen] = useState(false);
@@ -37,6 +53,11 @@ export function BookLayout({ title, subtitle, dateStr, pages, onClose }: BookLay
   }, []);
 
   const totalPages = pages.length;
+
+  useEffect(() => {
+    const renderedPageCount = isMobile ? 1 : 2;
+    onPageChange?.(currentIndex, renderedPageCount);
+  }, [currentIndex, isMobile, onPageChange]);
 
   const handleNext = useCallback(() => {
     if (!isOpen) {
@@ -217,6 +238,32 @@ export function BookLayout({ title, subtitle, dateStr, pages, onClose }: BookLay
         </div>
       )}
 
+      {isOpen && hasMorePages && (isFetchingMore || fetchMoreError) && (
+        <div className="pointer-events-none absolute bottom-6 left-1/2 z-50 -translate-x-1/2">
+          <div className="pointer-events-auto flex items-center gap-3 rounded-full border border-amber-200/20 bg-black/45 px-4 py-2 text-sm text-amber-50/80 backdrop-blur-md">
+            {isFetchingMore ? (
+              <>
+                <span className="h-3 w-3 animate-spin rounded-full border-2 border-amber-200/20 border-t-amber-200/80" />
+                <span>Loading the next chapter...</span>
+              </>
+            ) : (
+              <>
+                <span>Couldn&apos;t load the next chapter.</span>
+                {onRetryFetchMore && (
+                  <button
+                    type="button"
+                    onClick={onRetryFetchMore}
+                    className="rounded-full border border-amber-100/20 px-3 py-1 text-xs text-amber-50 transition-colors hover:bg-white/10"
+                  >
+                    Retry
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       <EntranceScene
         reduceMotion={shouldReduceMotion || skipEntrance}
         isOpen={isOpen}
@@ -317,3 +364,4 @@ export function BookLayout({ title, subtitle, dateStr, pages, onClose }: BookLay
     </div>
   );
 }
+
