@@ -1,4 +1,8 @@
+"use client";
+
 import React from "react";
+import { useQueries } from "@tanstack/react-query";
+import { memoryService } from "@/services/memory";
 
 import { BookPageData } from "@/types/storybook";
 import { PhotoGallery } from "@/components/viewer/PhotoGallery";
@@ -13,6 +17,17 @@ interface BookPageProps {
 export function BookPage({ pageData, isLeftPage }: BookPageProps) {
   const { memory, layout } = pageData;
   const attachments = memory.attachments || [];
+  const attachmentUrlQueries = useQueries({
+    queries: attachments.map((attachment) => ({
+      queryKey: ["signedAttachmentUrl", attachment.id, attachment.url],
+      queryFn: () => memoryService.getAttachmentUrlAsync(attachment.file_type, attachment.url),
+      staleTime: 1000 * 60 * 30,
+    })),
+  });
+  const attachmentUrlsById = new Map(
+    attachments.map((attachment, index) => [attachment.id, attachmentUrlQueries[index]?.data]),
+  );
+  const getAttachmentUrl = (attachment: typeof attachments[number]) => attachmentUrlsById.get(attachment.id);
   
   // Render based on layout
   const renderContent = () => {
@@ -28,7 +43,7 @@ export function BookPage({ pageData, isLeftPage }: BookPageProps) {
               {layout === "full_photo" ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img 
-                  src={photos[0].url} 
+                  src={getAttachmentUrl(photos[0]) ?? ""} 
                   alt={memory.title || "Memory Photo"} 
                   className="w-full h-full object-cover"
                 />
@@ -58,11 +73,11 @@ export function BookPage({ pageData, isLeftPage }: BookPageProps) {
       case "video": {
         const videos = attachments.filter(a => a.file_type === "video");
         if (videos.length === 0) return null;
-        
+        const videoUrl = getAttachmentUrl(videos[0]);
         return (
           <div className="flex flex-col h-full p-4">
             <div className="w-full rounded-lg overflow-hidden shadow-md bg-zinc-900 aspect-video">
-              <VideoPlayer url={videos[0].url} />
+              {videoUrl ? <VideoPlayer url={videoUrl} /> : <div className="h-full w-full animate-pulse bg-zinc-800" />}
             </div>
             {memory.content && (
               <div className="mt-8 font-serif text-zinc-800 text-lg leading-relaxed">
@@ -76,14 +91,14 @@ export function BookPage({ pageData, isLeftPage }: BookPageProps) {
       case "voice": {
         const voices = attachments.filter(a => a.file_type === "voice");
         if (voices.length === 0) return null;
-        
+        const voiceUrl = getAttachmentUrl(voices[0]);
         return (
           <div className="flex flex-col h-full justify-center p-8">
             <div className="bg-amber-50/80 rounded-2xl p-6 shadow-sm border border-amber-200/50">
               <h3 className="font-serif text-xl text-amber-900 mb-6 text-center">
                 {memory.title || "Voice Note"}
               </h3>
-              <AudioPlayer url={voices[0].url} />
+              {voiceUrl ? <AudioPlayer url={voiceUrl} /> : <div className="h-12 animate-pulse rounded bg-amber-100" />}
               
               {memory.content && (
                 <div className="mt-6 font-serif text-amber-800/80 text-center italic">

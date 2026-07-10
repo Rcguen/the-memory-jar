@@ -1239,17 +1239,11 @@ export const memoryService = {
 
   async getAttachmentUrlAsync(fileType: string, path: string): Promise<string> {
     const bucket = getStorageBucket(fileType);
-    const isPublic = bucket === "memory-images" || bucket === "memory-thumbnails";
-    
     const supabase = createClient();
-    if (isPublic) {
-      const { data } = supabase.storage.from(bucket).getPublicUrl(path);
-      return data.publicUrl;
-    } else {
-      const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 3600);
-      if (error) throw error;
-      return data.signedUrl;
-    }
+    const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 3600);
+    if (error) throw error;
+    if (!data?.signedUrl) throw new Error("Storage did not return a signed attachment URL.");
+    return data.signedUrl;
   },
 
   async saveVisualState(state: Omit<import("@/types/memory").MemoryVisualState, "id" | "created_at" | "updated_at">): Promise<void> {

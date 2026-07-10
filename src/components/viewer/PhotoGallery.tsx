@@ -14,7 +14,7 @@ export function PhotoGallery({ attachments }: PhotoGalleryProps) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const urls = useQueries({
     queries: attachments.map((attachment) => ({
-      queryKey: ["attachmentUrl", attachment.id, attachment.url],
+      queryKey: ["signedAttachmentUrl", attachment.id, attachment.url],
       queryFn: () => memoryService.getAttachmentUrlAsync(attachment.file_type, attachment.url),
       staleTime: 1000 * 60 * 30,
     })),

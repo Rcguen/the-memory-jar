@@ -512,12 +512,12 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
 
 function AttachmentRenderer({ attachment, thumbnail }: { attachment: MemoryAttachment; thumbnail?: MemoryAttachment }) {
   const { data: url, isLoading } = useQuery({
-    queryKey: ['attachmentUrl', attachment.id, attachment.url],
+    queryKey: ['signedAttachmentUrl', attachment.id, attachment.url],
     queryFn: () => memoryService.getAttachmentUrlAsync(attachment.file_type, attachment.url),
     staleTime: 1000 * 60 * 30, // Cache signed URLs for 30 minutes
   });
   const { data: thumbnailUrl } = useQuery({
-    queryKey: ['attachmentUrl', thumbnail?.id, thumbnail?.url],
+    queryKey: ['signedAttachmentUrl', thumbnail?.id, thumbnail?.url],
     queryFn: () => memoryService.getAttachmentUrlAsync(thumbnail!.file_type, thumbnail!.url),
     staleTime: 1000 * 60 * 30,
     enabled: !!thumbnail,

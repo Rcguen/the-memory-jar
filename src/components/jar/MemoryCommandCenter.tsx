@@ -122,7 +122,7 @@ function MemoryPreviewThumb({ memory }: { memory: Memory }) {
   const thumbnail = memory.attachments?.find((attachment) => attachment.file_type === "thumbnail")
     ?? memory.attachments?.find((attachment) => attachment.file_type === "photo");
   const { data: url } = useQuery({
-    queryKey: ["attachmentUrl", thumbnail?.id, thumbnail?.url],
+    queryKey: ["signedAttachmentUrl", thumbnail?.id, thumbnail?.url],
     queryFn: () => memoryService.getAttachmentUrlAsync(thumbnail!.file_type, thumbnail!.url),
     staleTime: 1000 * 60 * 30,
     enabled: !!thumbnail && (memory.type === "video" || memory.type === "photo"),

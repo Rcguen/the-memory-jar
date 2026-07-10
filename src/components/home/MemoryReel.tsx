@@ -13,7 +13,7 @@ function ReelThumbnail({ memory, onClick }: { memory: Memory, onClick: () => voi
     ?? memory.attachments?.find((a) => a.file_type === "photo");
 
   const { data: url } = useQuery({
-    queryKey: ["attachmentUrl", thumbnail?.id, thumbnail?.url],
+    queryKey: ["signedAttachmentUrl", thumbnail?.id, thumbnail?.url],
     queryFn: () => memoryService.getAttachmentUrlAsync(thumbnail!.file_type, thumbnail!.url),
     staleTime: 1000 * 60 * 30,
     enabled: !!thumbnail && (memory.type === "video" || memory.type === "photo"),

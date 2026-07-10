@@ -1,11 +1,14 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRelationshipContext } from "@/hooks/useRelationshipContext";
 import { useYearRecapStats } from "@/hooks/useStorybookData";
 import { YearRecapStats } from "@/types/storybook";
 import { EmojiText } from "@/components/ui/EmojiText";
+import { memoryService } from "@/services/memory";
+import type { MemoryAttachment } from "@/types/memory";
 
 
 export function YearRecapClient() {
@@ -198,10 +201,7 @@ function StoryBlocks({ stats }: { stats: YearRecapStats }) {
                 </div>
                 <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
                   {firstMemory.attachments && firstMemory.attachments.length > 0 && firstMemory.attachments[0].file_type === 'photo' ? (
-                    <div className="w-full aspect-video rounded-lg overflow-hidden mb-4">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={firstMemory.attachments[0].url} alt="" className="w-full h-full object-cover" />
-                    </div>
+                    <RecapMemoryImage attachment={firstMemory.attachments[0]} />
                   ) : null}
                   <h5 className="font-serif text-lg text-white/90">{firstMemory.title || "First memory of the year"}</h5>
                   {firstMemory.content && <p className="text-white/60 mt-2 line-clamp-3">{firstMemory.content}</p>}
@@ -288,6 +288,25 @@ function StoryBlocks({ stats }: { stats: YearRecapStats }) {
           </div>
         )}
       </motion.section>
+    </div>
+  );
+}
+
+function RecapMemoryImage({ attachment }: { attachment: MemoryAttachment }) {
+  const { data: url } = useQuery({
+    queryKey: ["signedAttachmentUrl", attachment.id, attachment.url],
+    queryFn: () => memoryService.getAttachmentUrlAsync(attachment.file_type, attachment.url),
+    staleTime: 1000 * 60 * 30,
+  });
+
+  if (!url) {
+    return <div className="mb-4 aspect-video w-full animate-pulse rounded-lg bg-white/10" />;
+  }
+
+  return (
+    <div className="mb-4 aspect-video w-full overflow-hidden rounded-lg">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={url} alt="" className="h-full w-full object-cover" />
     </div>
   );
 }

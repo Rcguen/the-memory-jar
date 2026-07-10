@@ -61,7 +61,7 @@ export function MemoryObjectFactory({ state, onClick }: MemoryObjectFactoryProps
             memory.attachments.forEach(async (att) => {
               try {
                 const url = await queryClient.fetchQuery({
-                  queryKey: ['attachmentUrl', att.id, att.url],
+                  queryKey: ['signedAttachmentUrl', att.id, att.url],
                   queryFn: () => memoryService.getAttachmentUrlAsync(att.file_type, att.url),
                   staleTime: 1000 * 60 * 30
                 });
