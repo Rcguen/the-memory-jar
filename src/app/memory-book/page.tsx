@@ -9,7 +9,7 @@ export const metadata = {
 
 export default function MemoryBookPage() {
   return (
-    <main className="min-h-[100dvh] bg-zinc-950 relative overflow-hidden">
+    <main className="min-h-[100dvh] bg-zinc-950 relative overflow-hidden pb-32 sm:pb-0">
       <AmbientParticles />
       <MemoryBookClient />
       <MobileBottomNav />

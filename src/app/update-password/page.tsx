@@ -6,7 +6,7 @@ import { FloatingParticles } from "@/components/jar/FloatingParticles";
 
 export default function UpdatePasswordPage() {
   return (
-    <main className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-rose-50 to-white dark:from-zinc-950 dark:to-zinc-900 transition-colors duration-500">
+    <main className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden px-4 py-8 sm:px-6 bg-gradient-to-b from-rose-50 to-white dark:from-zinc-950 dark:to-zinc-900 transition-colors duration-500">
       {/* Decorative Background Elements */}
       <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-rose-200/30 dark:bg-rose-900/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-200/30 dark:bg-purple-900/10 rounded-full blur-3xl pointer-events-none" />

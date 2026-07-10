@@ -230,7 +230,7 @@ export function MemoryViewer() {
             initial="initial"
             animate="animate"
             exit="exit"
-            className={isPhone ? "relative z-10 h-full w-full pointer-events-auto mobile-safe-y" : "relative z-10 pointer-events-auto"}
+            className={isPhone ? "relative z-10 h-[100dvh] w-full overflow-y-auto overscroll-contain pointer-events-auto mobile-safe-y" : "relative z-10 pointer-events-auto"}
             transition={{ type: "spring", damping: 26, stiffness: 150, mass: 0.9 }}
             style={{ transformStyle: "preserve-3d" }}
           >

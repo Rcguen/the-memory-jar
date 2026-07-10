@@ -184,7 +184,7 @@ export default function Home() {
   }
 
   return (
-    <main className="relative min-h-screen flex flex-col items-center justify-start bg-emerald-50/30 dark:bg-emerald-950/20 transition-colors duration-700 xl:justify-center w-full">
+    <main className="relative min-h-screen flex flex-col items-center justify-start bg-emerald-50/30 dark:bg-emerald-950/20 transition-colors duration-700 xl:justify-center w-full pb-36 sm:pb-8">
       
       <AnimatePresence>
         {memoryCount === null && (

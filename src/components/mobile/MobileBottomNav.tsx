@@ -26,14 +26,14 @@ export function MobileBottomNav() {
 
   return (
     <>
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[85] flex justify-center px-4 pb-[calc(env(safe-area-inset-bottom)+0.9rem)] sm:hidden">
+      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+4.15rem)] z-[85] flex justify-center px-4 sm:hidden">
         <button
           type="button"
           onClick={() => {
             trigger("light");
             openModal();
           }}
-          className="pointer-events-auto relative inline-flex min-h-14 items-center gap-2 rounded-full border border-white/25 bg-[linear-gradient(135deg,rgba(16,185,129,0.96),rgba(5,150,105,0.92))] px-5 py-3 text-left text-white shadow-[0_16px_48px_rgba(5,150,105,0.35)] backdrop-blur-xl transition-transform active:scale-[0.985]"
+          className="pointer-events-auto relative inline-flex min-h-12 items-center gap-2 rounded-full border border-white/25 bg-[linear-gradient(135deg,rgba(16,185,129,0.96),rgba(5,150,105,0.92))] px-4 py-2.5 text-left text-white shadow-[0_16px_48px_rgba(5,150,105,0.35)] backdrop-blur-xl transition-transform active:scale-[0.985]"
           aria-label="Drop a Memory"
         >
           <span className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.32),transparent_48%)]" />
@@ -48,8 +48,8 @@ export function MobileBottomNav() {
         </button>
       </div>
 
-      <nav className="mobile-safe-bottom fixed inset-x-0 bottom-0 z-[80] border-t border-white/10 bg-zinc-950/72 px-3 pb-[calc(env(safe-area-inset-bottom)+0.4rem)] pt-3 shadow-[0_-14px_50px_rgba(0,0,0,0.28)] backdrop-blur-2xl sm:hidden">
-        <div className="mx-auto grid max-w-md grid-cols-5 gap-1.5 rounded-[1.7rem] border border-white/10 bg-white/[0.045] p-2">
+      <nav aria-label="Primary navigation" className="mobile-safe-bottom fixed inset-x-0 bottom-0 z-[80] border-t border-white/10 bg-zinc-950/78 px-3 pb-[calc(env(safe-area-inset-bottom)+0.45rem)] pt-2.5 shadow-[0_-14px_50px_rgba(0,0,0,0.28)] backdrop-blur-2xl sm:hidden">
+        <div className="mx-auto grid max-w-md grid-cols-5 gap-1 rounded-[1.45rem] border border-white/10 bg-white/[0.045] p-1.5">
           {ITEMS.map((item) => {
             const Icon = item.icon;
             const active = pathname === item.href;
@@ -59,13 +59,13 @@ export function MobileBottomNav() {
                 href={item.href}
                 onClick={() => trigger("light")}
                 className={cn(
-                  "flex min-h-[56px] flex-col items-center justify-center rounded-[1.1rem] px-1 py-2 text-center transition-colors",
+                  "flex min-h-[52px] flex-col items-center justify-center rounded-[1.1rem] px-1 py-2 text-center transition-colors",
                   active ? "bg-white/10 text-white" : "text-zinc-400",
                 )}
                 aria-current={active ? "page" : undefined}
               >
                 <Icon className={cn("h-4.5 w-4.5", active ? item.accent : "text-zinc-400")} />
-                <span className="mt-1 text-[11px] font-medium tracking-[0.01em]">{item.label}</span>
+                <span className="mt-1 text-[10px] font-medium tracking-[0.01em]">{item.label}</span>
               </Link>
             );
           })}

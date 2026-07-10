@@ -8,7 +8,7 @@ export const metadata = {
 
 export default function YearRecapPage() {
   return (
-    <main className="min-h-[100dvh] bg-zinc-950">
+    <main className="min-h-[100dvh] bg-zinc-950 pb-32 sm:pb-0">
       <YearRecapClient />
       <MobileBottomNav />
     </main>
