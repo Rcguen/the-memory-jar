@@ -1,8 +1,26 @@
 import { createClient } from "@supabase/supabase-js";
+import * as dotenv from "dotenv";
+
+// Load .env.local only as fallback, do not override existing shell variables
+dotenv.config({ path: ".env.local", override: false });
 
 // Make sure to set these environment variables when running this script
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const SUPABASE_URL =
+  process.env.SUPABASE_URL?.trim() ||
+  process.env.NEXT_PUBLIC_SUPABASE_URL?.trim() ||
+  "";
+
+const SUPABASE_SERVICE_ROLE_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ||
+  process.env.SUPABASE_SECRET_KEY?.trim() ||
+  "";
+
+const DRY_RUN = process.env.DRY_RUN !== "false"; // Default to true for safety
+
+console.log(`[INIT] SUPABASE_URL present: ${!!SUPABASE_URL}`);
+console.log(`[INIT] service key present: ${!!SUPABASE_SERVICE_ROLE_KEY}`);
+console.log(`[INIT] service key length: ${SUPABASE_SERVICE_ROLE_KEY.length}`);
+console.log(`[INIT] DRY_RUN value: ${DRY_RUN}`);
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
   console.error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY environment variables.");
@@ -15,6 +33,7 @@ const BUCKETS = ["memory-images", "memory-voices", "memory-videos", "memory-thum
 
 async function run() {
   console.log("Starting Storage Path Migration...");
+  console.log(`DRY RUN MODE: ${DRY_RUN ? "ON (no changes will be made)" : "OFF (changes WILL be made)"}`);
 
   // 1. Fetch all memory attachments
   const { data: attachments, error } = await supabase
@@ -59,6 +78,13 @@ async function run() {
     const newPath = `${relationship_id}/${memory_id}/${filename}`;
 
     console.log(`[PROCESS] Copying ${url} to ${newPath} in bucket ${bucket}`);
+
+    if (DRY_RUN) {
+      console.log(`[DRY RUN] Would copy ${url} to ${newPath}`);
+      console.log(`[DRY RUN] Would update attachment ${id} URL to ${newPath}`);
+      copied++;
+      continue;
+    }
 
     // 2. Copy the file to the new path
     const { error: copyError } = await supabase.storage

@@ -1,10 +1,24 @@
 "use server";
 
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
-import { lookupEmailByUsername } from "@/services/auth";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+
+async function lookupEmailOnServer(username: string): Promise<string | null> {
+  const supabaseAdmin = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+  const { data } = await supabaseAdmin
+    .from("profiles")
+    .select("email")
+    .eq("username", username)
+    .single();
+  return data?.email || null;
+}
+
 
 const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -28,8 +42,8 @@ export async function loginAction(
 
   const { username, password } = parseResult.data;
 
-  // 1. Lookup username
-  const email = await lookupEmailByUsername(username);
+  // 1. Lookup username on the server using service role
+  const email = await lookupEmailOnServer(username);
 
   if (!email) {
     return { error: "The jar doesn't recognize this name." };
@@ -73,7 +87,7 @@ export async function resetPasswordRequestAction(
   const username = formData.get("username")?.toString();
   if (!username) return { error: "Please enter your name." };
 
-  const email = await lookupEmailByUsername(username);
+  const email = await lookupEmailOnServer(username);
   if (!email) return { error: "The jar doesn't recognize this name." };
 
   const supabase = await createClient();

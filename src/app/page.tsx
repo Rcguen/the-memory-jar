@@ -317,7 +317,7 @@ export default function Home() {
       </header>
 
       {/* 4. Main Content Area */}
-      <div className="relative z-10 flex w-full max-w-[23rem] flex-col items-center px-3 pb-8 pt-12 sm:max-w-2xl sm:px-4 sm:pb-10 sm:pt-16 lg:pt-8 xl:pt-4">
+      <div className="relative z-10 flex w-full max-w-[23rem] flex-col items-center px-3 pb-8 pt-20 sm:max-w-2xl sm:px-4 sm:pb-10 sm:pt-24 lg:pt-12 xl:pt-8">
         
         {/* Title / Mood Text */}
         <motion.div
