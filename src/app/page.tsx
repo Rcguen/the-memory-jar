@@ -10,6 +10,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Compass, LayoutDashboard, LogOut, User, BookOpen, Loader2 } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { logoutAction } from "@/app/actions/auth";
+import { clearPrivateClientData } from "@/lib/cache-cleanup";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -305,7 +306,7 @@ export default function Home() {
               </DropdownMenuItem>
               <DropdownMenuItem 
                 className="cursor-pointer text-rose-600 dark:text-rose-400 focus:text-rose-600 dark:focus:text-rose-400" 
-                onClick={() => startTransition(async () => { await logoutAction(); })}
+                onClick={() => startTransition(async () => { await clearPrivateClientData(); await logoutAction(); })}
                 disabled={isPending}
               >
                 <LogOut className="mr-2 h-4 w-4" />

@@ -5,11 +5,12 @@ import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 export function CozyDetails() {
-  const [hour, setHour] = useState(12);
+  const [hour, setHour] = useState(() => 
+    typeof window !== "undefined" ? new Date().getHours() : 12
+  );
   const reduceMotion = useReducedMotion();
 
   useEffect(() => {
-    setHour(new Date().getHours());
     const interval = setInterval(() => setHour(new Date().getHours()), 60000);
     return () => clearInterval(interval);
   }, []);

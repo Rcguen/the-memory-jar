@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { logoutAction } from "@/app/actions/auth";
+import { clearPrivateClientData } from "@/lib/cache-cleanup";
 import { useAuth } from "@/providers/auth-provider";
 import { useRoutePrefetch } from "@/hooks/useRoutePrefetch";
 import { useRelationshipContext } from "@/hooks/useRelationshipContext";
@@ -717,7 +718,7 @@ export function ProfileSettingsPage() {
                 </p>
                 <Button
                   variant="destructive"
-                  onClick={() => startLogoutTransition(async () => { await logoutAction(); })}
+                  onClick={() => startLogoutTransition(async () => { await clearPrivateClientData(); await logoutAction(); })}
                   disabled={isLogoutPending}
                   className="h-10 rounded-full px-5"
                 >

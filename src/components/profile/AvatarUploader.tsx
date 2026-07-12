@@ -67,7 +67,8 @@ export function AvatarUploader({ currentAvatarUrl, displayName, onAvatarChange }
       onAvatarChange(urlWithCacheBuster);
       toast.success("Avatar updated successfully");
 
-    } catch (error: any) {
+    } catch (e) {
+      const error = e as { statusCode?: string, status?: string, code?: string, error?: string, message?: string };
       console.error("[AvatarUploader] Upload failed", {
         operation: "STORAGE_UPSERT",
         status: error?.statusCode || error?.status || "UNKNOWN",
@@ -93,7 +94,8 @@ export function AvatarUploader({ currentAvatarUrl, displayName, onAvatarChange }
       
       onAvatarChange("");
       toast.success("Avatar removed");
-    } catch (error: any) {
+    } catch (e) {
+      const error = e as { statusCode?: string, status?: string, code?: string, error?: string, message?: string };
       console.error("[AvatarUploader] Remove failed", {
         operation: "STORAGE_DELETE",
         status: error?.statusCode || error?.status || "UNKNOWN",

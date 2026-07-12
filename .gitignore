@@ -44,6 +44,7 @@ next-env.d.ts
 .turbo/
 dist/
 out/
+public/sw*
 logs/
 *.docx
 !.env.example

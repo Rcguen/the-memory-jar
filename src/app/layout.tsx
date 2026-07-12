@@ -11,6 +11,7 @@ import { RealtimeProvider } from "@/providers/realtime-provider";
 import { JarHeartbeat } from "@/components/jar/JarHeartbeat";
 import { getProfile } from "@/services/auth";
 import { Toaster } from "sonner";
+import { PwaManager } from "@/components/ui/PwaManager";
 import "./globals.css";
 
 const cormorantGaramond = Cormorant_Garamond({
@@ -57,6 +58,7 @@ export default async function RootLayout({
                     <UnlockSchedulerProvider>
                       <MemoryViewerProvider>
                         <JarHeartbeat />
+                        <PwaManager />
                         {children}
                       </MemoryViewerProvider>
                     </UnlockSchedulerProvider>
