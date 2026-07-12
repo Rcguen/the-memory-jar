@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MemoryType, Memory } from "@/types/memory";
 
@@ -109,7 +109,7 @@ export function ViewerAnimation({ memoryId, type, fullMemory, onClose, stage: in
 
     const commonProps = {
       // In viewer, we want them significantly larger than in the jar
-      style: { width: "250px", height: "auto" },
+      style: { width: "104px", height: "auto" },
       velocityY: 0,
       isSleeping: true
     };
@@ -254,7 +254,7 @@ export function ViewerAnimation({ memoryId, type, fullMemory, onClose, stage: in
   const readingVariants = getReadingVariants();
 
   return (
-    <div className="relative w-[90vw] max-w-4xl min-h-[60vh] flex items-center justify-center">
+    <div className="relative flex min-h-[60vh] w-full max-w-[70rem] items-center justify-center px-0 sm:px-3">
       <AnimatePresence mode="wait">
         {stage !== "reading" ? (
           <motion.div
@@ -262,7 +262,7 @@ export function ViewerAnimation({ memoryId, type, fullMemory, onClose, stage: in
             initial={{ opacity: 1 }}
             exit={{ opacity: 0, scale: 1.5, filter: "blur(10px)" }}
             transition={{ duration: 0.6, ease: "easeOut" }}
-            className="absolute z-20 flex items-center justify-center flex-col gap-6"
+            className="absolute z-20 flex flex-col items-center justify-center gap-2"
           >
             {renderPhysicalObject()}
             
@@ -272,7 +272,7 @@ export function ViewerAnimation({ memoryId, type, fullMemory, onClose, stage: in
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
-                  className="font-cormorant text-2xl text-emerald-100 italic tracking-widest drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
+                  className="font-cormorant text-sm text-emerald-100/80 italic"
                 >
                   Unveiling memory...
                 </motion.p>
@@ -287,7 +287,7 @@ export function ViewerAnimation({ memoryId, type, fullMemory, onClose, stage: in
             exit="exit"
             variants={readingVariants}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
-            className="w-full h-full relative z-30 perspective-1000"
+            className="relative z-30 h-full w-full perspective-1000"
             style={{ transformStyle: "preserve-3d" }}
           >
             {/* The actual reading experience */}
@@ -298,3 +298,4 @@ export function ViewerAnimation({ memoryId, type, fullMemory, onClose, stage: in
     </div>
   );
 }
+

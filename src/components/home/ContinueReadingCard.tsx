@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useMemories } from "@/hooks/useMemoryData";
@@ -9,20 +9,24 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { EmojiText } from "@/components/ui/EmojiText";
 
 export function ContinueReadingCard({ className }: { className?: string }) {
   const { data: memories = [] } = useMemories({});
   const { openViewer } = useMemoryViewer();
   const [lastOpenedId, setLastOpenedId] = useState<string | null>(null);
   const [lastOpenedAt, setLastOpenedAt] = useState<number | null>(null);
+  const [currentTime, setCurrentTime] = useState(0);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    const timer = window.setTimeout(() => {
       const id = localStorage.getItem("lastOpenedMemoryId");
       const at = localStorage.getItem("lastOpenedAt");
-      if (id) setLastOpenedId(id);
-      if (at) setLastOpenedAt(parseInt(at, 10));
-    }
+      setLastOpenedId(id);
+      setLastOpenedAt(at ? parseInt(at, 10) : null);
+      setCurrentTime(Date.now());
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   const memory = memories.find((m) => m.id === lastOpenedId);
@@ -51,7 +55,7 @@ export function ContinueReadingCard({ className }: { className?: string }) {
   };
 
   const actionText = getActionText(memory.type);
-  const isRecent = lastOpenedAt && (Date.now() - lastOpenedAt) < 1000 * 60 * 60 * 24; // within 24h
+  const isRecent = lastOpenedAt && (currentTime - lastOpenedAt) < 1000 * 60 * 60 * 24; // within 24h
 
   return (
     <motion.button
@@ -86,7 +90,7 @@ export function ContinueReadingCard({ className }: { className?: string }) {
       
       <div className="relative z-10 mt-auto">
         <h3 className="font-cormorant text-xl text-zinc-100 line-clamp-2 leading-tight">
-          {memory.title || "Untitled memory"}
+          <EmojiText text={memory.title || "Untitled memory"} />
         </h3>
         {lastOpenedAt && (
           <p className="mt-1.5 text-xs text-zinc-400">
@@ -97,3 +101,5 @@ export function ContinueReadingCard({ className }: { className?: string }) {
     </motion.button>
   );
 }
+
+

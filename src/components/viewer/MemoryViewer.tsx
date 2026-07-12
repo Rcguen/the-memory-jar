@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -200,13 +200,13 @@ export function MemoryViewer() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
           <motion.div
             initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
-            animate={{ opacity: 1, backdropFilter: "blur(12px)" }}
+            animate={{ opacity: 1, backdropFilter: "blur(4px)" }}
             exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
             transition={{ duration: 0.6, ease: "easeInOut" }}
-            className="absolute inset-0 bg-zinc-950/60 pointer-events-auto"
+            className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(210,188,142,0.12),transparent_46%),rgba(12,25,19,0.82)] pointer-events-auto"
             onClick={closeViewer}
           >
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(251,146,60,0.15)_0%,_transparent_70%)] pointer-events-none" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(18,100,82,0.12)_0%,_transparent_70%)] pointer-events-none" />
           </motion.div>
 
           <motion.div
@@ -291,3 +291,4 @@ export function MemoryViewer() {
     </>
   );
 }
+

@@ -153,14 +153,14 @@ export function ProfileSettingsPage() {
   const [relAnniversaryDraft, setRelAnniversaryDraft] = useState<"yearly" | "monthly" | undefined>(undefined);
 
   const detectedTimezone = useMemo(() => detectTimezone(), []);
-
-  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => {
-    if (relationship) {
-      setRelStartDateDraft(prev => prev === undefined ? (relationship.startDate ? new Date(relationship.startDate).toISOString().split('T')[0] : "") : prev);
-      setRelTimezoneDraft(prev => prev === undefined ? (relationship.relationshipTimezone || detectedTimezone) : prev);
-      setRelAnniversaryDraft(prev => prev === undefined ? (relationship.anniversaryType as "yearly" | "monthly" || "yearly") : prev);
-    }
+    if (!relationship) return;
+    const timer = window.setTimeout(() => {
+      setRelStartDateDraft((prev) => prev === undefined ? (relationship.startDate ? new Date(relationship.startDate).toISOString().split("T")[0] : "") : prev);
+      setRelTimezoneDraft((prev) => prev === undefined ? (relationship.relationshipTimezone || detectedTimezone) : prev);
+      setRelAnniversaryDraft((prev) => prev === undefined ? (relationship.anniversaryType as "yearly" | "monthly" || "yearly") : prev);
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [relationship, detectedTimezone]);
 
   useRoutePrefetch(["/", "/timeline", "/dashboard", "/on-this-day"]);

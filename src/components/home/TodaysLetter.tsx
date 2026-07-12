@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useState } from "react";
 import { useMemories } from "@/hooks/useMemoryData";
@@ -7,6 +7,7 @@ import { useMemoryViewer } from "@/providers/memory-viewer-provider";
 import { motion } from "framer-motion";
 import { Mail, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { EmojiText } from "@/components/ui/EmojiText";
 
 function seededRandom(seed: number) {
   const x = Math.sin(seed++) * 10000;
@@ -67,7 +68,7 @@ export function TodaysLetter({ className }: { className?: string }) {
       
       <div className="relative z-10">
         <p className="font-cormorant text-lg sm:text-xl text-[#4A453B] line-clamp-2 leading-relaxed mb-2">
-          {letter.content}
+          <EmojiText text={letter.content || ""} />
         </p>
         
         {/* Fade out effect */}
@@ -80,3 +81,5 @@ export function TodaysLetter({ className }: { className?: string }) {
     </motion.button>
   );
 }
+
+

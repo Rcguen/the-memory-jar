@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMemories } from "@/hooks/useMemoryData";
 import { useMemoryViewer } from "@/providers/memory-viewer-provider";
@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 
 import { Memory } from "@/types/memory";
+import { EmojiText } from "@/components/ui/EmojiText";
 
 function ReelThumbnail({ memory, onClick }: { memory: Memory, onClick: () => void }) {
   const thumbnail = memory.attachments?.find((a) => a.file_type === "thumbnail")
@@ -27,12 +28,12 @@ function ReelThumbnail({ memory, onClick }: { memory: Memory, onClick: () => voi
       whileTap={{ scale: 0.95 }}
       onClick={onClick}
       className="shrink-0 h-16 w-16 sm:h-20 sm:w-20 rounded-xl overflow-hidden border border-white/10 shadow-md cursor-pointer relative group focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
-      aria-label={`Open memory: ${memory.title || "Photo"}`}
+      aria-label={`Open memory: $<EmojiText text={memory.title || "Photo"} />`}
     >
       <img src={url} alt="" className="w-full h-full object-cover" loading="lazy" />
       <div className="absolute inset-0 bg-black/10 group-hover:bg-black/40 group-hover:backdrop-blur-[1px] transition-all duration-300 flex items-end p-1.5 opacity-0 group-hover:opacity-100">
         <span className="text-[9px] text-white font-medium line-clamp-2 leading-tight drop-shadow-md">
-          {memory.title || "Photo"}
+          <EmojiText text={memory.title || "Photo"} />
         </span>
       </div>
     </motion.button>
@@ -58,3 +59,6 @@ export function MemoryReel() {
     </div>
   );
 }
+
+
+

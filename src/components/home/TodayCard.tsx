@@ -69,11 +69,11 @@ export function TodayCard({ className }: { className?: string }) {
     <motion.div 
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className={cn("p-5 rounded-[1.35rem] border border-white/[0.08] bg-zinc-950/60 shadow-xl backdrop-blur-md flex flex-col justify-center", className)}
+      className={cn("paper-surface p-5 rounded-[1.35rem] border border-white/[0.20] dark:border-white/[0.08] flex flex-col justify-center", className)}
     >
       <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-1 font-semibold">Today</p>
-      <h2 className="font-cormorant text-2xl sm:text-3xl text-amber-50 mb-1.5 leading-none">{greeting}</h2>
-      <p className="text-sm text-zinc-400 leading-snug">{dynamicSentence}</p>
+      <h2 className="font-cormorant text-2xl sm:text-3xl text-[color:var(--jar-ink)] dark:text-amber-50 mb-1.5 leading-none">{greeting}</h2>
+      <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-snug">{dynamicSentence}</p>
     </motion.div>
   );
 }

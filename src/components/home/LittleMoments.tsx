@@ -16,7 +16,7 @@ export function LittleMoments() {
   if (memories.length === 0) return null;
 
   return (
-    <div className="flex gap-2 items-center justify-between px-2 text-zinc-400">
+    <div className="flex items-center justify-between border-t border-[var(--divider)] px-2 pt-3 text-[color:var(--text-tertiary)]">
       <div className="flex items-center gap-1.5" title="Letters">
         <Mail className="w-3.5 h-3.5" />
         <span className="text-xs font-medium">{stats.letters}</span>

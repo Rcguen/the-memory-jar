@@ -55,7 +55,7 @@ export function MemoryWhisper() {
   if (!whisper) return null;
 
   return (
-    <p className="text-xs text-zinc-500 italic mb-1 pl-1">
+    <p className="type-meta mb-1 pl-1 font-cormorant normal-case tracking-[0.06em] text-[color:var(--text-tertiary)]">
       {whisper}
     </p>
   );

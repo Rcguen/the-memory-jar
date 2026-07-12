@@ -60,20 +60,20 @@ export function NextMomentCard({ className }: { className?: string }) {
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3, delay: 0.15 }}
       className={cn(
-        "flex flex-col justify-center rounded-[1.35rem] border border-white/[0.08] bg-zinc-950/60 p-4 shadow-xl backdrop-blur-md",
+        "surface-paper flex flex-col justify-center border-dashed p-4",
         className
       )}
     >
-      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-zinc-500 font-semibold mb-2">
+      <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-stone-500 font-semibold mb-2">
         {nextMoment.type === "capsule" ? <Lock className="w-3.5 h-3.5" /> : <Calendar className="w-3.5 h-3.5" />}
         <span>{nextMoment.type === "capsule" ? "Next Capsule" : "Next Milestone"}</span>
       </div>
       
       <div className="mt-auto">
-        <p className="font-cormorant text-3xl sm:text-4xl text-emerald-400 leading-none mb-1">
+        <p className="font-cormorant text-3xl sm:text-4xl text-[color:var(--jar-forest)] leading-none mb-1">
           {nextMoment.days}
         </p>
-        <p className="text-xs text-zinc-400">
+        <p className="text-xs text-stone-500">
           days remaining
         </p>
       </div>

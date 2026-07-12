@@ -1,13 +1,18 @@
-"use client";
+﻿"use client";
 
-/* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNow } from "date-fns";
 import {
   BookOpen,
+  Camera,
+  CassetteTape,
+  Clapperboard,
+  HeartHandshake,
+  Mail,
+  StickyNote,
   ChevronLeft,
   Flame,
   Heart,
@@ -29,6 +34,7 @@ import { memoryService } from "@/services/memory";
 import { ActivityLog, Memory, MemoryFilter, MemorySort, ReactionEmoji } from "@/types/memory";
 import { cn } from "@/lib/utils";
 import { EmojiText } from "@/components/ui/EmojiText";
+import { MemoryKeepsake } from "@/components/jar/keepsakes/MemoryKeepsake";
 
 const FILTERS: { id: MemoryFilter; label: string }[] = [
   { id: "all", label: "All" },
@@ -44,7 +50,6 @@ const FILTERS: { id: MemoryFilter; label: string }[] = [
   { id: "pinned", label: "Pinned" },
 ];
 
-const REACTIONS: ReactionEmoji[] = ["❤️", "🥹", "😂", "😭", "😍", "🔥"];
 const MAX_RENDERED_MEMORIES = 24;
 const MAX_RENDERED_ACTIVITIES = 24;
 const MAX_RENDERED_MOBILE_MEMORIES = 10;
@@ -109,34 +114,6 @@ function isPendingTimeCapsule(memory: Memory) {
   return Number.isFinite(unlockAtMs) && Date.now() < unlockAtMs;
 }
 
-function lockedUntilLabel(unlockAt: string | null) {
-  if (!unlockAt) return "Locked time capsule";
-
-  const date = new Date(unlockAt);
-  if (!Number.isFinite(date.getTime())) return "Locked time capsule";
-
-  return `Opens ${format(date, "MMM d")}`;
-}
-
-function MemoryPreviewThumb({ memory }: { memory: Memory }) {
-  const thumbnail = memory.attachments?.find((attachment) => attachment.file_type === "thumbnail")
-    ?? memory.attachments?.find((attachment) => attachment.file_type === "photo");
-  const { data: url } = useQuery({
-    queryKey: ["signedAttachmentUrl", thumbnail?.id, thumbnail?.url],
-    queryFn: () => memoryService.getAttachmentUrlAsync(thumbnail!.file_type, thumbnail!.url),
-    staleTime: 1000 * 60 * 30,
-    enabled: !!thumbnail && (memory.type === "video" || memory.type === "photo"),
-  });
-
-  if (!url) return null;
-
-  return (
-    <span className="mr-3 hidden h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-white/[0.07] bg-black/20 sm:block">
-      <img src={url} alt="" loading="lazy" className="h-full w-full object-cover" />
-    </span>
-  );
-}
-
 interface MemoryCommandCenterProps {
   className?: string;
 }
@@ -173,10 +150,10 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
     () => memories.filter((memory) => !pendingDeleted.has(memory.id)),
     [memories, pendingDeleted],
   );
-  const renderedMemories = useMemo(
-    () => visibleMemories.slice(0, isCompact ? MAX_RENDERED_MOBILE_MEMORIES : MAX_RENDERED_MEMORIES),
-    [isCompact, visibleMemories],
-  );
+  const renderedMemories = useMemo(() => {
+    const ordered = [...visibleMemories].sort((a, b) => Number(b.is_pinned) - Number(a.is_pinned));
+    return ordered.slice(0, isCompact ? MAX_RENDERED_MOBILE_MEMORIES : MAX_RENDERED_MEMORIES);
+  }, [isCompact, visibleMemories]);
   const renderedActivities = useMemo(
     () => activities.slice(0, isCompact ? MAX_RENDERED_MOBILE_ACTIVITIES : MAX_RENDERED_ACTIVITIES),
     [activities, isCompact],
@@ -318,14 +295,14 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
             animate={{ opacity: 1, x: 0, scale: 1, filter: "blur(0px)" }}
             exit={{ opacity: 0, x: -28, scale: 0.985, filter: "blur(8px)" }}
             transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
-            className="relative overflow-hidden rounded-[1.35rem] border border-white/[0.12] bg-zinc-950/[0.9] shadow-[0_18px_60px_rgba(0,0,0,0.32)] backdrop-blur-xl sm:bg-zinc-950/[0.74] xl:bg-zinc-950/[0.38]"
+            className="relative overflow-hidden rounded-[1.35rem] border border-white/[0.12] bg-[linear-gradient(145deg,rgba(38,33,26,0.94),rgba(18,27,24,0.92))] shadow-[0_22px_72px_rgba(25,17,9,0.38),inset_0_1px_rgba(255,255,255,0.09)] backdrop-blur-xl sm:bg-[linear-gradient(145deg,rgba(38,33,26,0.86),rgba(18,27,24,0.82))] xl:bg-[linear-gradient(145deg,rgba(38,33,26,0.68),rgba(18,27,24,0.66))]"
           >
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.14),transparent_44%),linear-gradient(180deg,rgba(255,255,255,0.06),transparent_36%)]" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(222,176,106,0.16),transparent_42%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.12),transparent_46%),linear-gradient(180deg,rgba(255,255,255,0.075),transparent_36%)]" />
 
             <div className="relative flex items-center justify-between gap-3 border-b border-white/[0.07] px-4 py-4">
               <div>
                 <p className="font-cormorant text-[1.75rem] leading-none text-zinc-100 sm:text-xl">Memory Shelf</p>
-                <p className="mt-1 text-[11px] text-zinc-400">{visibleMemories.length} shown</p>
+                <p className="mt-1 text-[11px] tracking-[0.12em] uppercase text-amber-100/55">{visibleMemories.length} keepsakes</p>
               </div>
               <div className="flex items-center gap-1">
                 <Link
@@ -424,9 +401,9 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                     </div>
 
                     <div className="mt-3 max-h-[58vh] space-y-2 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.18)_transparent] sm:mt-4 sm:max-h-[52vh]">
-                      {isLoading && <div className="px-2 py-8 text-center text-sm text-zinc-500">Searching the jar...</div>}
+                      {isLoading && <div className="space-y-3 px-1 py-3" aria-label="Loading memories">{[0, 1, 2].map((item) => <div key={item} className="h-24 animate-pulse rounded-[1.15rem] bg-[linear-gradient(110deg,rgba(255,255,255,0.06),rgba(255,255,255,0.13),rgba(255,255,255,0.06))]" />)}</div>}
                       {!isLoading && visibleMemories.length === 0 && (
-                        <div className="px-2 py-8 text-center text-sm text-zinc-500">No memories match this view.</div>
+                        <div className="px-5 py-10 text-center"><BookOpen className="mx-auto h-6 w-6 text-amber-200/55" /><p className="mt-3 font-cormorant text-xl text-zinc-200">This drawer is waiting for a keepsake.</p><p className="mt-1 text-xs leading-5 text-zinc-500">Try another filter, or place a new little moment in the jar.</p></div>
                       )}
 
                       <AnimatePresence initial={false}>
@@ -434,116 +411,27 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                           const isLockedCapsule = isPendingTimeCapsule(memory);
                           const title = memory.title || "Untitled memory";
                           const preview = memory.content || memory.tags?.map((tag) => `#${tag.name}`).join(" ") || "Open to preview this memory.";
-
+                          const reactionTotal = Object.values(memory.reaction_counts ?? {}).reduce((total, count) => total + count, 0);
                           return (
-                            <motion.article
+                            <MemoryKeepsake
                               key={memory.id}
-                              layout={!useSimpleMotion}
-                              initial={useSimpleMotion ? false : { opacity: 0, y: 10, scale: 0.98 }}
-                              animate={useSimpleMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
-                              exit={useSimpleMotion ? { opacity: 0 } : { opacity: 0, x: -16, scale: 0.98 }}
-                              transition={{ duration: useSimpleMotion ? 0.12 : 0.22 }}
-                              className={cn(
-                                "group rounded-xl border border-white/[0.1] bg-zinc-900/75 p-3 transition-colors hover:bg-zinc-900/90 sm:rounded-2xl sm:bg-white/[0.055]",
-                                isLockedCapsule && "border-emerald-400/15 bg-emerald-950/[0.08]",
-                              )}
-                            >
-                              <div className="flex items-start gap-3">
-                                <button onClick={() => openViewer(memory.id)} className="flex min-w-0 flex-1 text-left">
-                                  <MemoryPreviewThumb memory={memory} />
-                                  <span className="min-w-0 flex-1">
-                                  <div className="mb-1 flex items-center gap-2 text-[10px] uppercase tracking-[0.16em] text-zinc-500">
-                                    {memory.is_pinned && <Pin className="h-3 w-3 text-emerald-400" />}
-                                    <span>{memory.type.replace("_", " ")}</span>
-                                    {memory.unlock_at && <span className="normal-case tracking-normal text-zinc-600">Capsule</span>}
-                                  </div>
-                                  <h3 className="truncate font-cormorant text-xl leading-tight text-zinc-100">
-                                    {isLockedCapsule ? (
-                                      <span className="relative block">
-                                        <span className="block truncate select-none blur-md opacity-15 text-transparent">
-                                          <EmojiText text={title} />
-                                        </span>
-                                        <span className="absolute inset-0 flex items-center gap-1.5 text-zinc-100">
-                                          <Lock className="h-3.5 w-3.5 text-emerald-300" />
-                                          Locked time capsule
-                                        </span>
-                                      </span>
-                                    ) : (
-                                      <EmojiText text={title} />
-                                    )}
-                                  </h3>
-                                  <p className="mt-1 line-clamp-1 text-xs text-zinc-400">
-                                    {isLockedCapsule ? (
-                                      <span className="relative block">
-                                        <span className="block truncate select-none blur-md opacity-15 text-transparent">
-                                          <EmojiText text={preview} />
-                                        </span>
-                                        <span className="absolute inset-0 text-emerald-300/70">
-                                          {lockedUntilLabel(memory.unlock_at)}
-                                        </span>
-                                      </span>
-                                    ) : (
-                                      <EmojiText text={preview} />
-                                    )}
-                                  </p>
-                                  </span>
-                                </button>
-
-                                <div className="flex items-center gap-1">
-                                  <button
-                                    onClick={() => favoriteMutation.mutate({ memory, favorite: !memory.is_favorite })}
-                                    disabled={favoriteMutation.isPending}
-                                    className="inline-flex h-9 w-9 items-center justify-center rounded-full text-zinc-300 transition-colors hover:bg-white/[0.1] hover:text-zinc-100 active:scale-95 disabled:opacity-50"
-                                    aria-label={memory.is_favorite ? "Remove favorite" : "Favorite memory"}
-                                  >
-                                    <Star className={cn("h-4 w-4", memory.is_favorite && "fill-amber-400 text-amber-400")} />
-                                  </button>
-                                  {profile?.id === memory.created_by && (
-                                    <button
-                                      onClick={() => pinMutation.mutate({ memory, pinned: !memory.is_pinned })}
-                                      className="inline-flex h-9 w-9 items-center justify-center rounded-full text-zinc-300 transition-colors hover:bg-white/[0.1] hover:text-zinc-100 active:scale-95"
-                                      aria-label={memory.is_pinned ? "Unpin memory" : "Pin memory"}
-                                    >
-                                      {memory.is_pinned ? <PinOff className="h-4 w-4 text-emerald-400" /> : <Pin className="h-4 w-4" />}
-                                    </button>
-                                  )}
-                                  {profile?.id === memory.created_by && (
-                                    <button
-                                      onClick={() => scheduleDelete(memory)}
-                                      className="inline-flex h-9 w-9 items-center justify-center rounded-full text-rose-500 transition-colors hover:bg-rose-500/10 active:scale-95"
-                                      aria-label="Delete memory"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-
-                              <div className="mt-3 flex items-center justify-between gap-2">
-                                <div className="flex max-w-[calc(100%-4rem)] gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                                  {REACTIONS.map((emoji) => (
-                                    <motion.button
-                                      key={emoji}
-                                      whileTap={{ scale: 0.86 }}
-                                      onClick={() => reactionMutation.mutate({ memory, emoji })}
-                                      className={cn(
-                                        "h-8 min-w-8 shrink-0 rounded-full border border-white/[0.1] bg-black/35 px-2 text-xs text-zinc-100",
-                                        memory.my_reaction === emoji && "border-rose-400/40 bg-rose-400/10",
-                                      )}
-                                    >
-                                      <EmojiText text={emoji} /> {memory.reaction_counts?.[emoji] ? memory.reaction_counts[emoji] : ""}
-                                    </motion.button>
-                                  ))}
-                                </div>
-                                <div className="flex items-center gap-2 text-xs text-zinc-300">
-                                  <span className="inline-flex items-center gap-1"><Heart className="h-3 w-3" />{memory.favorite_count ?? 0}</span>
-                                  <span className="inline-flex items-center gap-1"><MessageCircle className="h-3 w-3" />{memory.comment_count ?? 0}</span>
-                                </div>
-                              </div>
-                            </motion.article>
+                              memory={memory}
+                              metadata={{ title, preview: isLockedCapsule ? "" : preview, dateLabel: format(new Date(memory.memory_date), "MMM d, yyyy"), comments: memory.comment_count ?? 0, favorites: memory.favorite_count ?? 0, reaction: memory.my_reaction, reactions: reactionTotal, tags: memory.tags?.map((tag) => tag.name) }}
+                              previewState="idle"
+                              isLocked={isLockedCapsule}
+                              isCollaborative={memory.is_collaborative}
+                              isPinned={Boolean(memory.is_pinned)}
+                              isFavorite={Boolean(memory.is_favorite)}
+                              reducedMotion={reduceMotion}
+                              onOpen={() => openViewer(memory.id)}
+                              onFavorite={() => favoriteMutation.mutate({ memory, favorite: !memory.is_favorite })}
+                              onPin={() => pinMutation.mutate({ memory, pinned: !memory.is_pinned })}
+                              onDelete={profile?.id === memory.created_by ? () => scheduleDelete(memory) : undefined}
+                              canDelete={profile ? profile.id === memory.created_by : true}
+                              onReaction={(emoji) => reactionMutation.mutate({ memory, emoji })}
+                            />
                           );
-                        })}
-                      </AnimatePresence>
+                        })}                      </AnimatePresence>
                       {visibleMemories.length > renderedMemories.length && (
                         <div className="px-2 py-3 text-center text-xs text-zinc-600">
                           Showing {renderedMemories.length} of {visibleMemories.length}. Search or filter to narrow the shelf.
@@ -608,3 +496,13 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+

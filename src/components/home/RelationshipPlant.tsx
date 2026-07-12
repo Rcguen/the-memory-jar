@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemories } from "@/hooks/useMemoryData";
-import { useReducedMotion, motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useMemo } from "react";
 
-function PlantSVG({ stage }: { stage: "seed" | "sprout" | "leaves" | "flower" | "smallTree" | "largeTree" }) {
+type PlantStage = "seed" | "sprout" | "leaves" | "flower" | "smallTree" | "largeTree";
+
+function PlantSVG({ stage }: { stage: PlantStage }) {
   // We can render tiny SVG paths for each
   switch (stage) {
     case "seed": return <svg viewBox="0 0 24 24" className="w-5 h-5 text-emerald-900/50 fill-current"><path d="M12 18c-2 0-3-1-3-2 0-2 2-3 3-3s3 1 3 3c0 1-1 2-3 2z"/></svg>;
@@ -18,7 +20,6 @@ function PlantSVG({ stage }: { stage: "seed" | "sprout" | "leaves" | "flower" | 
 
 export function RelationshipPlant() {
   const { data: memories = [] } = useMemories({});
-  const reduceMotion = useReducedMotion();
 
   const stage = useMemo(() => {
     const count = memories.length;
@@ -41,7 +42,7 @@ export function RelationshipPlant() {
           transition={{ duration: 0.5 }}
           className="origin-bottom"
         >
-          <PlantSVG stage={stage as any} />
+          <PlantSVG stage={stage} />
         </motion.div>
       </AnimatePresence>
       <span className="text-[10px] font-cormorant tracking-widest uppercase">Growing together</span>

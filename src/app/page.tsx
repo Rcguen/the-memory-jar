@@ -184,7 +184,7 @@ export default function Home() {
   }
 
   return (
-    <main className="relative min-h-screen flex flex-col items-center justify-start bg-emerald-50/30 dark:bg-emerald-950/20 transition-colors duration-700 xl:justify-center w-full pb-36 sm:pb-8">
+    <main className="relative min-h-screen xl:h-[100dvh] xl:overflow-hidden flex flex-col items-center justify-start home-room transition-colors duration-700 xl:justify-center w-full pb-36 sm:pb-8 xl:pb-0">
       
       <AnimatePresence>
         {memoryCount === null && (
@@ -332,38 +332,6 @@ export default function Home() {
           <p className="mt-2 text-[10px] uppercase tracking-[0.28em] text-zinc-500/90 dark:text-zinc-400/80 sm:hidden">
             Keep your little moments close
           </p>
-          <div className="mt-4 grid w-full grid-cols-2 gap-2 md:hidden">
-            <Link
-              href="/timeline"
-              onMouseEnter={prefetchTimeline}
-              onTouchStart={prefetchTimeline}
-              onFocus={prefetchTimeline}
-              className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-zinc-950/35 px-4 py-2.5 text-sm text-zinc-200 shadow-lg backdrop-blur-xl transition-colors hover:bg-zinc-950/55"
-            >
-              <Compass className="h-4 w-4 text-emerald-400" />
-              Timeline
-            </Link>
-            <Link
-              href="/dashboard"
-              onMouseEnter={prefetchDashboard}
-              onTouchStart={prefetchDashboard}
-              onFocus={prefetchDashboard}
-              className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-zinc-950/35 px-4 py-2.5 text-sm text-zinc-200 shadow-lg backdrop-blur-xl transition-colors hover:bg-zinc-950/55"
-            >
-              <LayoutDashboard className="h-4 w-4 text-rose-300" />
-              Dashboard
-            </Link>
-            <Link
-              href="/memory-book"
-              onMouseEnter={prefetchBook}
-              onTouchStart={prefetchBook}
-              onFocus={prefetchBook}
-              className="col-span-2 inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-zinc-950/35 px-4 py-2.5 text-sm text-zinc-200 shadow-lg backdrop-blur-xl transition-colors hover:bg-zinc-950/55"
-            >
-              <BookOpen className="h-4 w-4 text-amber-200" />
-              Open Memory Book
-            </Link>
-          </div>
         </motion.div>
 
         {/* Couple Presence Avatars */}
@@ -401,9 +369,9 @@ export default function Home() {
       </div>
 
       {/* LEFT PANEL: Memory Shelf (Primary Actions) */}
-      <div className="relative z-10 mt-8 w-full max-w-[23rem] px-3 sm:max-w-3xl sm:px-4 xl:absolute xl:bottom-6 xl:left-6 xl:top-24 xl:mt-0 xl:w-[28rem] xl:max-w-none xl:px-0 xl:pb-0 2xl:w-[34rem] xl:overflow-y-auto xl:overscroll-contain custom-scrollbar">
+      <div className="relative z-10 mt-8 w-full max-w-[23rem] px-3 sm:max-w-3xl sm:px-4 xl:absolute xl:bottom-6 xl:left-6 xl:top-24 xl:mt-0 xl:w-[28rem] xl:max-w-none xl:px-0 xl:pb-0 2xl:w-[34rem]">
         <div className="flex flex-col relative z-10 xl:pr-3 xl:pb-12 min-h-full">
-          <LivingMemoryShelf className="relative min-h-[500px] flex-1">
+          <LivingMemoryShelf className="home-shelf relative min-h-[500px] flex-1">
             <DeskCat />
             <ErrorBoundary fallbackMessage="Memory tools failed to load.">
               <MemoryCommandCenter className="xl:mt-0 xl:max-w-none h-full" />
@@ -413,36 +381,29 @@ export default function Home() {
       </div>
 
       {/* RIGHT PANEL: Storytelling & Ambient Cards */}
-      <div className="relative z-10 mt-4 w-full max-w-[23rem] px-3 pb-32 sm:max-w-3xl sm:px-4 xl:absolute xl:bottom-6 xl:right-6 xl:top-24 xl:mt-0 xl:w-[28rem] xl:max-w-none xl:px-0 xl:pb-0 2xl:w-[32rem] xl:overflow-y-auto xl:overscroll-contain custom-scrollbar">
+      <div className="relative z-10 mt-4 w-full max-w-[23rem] px-3 pb-32 sm:max-w-3xl sm:px-4 xl:absolute xl:bottom-6 xl:right-6 xl:top-24 xl:mt-0 xl:w-[28rem] xl:max-w-none xl:px-0 xl:pb-0 2xl:w-[32rem]">
         <CozyDetails />
         <AmbientManager />
         
-        <div className="flex flex-col gap-2.5 sm:gap-3 relative z-10 xl:pl-3 xl:pr-2 xl:pb-12 min-h-full">
+        <div className="home-desk grid grid-cols-1 gap-3 sm:gap-4 relative z-10 xl:grid-cols-2 xl:pl-3 xl:pr-2 xl:pb-12 min-h-full">
           
           <div className="flex justify-between items-end mb-1">
             <JarWeather />
           </div>
 
-          <MemoryWhisper />
-          <MemoryOfTheDay />
-
-          <div className="flex gap-2.5">
-            <TodayCard className="flex-1" />
-            <NextMomentCard className="w-[35%]" />
+          <div className="xl:col-span-2"><MemoryWhisper /></div>
+          <div className="xl:col-span-2"><MemoryOfTheDay /></div>
+          <div className="grid gap-2.5 sm:grid-cols-[1fr_0.72fr] xl:col-span-2">
+            <ContinueReadingCard />
+            <NextMomentCard />
           </div>
-
-          <div className="flex gap-2.5">
-            <TodaysLetter className="flex-1" />
-            <ContinueReadingCard className="w-[35%]" />
+          <div className="hidden xl:block xl:col-span-2"><TodaysLetter /></div>
+          <div className="hidden xl:block xl:col-span-2"><DailyReflection /></div>
+          <div className="xl:col-span-2"><MemoryReel /></div>
+          <div className="grid gap-2.5 sm:grid-cols-[1fr_auto] xl:col-span-2">
+            <LittleMoments />
+            <RelationshipPlant />
           </div>
-
-          <DailyReflection />
-
-          <LittleMoments />
-
-          <MemoryReel />
-          
-          <RelationshipPlant />
         </div>
       </div>
 

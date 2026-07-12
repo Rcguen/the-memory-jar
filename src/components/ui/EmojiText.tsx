@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 /* eslint-disable @next/next/no-img-element */
 import { useMemo, useState } from "react";
@@ -92,3 +92,4 @@ export function EmojiText({ text, className }: EmojiTextProps) {
     </span>
   );
 }
+

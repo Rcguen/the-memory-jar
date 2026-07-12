@@ -1,6 +1,6 @@
-import { Memory, MemoryAttachment } from "@/types/memory";
+﻿import { Memory, MemoryAttachment } from "@/types/memory";
 import { format } from "date-fns";
-import { X, ChevronLeft, ChevronRight, AlertCircle, Heart, MessageCircle, Share2, Download, Sparkles } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, AlertCircle, Heart, Share2, Download, Sparkles } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useMemoryViewer } from "@/providers/memory-viewer-provider";
 import { usePhysics } from "@/providers/physics-provider";
@@ -48,9 +48,9 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteConfirming, setIsDeleteConfirming] = useState(false);
   const [isActionRailExpanded, setIsActionRailExpanded] = useState(false);
-  const [readingModeDismissedFor, setReadingModeDismissedFor] = useState<string | null>(null);
+  const [isFavoriting, setIsFavoriting] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const deleteTimerRef = useRef<number | null>(null);
-  const commentsAnchorRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     return () => {
@@ -125,28 +125,26 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
   const photoAttachments = attachments.filter((attachment) => attachment.file_type === "photo");
   const thumbnailAttachments = attachments.filter((attachment) => attachment.file_type === "thumbnail");
   const playableAttachments = attachments.filter((attachment) => attachment.file_type === "voice" || attachment.file_type === "video");
+  const downloadableAttachment = attachments.find((attachment) => attachment.file_type !== "thumbnail");
   const quickReactions: ReactionEmoji[] = ["❤️", "🥹", "😂", "😍"];
-  const shouldFocusRead =
-    isPhone &&
-    !!fullMemory?.content &&
-    fullMemory.content.length > 420 &&
-    ["letter", "promise", "wish", "gratitude", "random_thought", "travel"].includes(fullMemory.type);
-  const isReadingMode = shouldFocusRead && readingModeDismissedFor !== memoryId;
-
-  const handleCommentJump = () => {
-    commentsAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
+  const isReadingMemory = ["letter", "promise", "wish", "gratitude", "random_thought", "travel"].includes(fullMemory?.type ?? "");
 
   const handleFavorite = async () => {
-    if (!fullMemory) return;
+    if (!fullMemory || isFavoriting) return;
+    const nextFavorite = !fullMemory.is_favorite;
+    setIsFavoriting(true);
     trigger("light");
     try {
-      await memoryService.setFavorite(fullMemory.id, !fullMemory.is_favorite);
+      await memoryService.setFavorite(fullMemory.id, nextFavorite);
+      queryClient.setQueryData<Memory>(["memory", fullMemory.id], (current) => current ? { ...current, is_favorite: nextFavorite, favorite_count: Math.max(0, (current.favorite_count ?? 0) + (nextFavorite ? 1 : -1)) } : current);
+      queryClient.setQueriesData<Memory[]>({ queryKey: ["memories"] }, (current) => current?.map((memory) => memory.id === fullMemory.id ? { ...memory, is_favorite: nextFavorite, favorite_count: Math.max(0, (memory.favorite_count ?? 0) + (nextFavorite ? 1 : -1)) } : memory));
       await queryClient.invalidateQueries({ queryKey: ["memory", fullMemory.id] });
       await queryClient.invalidateQueries({ queryKey: ["memories"] });
       await queryClient.invalidateQueries({ queryKey: ["activity-feed"] });
     } catch (error) {
       toast.error(`Favorite failed: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setIsFavoriting(false);
     }
   };
 
@@ -180,18 +178,28 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
   };
 
   const handleDownload = async () => {
-    if (!attachments[0]) return;
+    if (!downloadableAttachment || isDownloading) return;
+    setIsDownloading(true);
     trigger("light");
     try {
-      const url = await memoryService.getAttachmentUrlAsync(attachments[0].file_type, attachments[0].url);
+      const signedUrl = await memoryService.getAttachmentUrlAsync(downloadableAttachment.file_type, downloadableAttachment.url);
+      const response = await fetch(signedUrl);
+      if (!response.ok) throw new Error(`Could not download media (${response.status})`);
+      const blob = await response.blob();
+      if (blob.size === 0) throw new Error("Downloaded media was empty");
+      const objectUrl = URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.href = url;
-      link.download = attachments[0].url.split("/").pop() || "memory-attachment";
+      link.href = objectUrl;
+      link.download = downloadableAttachment.url.split("/").pop() || "memory-attachment";
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+      toast.success("Saved to your device.");
     } catch (error) {
-      toast.error(`Download failed: ${error instanceof Error ? error.message : String(error)}`);
+      toast.error(`Save failed: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -223,13 +231,10 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
 
   return (
     <div className={cn(
-      "relative mx-auto flex h-[100dvh] w-full max-h-[100dvh] flex-col overflow-hidden sm:max-h-[80vh]",
+      "relative mx-auto flex h-[100dvh] w-full max-h-[100dvh] flex-col overflow-hidden border border-[rgba(86,72,53,0.16)] bg-[#fdfbf7] text-stone-800 shadow-[var(--shadow-modal)] sm:w-[min(94vw,70rem)]",
+      isReadingMemory ? "sm:h-auto sm:min-h-[30rem] sm:max-h-[calc(100dvh-3rem)]" : "sm:h-[calc(100dvh-3rem)] sm:max-h-[calc(100dvh-3rem)]",
       paper.borderRadius,
-      theme.backgroundClass,
-      theme.borderClass,
-      theme.fontClass,
-      paper.shadow,
-      isPhone && "rounded-none border-x-0 border-y-0 shadow-none"
+      isPhone && "overflow-y-auto rounded-none border-x-0 border-y-0 shadow-none"
     )}>
       
       {/* Texture overlay */}
@@ -251,7 +256,7 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
         return (
           <div 
             key={`${placement.id}-${placement.style.top}-${placement.style.left}`} 
-            className="absolute z-20 text-4xl drop-shadow-md pointer-events-none"
+            className="absolute z-20 text-2xl opacity-30 pointer-events-none"
             style={placement.style}
           >
             {deco.svg}
@@ -358,8 +363,8 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
       </div>
 
       {/* Header */}
-      <div className={cn("relative z-10 flex-shrink-0 border-b border-black/5 bg-inherit pb-6 dark:border-white/5", paper.padding, isPhone && "sticky top-0 px-5 pb-5 pt-[calc(env(safe-area-inset-top)+1.2rem)] backdrop-blur-xl")}>
-        <p className={cn("text-sm font-medium tracking-widest uppercase mb-2 opacity-50", theme.textClass)}>
+      <div className={cn("relative z-10 flex-shrink-0 border-b border-stone-700/10 bg-[#fdfbf7]/95 px-8 py-5 pr-28", isPhone && "sticky top-0 px-5 pb-4 pt-[calc(env(safe-area-inset-top)+0.9rem)] backdrop-blur-xl")}>
+        <p className="mb-2 text-[12px] font-medium tracking-[0.12em] text-stone-500">
           {format(new Date(fullMemory.memory_date), "MMMM do, yyyy")}
           {fullMemory.is_pinned && (
             <span className="ml-3 inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
@@ -367,139 +372,48 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
             </span>
           )}
         </p>
-        <h2 className={cn("font-semibold", theme.textClass, isPhone ? "max-w-[18rem] text-[2.5rem] leading-[0.92]" : "text-4xl")}>
+        <h2 className={cn("font-semibold text-stone-800", isPhone ? "max-w-[18rem] text-[2.15rem] leading-[1]" : "text-4xl")}>
           <EmojiText text={fullMemory.title || "Untitled memory"} />
         </h2>
       </div>
 
-      {/* Scrollable Content */}
-      <div className={cn("relative z-10 flex-1 overflow-y-auto custom-scrollbar space-y-6", paper.padding, isPhone ? "px-5 pb-40 pt-6" : "pt-8")}>
-        
-        {/* Main Text Content */}
-        {fullMemory.content && (
-          <div className={cn("prose prose-zinc dark:prose-invert prose-p:leading-relaxed", isPhone ? "mx-auto max-w-[32rem] prose-lg prose-p:text-[1.07rem] prose-p:leading-8" : "prose-lg")}>
-            <p className={cn("whitespace-pre-wrap font-light", theme.textClass)}>
-              <EmojiText text={fullMemory.content} />
-            </p>
-          </div>
-        )}
-
-        <PhotoGallery attachments={photoAttachments} />
-        {playableAttachments.map((attachment) => (
-          <AttachmentRenderer
-            key={attachment.id}
-            attachment={attachment}
-            thumbnail={attachment.file_type === "video" ? thumbnailAttachments[0] : undefined}
-          />
-        ))}
-      </div>
-
-      {/* Footer & Navigation */}
-      <div className={cn("relative z-10 flex items-center justify-between border-t border-black/5 bg-black/[0.02] py-6 dark:border-white/5 dark:bg-white/[0.02]", paper.padding, isPhone && "hidden")}>
-        
-        {/* Navigation */}
-        <div className="flex gap-4">
-          <button 
-            onClick={handlePrev} 
-            disabled={!prevId}
-            className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-full transition-colors group disabled:opacity-30 disabled:pointer-events-none"
-          >
-            <ChevronLeft className="w-5 h-5 text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200" />
-          </button>
-          <button 
-            onClick={handleNext} 
-            disabled={!nextId}
-            className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-full transition-colors group disabled:opacity-30 disabled:pointer-events-none"
-          >
-            <ChevronRight className="w-5 h-5 text-zinc-400 group-hover:text-zinc-800 dark:group-hover:text-zinc-200" />
-          </button>
-        </div>
-
-        {/* Mood/Tags */}
-        <div className="text-sm text-zinc-500 italic font-cormorant">
-          With Love
-        </div>
-      </div>
-
-      <div ref={commentsAnchorRef} />
-      {!isReadingMode && <MemoryComments memoryId={memoryId} />}
-
-      {isPhone && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
-          <div className="pointer-events-auto rounded-[1.6rem] border border-white/10 bg-zinc-950/78 p-2 shadow-[0_-14px_40px_rgba(0,0,0,0.32)] backdrop-blur-2xl">
-            {isActionRailExpanded && (
-              <div className="mb-2 flex items-center justify-center gap-2 rounded-[1.2rem] bg-white/[0.04] p-2">
-                {quickReactions.map((emoji) => (
-                  <button
-                    key={emoji}
-                    type="button"
-                    onClick={() => handleReaction(emoji)}
-                    className="flex min-h-11 min-w-11 items-center justify-center rounded-full bg-white/[0.06] text-xl text-white transition active:scale-[0.96]"
-                    aria-label={`React with ${emoji}`}
-                  >
-                    {emoji}
-                  </button>
-                ))}
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col lg:flex-row">
+        <main className={cn("min-h-0 flex-1 overflow-y-auto custom-scrollbar", isPhone ? "flex-none overflow-visible px-5 py-6" : "px-8 py-7")}>
+          <div className={cn("mx-auto flex w-full flex-col justify-start gap-5", isReadingMemory ? "max-w-[46rem]" : "max-w-[56rem]")}>
+            {fullMemory.content && (
+              <div className={cn("prose prose-stone max-w-none rounded-[var(--radius-small)] border border-stone-700/10 bg-[#fffaf0] p-5 shadow-sm prose-p:leading-[1.72] sm:p-7", isPhone ? "prose-base" : "prose-lg")}>
+                <p className="whitespace-pre-wrap font-normal text-stone-700"><EmojiText text={fullMemory.content} /></p>
               </div>
             )}
-
-            <div className="grid grid-cols-5 gap-2">
-              <button
-                type="button"
-                onClick={handleFavorite}
-                className={cn("flex min-h-[52px] flex-col items-center justify-center rounded-[1.1rem] text-[11px] font-medium text-zinc-300", fullMemory.is_favorite ? "bg-rose-500/18 text-rose-100" : "bg-white/[0.05]")}
-              >
-                <Heart className={cn("mb-1 h-4 w-4", fullMemory.is_favorite ? "text-rose-300" : "text-zinc-300")} />
-                Favorite
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsActionRailExpanded((value) => !value)}
-                className={cn("flex min-h-[52px] flex-col items-center justify-center rounded-[1.1rem] bg-white/[0.05] text-[11px] font-medium text-zinc-300", isActionRailExpanded && "bg-amber-400/16 text-amber-100")}
-              >
-                <Sparkles className="mb-1 h-4 w-4 text-amber-300" />
-                React
-              </button>
-              <button
-                type="button"
-                onClick={handleCommentJump}
-                className="flex min-h-[52px] flex-col items-center justify-center rounded-[1.1rem] bg-white/[0.05] text-[11px] font-medium text-zinc-300"
-              >
-                <MessageCircle className="mb-1 h-4 w-4 text-emerald-300" />
-                Comment
-              </button>
-              <button
-                type="button"
-                onClick={handleShare}
-                className="flex min-h-[52px] flex-col items-center justify-center rounded-[1.1rem] bg-white/[0.05] text-[11px] font-medium text-zinc-300"
-              >
-                <Share2 className="mb-1 h-4 w-4 text-sky-300" />
-                {canShare ? "Share" : "Copy"}
-              </button>
-              <button
-                type="button"
-                onClick={handleDownload}
-                disabled={attachments.length === 0}
-                className="flex min-h-[52px] flex-col items-center justify-center rounded-[1.1rem] bg-white/[0.05] text-[11px] font-medium text-zinc-300 disabled:opacity-40"
-              >
-                <Download className="mb-1 h-4 w-4 text-amber-200" />
-                Save
-              </button>
-            </div>
-
-            {isReadingMode && (
-              <button
-                type="button"
-                onClick={() => setReadingModeDismissedFor(memoryId)}
-                className="mt-2 flex min-h-11 w-full items-center justify-center rounded-full bg-white/[0.05] px-4 text-sm text-zinc-200"
-              >
-                Show comments and details
-              </button>
-            )}
+            <PhotoGallery attachments={photoAttachments} />
+            {playableAttachments.map((attachment) => (
+              <AttachmentRenderer key={attachment.id} attachment={attachment} thumbnail={attachment.file_type === "video" ? thumbnailAttachments[0] : undefined} />
+            ))}
           </div>
-        </div>
-      )}
+        </main>
 
+        <aside className="flex min-h-0 shrink-0 flex-col border-t border-stone-700/10 bg-[#eee7db]/70 lg:w-[29%] lg:min-w-[18rem] lg:max-w-[23rem] lg:border-l lg:border-t-0">
+          <div className="border-b border-stone-700/10 p-3">
+            {isActionRailExpanded && (
+              <div className="mb-2 flex flex-wrap gap-1 rounded-[var(--radius-small)] bg-white/45 p-1.5">
+                {quickReactions.map((emoji) => <button key={emoji} type="button" onClick={() => handleReaction(emoji)} className="inline-flex h-9 w-9 items-center justify-center rounded-md text-lg hover:bg-white" aria-label={`React with ${emoji}`}>{emoji}</button>)}
+              </div>
+            )}
+            <div className="grid grid-cols-4 gap-1.5">
+              <button type="button" onClick={handleFavorite} disabled={isFavoriting} className={cn("inline-flex min-h-11 flex-col items-center justify-center rounded-[var(--radius-small)] text-[10px] font-medium", fullMemory.is_favorite ? "bg-rose-100 text-rose-700" : "bg-white/55 text-stone-600")}><Heart className={cn("mb-0.5 h-4 w-4", fullMemory.is_favorite && "fill-current")} />Favorite</button>
+              <button type="button" onClick={() => setIsActionRailExpanded((value) => !value)} className={cn("inline-flex min-h-11 flex-col items-center justify-center rounded-[var(--radius-small)] bg-white/55 text-[10px] font-medium text-stone-600", isActionRailExpanded && "bg-amber-100 text-amber-800")}><Sparkles className="mb-0.5 h-4 w-4" />React</button>
+              <button type="button" onClick={handleShare} className="inline-flex min-h-11 flex-col items-center justify-center rounded-[var(--radius-small)] bg-white/55 text-[10px] font-medium text-stone-600"><Share2 className="mb-0.5 h-4 w-4" />{canShare ? "Share" : "Copy"}</button>
+              <button type="button" onClick={handleDownload} disabled={!downloadableAttachment || isDownloading} className="inline-flex min-h-11 flex-col items-center justify-center rounded-[var(--radius-small)] bg-white/55 text-[10px] font-medium text-stone-600 disabled:opacity-40"><Download className="mb-0.5 h-4 w-4" />Save</button>
+            </div>
+          </div>
+          <MemoryComments memoryId={memoryId} className="min-h-0 flex-1" />
+        </aside>
+      </div>
+
+      <div className="relative z-10 hidden items-center justify-between border-t border-stone-700/10 bg-[#eee7db]/55 px-6 py-2 lg:flex">
+        <div className="flex gap-1"><button onClick={handlePrev} disabled={!prevId} className="inline-flex h-10 w-10 items-center justify-center rounded-md text-stone-500 hover:bg-white/60 disabled:opacity-30" aria-label="Previous memory"><ChevronLeft className="h-5 w-5" /></button><button onClick={handleNext} disabled={!nextId} className="inline-flex h-10 w-10 items-center justify-center rounded-md text-stone-500 hover:bg-white/60 disabled:opacity-30" aria-label="Next memory"><ChevronRight className="h-5 w-5" /></button></div>
+        <span className="font-cormorant text-sm italic text-stone-500">With Love</span>
+      </div>
       {isEditing && (
         <EditMemoryModal 
           memory={fullMemory} 
@@ -535,3 +449,14 @@ function AttachmentRenderer({ attachment, thumbnail }: { attachment: MemoryAttac
   }
   return null;
 }
+
+
+
+
+
+
+
+
+
+
+

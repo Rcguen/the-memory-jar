@@ -1,10 +1,11 @@
-/* eslint-disable @next/next/no-img-element */
+﻿/* eslint-disable @next/next/no-img-element */
 import { useCallback, useEffect, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { memoryService } from "@/services/memory";
 import { MemoryAttachment } from "@/types/memory";
+import { cn } from "@/lib/utils";
 
 interface PhotoGalleryProps {
   attachments: MemoryAttachment[];
@@ -24,10 +25,10 @@ export function PhotoGallery({ attachments }: PhotoGalleryProps) {
   const currentUrl = activeIndex !== null ? loadedUrls[activeIndex] : null;
 
   const goNext = useCallback(() => {
-    setActiveIndex((index) => index === null ? 0 : (index + 1) % loadedUrls.length);
+    setActiveIndex((index) => index === null ? 0 : Math.min(index + 1, loadedUrls.length - 1));
   }, [loadedUrls.length]);
   const goPrev = useCallback(() => {
-    setActiveIndex((index) => index === null ? 0 : (index - 1 + loadedUrls.length) % loadedUrls.length);
+    setActiveIndex((index) => index === null ? 0 : Math.max(index - 1, 0));
   }, [loadedUrls.length]);
 
   useEffect(() => {
@@ -45,9 +46,10 @@ export function PhotoGallery({ attachments }: PhotoGalleryProps) {
 
   return (
     <>
-      <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className={cn("w-full", attachments.length === 1 ? "flex min-h-[18rem] items-center justify-center rounded-[var(--radius-medium)] bg-stone-900/5 p-3" : "grid grid-cols-2 gap-3 lg:grid-cols-2")}>
         {attachments.map((attachment, index) => {
           const url = urls[index]?.data;
+          const isSingle = attachments.length === 1;
           return (
             <motion.button
               key={attachment.id}
@@ -57,12 +59,25 @@ export function PhotoGallery({ attachments }: PhotoGalleryProps) {
               transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
               whileHover={{ scale: 1.018, filter: "brightness(1.04)" }}
               onClick={() => url && setActiveIndex(index)}
-              className="relative overflow-hidden rounded-xl border border-black/10 bg-black/5 text-left dark:border-white/10 dark:bg-white/5"
+              className={cn(
+                "relative overflow-hidden rounded-xl text-left",
+                isSingle 
+                  ? "w-full border border-black/5 shadow-sm" 
+                  : "w-full border border-black/10 bg-black/5 dark:border-white/10 dark:bg-white/5"
+              )}
             >
               {url ? (
-                <img src={url} alt="Memory attachment" loading="lazy" className="h-64 w-full object-cover" />
+                <img 
+                  src={url} 
+                  alt="Memory attachment" 
+                  loading="lazy" 
+                  className={cn(
+                    "w-full rounded-xl bg-black/5 dark:bg-white/5",
+                    isSingle ? "h-full max-h-[calc(100dvh-16rem)] w-full object-contain" : "h-48 w-full object-cover lg:h-56"
+                  )} 
+                />
               ) : (
-                <div className="h-64 w-full animate-pulse bg-black/5 dark:bg-white/5" />
+                <div className={cn("w-full animate-pulse bg-black/5 dark:bg-white/5 rounded-xl", isSingle ? "h-[min(60dvh,42rem)]" : "h-48 lg:h-56")} />
               )}
               {attachments.length > 1 && (
                 <span className="absolute bottom-3 right-3 rounded-full bg-black/50 px-2 py-1 text-xs text-white backdrop-blur-md">
@@ -100,7 +115,7 @@ export function PhotoGallery({ attachments }: PhotoGalleryProps) {
               <>
                 <button
                   type="button"
-                  className="absolute left-4 top-1/2 z-[230] -translate-y-1/2 rounded-full bg-white/10 p-3 text-white backdrop-blur-md transition-colors hover:bg-white/20"
+                  disabled={activeIndex === 0} className="absolute left-4 top-1/2 z-[230] inline-flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-md transition-colors hover:bg-white/20 disabled:opacity-35"
                   onClick={(event) => {
                     event.stopPropagation();
                     goPrev();
@@ -111,7 +126,7 @@ export function PhotoGallery({ attachments }: PhotoGalleryProps) {
                 </button>
                 <button
                   type="button"
-                  className="absolute right-4 top-1/2 z-[230] -translate-y-1/2 rounded-full bg-white/10 p-3 text-white backdrop-blur-md transition-colors hover:bg-white/20"
+                  disabled={activeIndex === loadedUrls.length - 1} className="absolute right-4 top-1/2 z-[230] inline-flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-md transition-colors hover:bg-white/20 disabled:opacity-35"
                   onClick={(event) => {
                     event.stopPropagation();
                     goNext();
@@ -150,3 +165,4 @@ export function PhotoGallery({ attachments }: PhotoGalleryProps) {
     </>
   );
 }
+

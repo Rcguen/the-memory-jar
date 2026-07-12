@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -10,8 +10,9 @@ import { useAuth } from "@/providers/auth-provider";
 import { useMemoryComments } from "@/hooks/useMemoryData";
 import { memoryService } from "@/services/memory";
 import { MemoryComment } from "@/types/memory";
+import { cn } from "@/lib/utils";
 
-export function MemoryComments({ memoryId }: { memoryId: string }) {
+export function MemoryComments({ memoryId, className }: { memoryId: string; className?: string }) {
   const { profile } = useAuth();
   const queryClient = useQueryClient();
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -99,9 +100,9 @@ export function MemoryComments({ memoryId }: { memoryId: string }) {
   });
 
   return (
-    <section className="mobile-keyboard-safe relative z-10 border-t border-black/10 bg-zinc-50/80 px-4 py-4 dark:border-white/5 dark:bg-zinc-950/35 sm:px-6">
+    <section className={cn("mobile-keyboard-safe relative z-10 flex flex-col border-t border-stone-700/10 bg-transparent px-4 py-3 sm:px-4", className)}>
       <h3 className="mb-3 text-sm font-semibold text-zinc-800 dark:text-zinc-200">Comments</h3>
-      <div className="max-h-56 overflow-y-auto space-y-2 pr-1">
+      <div className="min-h-0 flex-1 overflow-y-auto space-y-2 pr-1">
         {isLoading && (
           <p className="text-xs text-zinc-500">Loading comments...</p>
         )}
@@ -128,7 +129,7 @@ export function MemoryComments({ memoryId }: { memoryId: string }) {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="mb-1 text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                      {authorName} · {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                      {authorName} Â· {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                     </p>
                     {isEditing ? (
                       <textarea
@@ -215,3 +216,5 @@ export function MemoryComments({ memoryId }: { memoryId: string }) {
     </section>
   );
 }
+
+

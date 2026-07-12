@@ -14,7 +14,7 @@ export function JarWeather({ className }: { className?: string }) {
   const icon = getWeatherIcon(weather);
 
   return (
-    <div className={`flex items-center gap-1.5 text-xs text-zinc-500 font-medium ${className || ""}`}>
+    <div className={`flex items-center gap-1.5 type-meta text-[color:var(--text-tertiary)] ${className || ""}`}>
       <span className="text-sm">{icon}</span>
       <span>{weather}</span>
     </div>
