@@ -67,8 +67,13 @@ export function AvatarUploader({ currentAvatarUrl, displayName, onAvatarChange }
       onAvatarChange(urlWithCacheBuster);
       toast.success("Avatar updated successfully");
 
-    } catch (error) {
-      console.error("Avatar upload error:", error);
+    } catch (error: any) {
+      console.error("[AvatarUploader] Upload failed", {
+        operation: "STORAGE_UPSERT",
+        status: error?.statusCode || error?.status || "UNKNOWN",
+        code: error?.code || error?.error || "UNKNOWN",
+        message: error?.message || "Unknown storage error",
+      });
       toast.error("Failed to upload avatar. Please try again.");
     } finally {
       setIsUploading(false);
@@ -88,8 +93,13 @@ export function AvatarUploader({ currentAvatarUrl, displayName, onAvatarChange }
       
       onAvatarChange("");
       toast.success("Avatar removed");
-    } catch (e) {
-      console.error("Failed to remove avatar from storage", e);
+    } catch (error: any) {
+      console.error("[AvatarUploader] Remove failed", {
+        operation: "STORAGE_DELETE",
+        status: error?.statusCode || error?.status || "UNKNOWN",
+        code: error?.code || error?.error || "UNKNOWN",
+        message: error?.message || "Unknown storage error",
+      });
     }
   };
 
