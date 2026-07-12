@@ -6,16 +6,37 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+class ServerAuthConfigurationError extends Error {
+  constructor() {
+    super("Server authentication configuration is unavailable.");
+    this.name = "ServerAuthConfigurationError";
+  }
+}
+
+function createAdminClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    throw new ServerAuthConfigurationError();
+  }
+
+  return createSupabaseClient(supabaseUrl, serviceRoleKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
+  });
+}
+
 async function lookupEmailOnServer(username: string): Promise<string | null> {
-  const supabaseAdmin = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  );
+  const supabaseAdmin = createAdminClient();
   const { data } = await supabaseAdmin
     .from("profiles")
     .select("email")
     .eq("username", username)
-    .single();
+    .maybeSingle();
   return data?.email || null;
 }
 
@@ -42,25 +63,31 @@ export async function loginAction(
 
   const { username, password } = parseResult.data;
 
-  // 1. Lookup username on the server using service role
-  const email = await lookupEmailOnServer(username);
+  try {
+    // 1. Lookup username on the server using service role
+    const email = await lookupEmailOnServer(username);
 
-  if (!email) {
-    return { error: "The jar doesn't recognize this name." };
-  }
-
-  // 2. Authenticate using Supabase Auth
-  const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (error) {
-    if (error.message.includes("Invalid login credentials")) {
-      return { error: "The key doesn't fit." };
+    if (!email) {
+      return { error: "The jar doesn't recognize that name or key." };
     }
-    return { error: "The memories are sleeping. Please try again." };
+
+    // 2. Authenticate using Supabase Auth
+    const supabase = await createClient();
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      return { error: "The jar doesn't recognize that name or key." };
+    }
+  } catch (error) {
+    if (error instanceof ServerAuthConfigurationError) {
+      console.error("[auth] Missing server authentication configuration.");
+      return { error: "The jar cannot be opened right now. Please try again shortly." };
+    }
+    console.error("[auth] Login action failed.");
+    return { error: "The jar doesn't recognize that name or key." };
   }
 
   // Login successful, Next.js requires redirect to be called outside try/catch 
@@ -87,22 +114,33 @@ export async function resetPasswordRequestAction(
   const username = formData.get("username")?.toString();
   if (!username) return { error: "Please enter your name." };
 
-  const email = await lookupEmailOnServer(username);
-  if (!email) return { error: "The jar doesn't recognize this name." };
+  try {
+    const email = await lookupEmailOnServer(username);
+    if (!email) return { error: "The jar doesn't recognize this name." };
 
-  const supabase = await createClient();
-  // Using localhost or window.location.origin in production
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-  
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${siteUrl}/update-password`,
-  });
+    const supabase = await createClient();
+    // Using localhost or window.location.origin in production
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${siteUrl}/update-password`,
+    });
 
-  if (error) {
+    if (error) {
+      return { error: "Could not send the reset link. Please try again." };
+    }
+
+    return { success: true };
+  } catch (error) {
+    if (error instanceof ServerAuthConfigurationError) {
+      console.error("[auth] Missing server authentication configuration.");
+      // Do not reveal configuration state to the user in a way that differs from generic errors if possible, 
+      // but returning a generic error is safer here.
+      return { error: "Could not send the reset link. Please try again." };
+    }
+    console.error("[auth] Reset password request failed.");
     return { error: "Could not send the reset link. Please try again." };
   }
-
-  return { success: true };
 }
 
 export async function signOutAllAction(): Promise<ActionState> {
