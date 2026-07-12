@@ -34,6 +34,7 @@ import { memoryService } from "@/services/memory";
 import { createClient } from "@/lib/supabase/client";
 import { MemoryType } from "@/types/memory";
 import { useRelationshipContext } from "@/hooks/useRelationshipContext";
+import { useAvatarUrl } from "@/hooks/useAvatarUrl";
 import { useRoutePrefetch } from "@/hooks/useRoutePrefetch";
 import { RelationshipAmbientBackdrop } from "@/components/experience/RelationshipAmbientBackdrop";
 import { OnThisDayCard } from "@/components/experience/OnThisDayCard";
@@ -73,6 +74,7 @@ const MemoryViewer = dynamic(
 export default function Home() {
   const { profile } = useAuth();
   const { data: relationship } = useRelationshipContext();
+  const { data: avatarUrl } = useAvatarUrl(profile?.avatar);
   const { loadMemory } = usePhysics();
   const queryClient = useQueryClient();
   const router = useRouter();
@@ -273,9 +275,9 @@ export default function Home() {
           <DropdownMenu>
             <DropdownMenuTrigger className="relative h-10 flex items-center gap-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 pr-4 pl-1 outline-none transition-colors">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={profile.avatar || ""} alt={profile.display_name} />
+                {avatarUrl && <AvatarImage src={avatarUrl} alt={profile.display_name} />}
                 <AvatarFallback className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
-                  {profile.avatar ? profile.avatar : profile.display_name.charAt(0)}
+                  {profile.display_name.charAt(0)}
                 </AvatarFallback>
               </Avatar>
               <span className="font-inter text-sm font-medium hidden sm:inline-block text-zinc-700 dark:text-zinc-300">
@@ -418,4 +420,3 @@ export default function Home() {
     </main>
   );
 }
-

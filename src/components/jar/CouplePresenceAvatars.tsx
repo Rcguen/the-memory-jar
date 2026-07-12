@@ -5,11 +5,14 @@ import { Heart } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { useRelationshipContext } from "@/hooks/useRelationshipContext";
 import { usePresence } from "@/hooks/usePresence";
+import { useAvatarUrl } from "@/hooks/useAvatarUrl";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function CouplePresenceAvatars() {
   const { profile } = useAuth();
   const { data: relationship } = useRelationshipContext();
+  const { data: myAvatarUrl } = useAvatarUrl(profile?.avatar);
+  const { data: partnerAvatarUrl } = useAvatarUrl(relationship?.partnerAvatar);
 
   const { partnerOnline } = usePresence(
     relationship?.relationshipId ?? null,
@@ -44,7 +47,7 @@ export function CouplePresenceAvatars() {
         {/* Current User */}
         <div className="relative z-20 pointer-events-auto" aria-label="You are online">
           <Avatar className={`w-14 h-14 sm:w-16 sm:h-16 border-2 border-zinc-950 ring-2 ${myRing} shadow-lg`}>
-            {profile.avatar && <AvatarImage src={profile.avatar} alt="You" className="object-cover" />}
+            {myAvatarUrl && <AvatarImage src={myAvatarUrl} alt="You" className="object-cover" />}
             <AvatarFallback className="bg-emerald-950 text-emerald-200 font-cormorant text-xl">
               {profile.display_name?.charAt(0) ?? "U"}
             </AvatarFallback>
@@ -80,8 +83,8 @@ export function CouplePresenceAvatars() {
             transition={{ duration: 0.5 }}
           >
             <Avatar className={`w-14 h-14 sm:w-16 sm:h-16 border-2 border-zinc-950 ring-2 ${partnerRing} shadow-lg transition-all duration-500`}>
-              {relationship.partnerAvatar && (
-                <AvatarImage src={relationship.partnerAvatar} alt={relationship.partnerName ?? "Partner"} className="object-cover" />
+              {partnerAvatarUrl && (
+                <AvatarImage src={partnerAvatarUrl} alt={relationship.partnerName ?? "Partner"} className="object-cover" />
               )}
               <AvatarFallback className="bg-zinc-800 text-zinc-400 font-cormorant text-xl">
                 {relationship.partnerName?.charAt(0) ?? "P"}
