@@ -48,3 +48,4 @@ public/sw*
 logs/
 *.docx
 !.env.example
+dev.log

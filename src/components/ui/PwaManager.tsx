@@ -4,24 +4,55 @@ import { useEffect, useState } from "react";
 import { Download, WifiOff, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+
+const OFFLINE_TOAST_ID = "pwa-offline-status";
 
 export function PwaManager() {
   const [isOffline, setIsOffline] = useState(
-    typeof navigator !== "undefined" ? !navigator.onLine : false
+    () => typeof navigator !== "undefined" && !navigator.onLine
   );
-  const [isIOS, setIsIOS] = useState(() => 
+  const [isIOS] = useState(() =>
     typeof navigator !== "undefined" ? /iPad|iPhone|iPod/.test(navigator.userAgent) && !("MSStream" in window) : false
   );
-  const [isStandalone, setIsStandalone] = useState(() => 
+  const [isStandalone, setIsStandalone] = useState(() =>
     typeof window !== "undefined" ? window.matchMedia("(display-mode: standalone)").matches || ("standalone" in window.navigator && !!(window.navigator as unknown as { standalone: boolean }).standalone) : true
   ); // default true to prevent flash
   const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(null);
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    const handleOffline = () => setIsOffline(true);
-    const handleOnline = () => setIsOffline(false);
+    const debugConnectivity = () => {
+      console.debug("[pwa] connectivity changed", {
+        online: navigator.onLine,
+      });
+    };
+
+    const showOfflineToast = () => {
+      toast("You're offline", {
+        id: OFFLINE_TOAST_ID,
+        description: "Some features may wait until your connection returns.",
+        duration: Infinity,
+        icon: <WifiOff className="h-4 w-4" />,
+      });
+    };
+
+    const handleOffline = () => {
+      setIsOffline(true);
+      debugConnectivity();
+      showOfflineToast();
+    };
+
+    const handleOnline = () => {
+      setIsOffline(false);
+      debugConnectivity();
+      toast.dismiss(OFFLINE_TOAST_ID);
+    };
+
+    if (navigator.onLine) {
+      toast.dismiss(OFFLINE_TOAST_ID);
+    } else {
+      showOfflineToast();
+    }
 
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
@@ -35,7 +66,7 @@ export function PwaManager() {
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
 
     if ("serviceWorker" in navigator && "serwist" in window) {
-      (window as unknown as { serwist: EventTarget }).serwist.addEventListener("installed", (event: Event) => {
+      const handleSerwistInstalled = (event: Event) => {
         if ((event as unknown as { isUpdate: boolean }).isUpdate) {
           toast.success("App updated. Restart when you're ready.", {
             action: {
@@ -45,9 +76,20 @@ export function PwaManager() {
             duration: Infinity,
           });
         }
-      });
-    } else if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.addEventListener("controllerchange", () => {
+      };
+
+      (window as unknown as { serwist: EventTarget }).serwist.addEventListener("installed", handleSerwistInstalled);
+
+      return () => {
+        window.removeEventListener("online", handleOnline);
+        window.removeEventListener("offline", handleOffline);
+        window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+        (window as unknown as { serwist: EventTarget }).serwist.removeEventListener("installed", handleSerwistInstalled);
+      };
+    }
+
+    if ("serviceWorker" in navigator) {
+      const handleControllerChange = () => {
         toast("App updated. Restart when you're ready.", {
           action: {
             label: "Restart",
@@ -55,7 +97,16 @@ export function PwaManager() {
           },
           duration: Infinity,
         });
-      });
+      };
+
+      navigator.serviceWorker.addEventListener("controllerchange", handleControllerChange);
+
+      return () => {
+        window.removeEventListener("online", handleOnline);
+        window.removeEventListener("offline", handleOffline);
+        window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+        navigator.serviceWorker.removeEventListener("controllerchange", handleControllerChange);
+      };
     }
 
     return () => {
@@ -83,27 +134,21 @@ export function PwaManager() {
     setDismissed(true);
   };
 
+  const connectivityStatus = isOffline ? "You're offline" : "You're online";
+
   if (isStandalone) {
     return (
-      <>
-        {isOffline && (
-          <div className="fixed bottom-safe left-1/2 -translate-x-1/2 mb-4 z-[100] rounded-full border border-rose-500/20 bg-zinc-950/90 px-4 py-2 text-sm text-rose-400 shadow-[0_4px_30px_rgba(225,29,72,0.1)] backdrop-blur-md flex items-center gap-2 transition-all">
-            <WifiOff className="h-4 w-4" />
-            <span>You&apos;re offline</span>
-          </div>
-        )}
-      </>
+      <span className="sr-only" aria-live="polite" suppressHydrationWarning>
+        {connectivityStatus}
+      </span>
     );
   }
 
   return (
     <>
-      {isOffline && (
-        <div className="fixed bottom-safe left-1/2 -translate-x-1/2 mb-4 z-[100] rounded-full border border-rose-500/20 bg-zinc-950/90 px-4 py-2 text-sm text-rose-400 shadow-[0_4px_30px_rgba(225,29,72,0.1)] backdrop-blur-md flex items-center gap-2 transition-all">
-          <WifiOff className="h-4 w-4" />
-          <span>You&apos;re offline</span>
-        </div>
-      )}
+      <span className="sr-only" aria-live="polite" suppressHydrationWarning>
+        {connectivityStatus}
+      </span>
 
       {(!isStandalone && (deferredPrompt || isIOS) && !dismissed) && (
         <div className="fixed bottom-0 left-0 right-0 z-[90] border-t border-white/10 bg-zinc-950/80 p-4 backdrop-blur-xl md:bottom-6 md:left-auto md:right-6 md:w-80 md:rounded-[1.2rem] md:border shadow-2xl">
@@ -115,7 +160,7 @@ export function PwaManager() {
               <p className="text-sm font-medium text-zinc-100">Install The Memory Jar</p>
               <p className="text-xs text-zinc-400">For a faster, safer experience.</p>
             </div>
-            
+
             {deferredPrompt ? (
               <Button onClick={handleInstallClick} size="sm" className="w-full rounded-full bg-emerald-500 text-emerald-950 hover:bg-emerald-400 font-medium">
                 <Download className="mr-2 h-4 w-4" />
