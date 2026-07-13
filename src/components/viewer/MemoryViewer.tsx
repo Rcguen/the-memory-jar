@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -16,6 +16,7 @@ import { useMemory } from "@/hooks/useMemoryData";
 import { useAuth } from "@/providers/auth-provider";
 import { memoryService } from "@/services/memory";
 import { useIsPhone } from "@/hooks/useIsPhone";
+import { notifyPushEvent } from "@/lib/push/client-events";
 
 type ViewerState = "LOADING" | "LOCKED" | "WAITING_PARTNER" | "OPENING" | "VIEWING" | "ERROR";
 
@@ -85,6 +86,7 @@ export function MemoryViewer() {
   const [isEditingCapsule, setIsEditingCapsule] = useState(false);
   const [currentTime, setCurrentTime] = useState(() => Date.now());
   const capsuleDeleteTimerRef = useRef<number | null>(null);
+  const unlockedPushNotifiedRef = useRef<Set<string>>(new Set());
   const { data: fullMemory, isLoading, isError } = useMemory(viewingMemoryId);
   const isPhone = useIsPhone();
 
@@ -119,6 +121,15 @@ export function MemoryViewer() {
     return "VIEWING";
   }, [currentTime, fullMemory, isError, isLoading]);
 
+  useEffect(() => {
+    if (!fullMemory?.unlock_at) return;
+    const unlockAtMs = new Date(fullMemory.unlock_at).getTime();
+    if (!Number.isFinite(unlockAtMs) || currentTime < unlockAtMs) return;
+    if (unlockedPushNotifiedRef.current.has(fullMemory.id)) return;
+
+    unlockedPushNotifiedRef.current.add(fullMemory.id);
+    notifyPushEvent("time_capsule_unlocked", fullMemory.id);
+  }, [currentTime, fullMemory]);
   useEffect(() => {
     if (!fullMemory || viewerState !== "OPENING" || fullMemory.status === "opening" || fullMemory.is_collaborative) {
       return;

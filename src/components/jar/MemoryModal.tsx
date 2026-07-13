@@ -12,6 +12,7 @@ import { useMemoryDraft } from "@/hooks/useMemoryDraft";
 import { usePhysics } from "@/providers/physics-provider";
 import { uploadMemoryAttachments } from "@/lib/memory-upload";
 import { useIsPhone } from "@/hooks/useIsPhone";
+import { notifyPushEvent } from "@/lib/push/client-events";
 
 type ModalStep = "select_type" | "form" | "saving_animation";
 
@@ -66,6 +67,7 @@ export function MemoryModal() {
     });
 
     await uploadMemoryAttachments(memory.id, files);
+    notifyPushEvent("partner_created_memory", memory.id);
 
     clearDraft();
     setStep("saving_animation");

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useRealtimeContext } from "@/providers/realtime-provider";
 import { createClient } from "@/lib/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { notifyPushEvent } from "@/lib/push/client-events";
 
 export function useKnockState(memoryId: string | null, userId: string | undefined) {
   const { subscribePostgres, unsubscribePostgres } = useRealtimeContext();
@@ -88,6 +89,10 @@ export function useKnockState(memoryId: string | null, userId: string | undefine
       memory_id: memoryId,
       user_id: userId
     });
+
+    if (!partnerKnocked) {
+      notifyPushEvent("collaborative_capsule_waiting", memoryId);
+    }
     
     // Fallback: if we just became the second knocker, trigger opening
     if (partnerKnocked && options?.autoOpen !== false) {

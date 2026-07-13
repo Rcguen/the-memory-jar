@@ -45,6 +45,7 @@ import {
 import { profileService } from "@/services/profile";
 import { AvatarUploader } from "./AvatarUploader";
 import { SecuritySettingsCard } from "./SecuritySettingsCard";
+import { NotificationSettingsCard } from "./NotificationSettingsCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -637,15 +638,7 @@ export function ProfileSettingsPage() {
               subtitle="How you hear from the jar."
               icon={MessageSquare}
             >
-              <div className="flex items-center justify-between rounded-[1.1rem] border border-white/10 bg-white/[0.03] px-4 py-4 opacity-75">
-                <div>
-                  <p className="text-sm text-zinc-100">Preference controls</p>
-                  <p className="text-xs text-zinc-400 mt-1">Preference controls will arrive in a future update.</p>
-                </div>
-                <div className="rounded-full bg-white/5 px-3 py-1 text-xs text-zinc-500 border border-white/10">
-                  Available soon
-                </div>
-              </div>
+              <NotificationSettingsCard />
             </SectionShell>
 
             {/* APPEARANCE */}
