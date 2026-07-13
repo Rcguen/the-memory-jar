@@ -109,6 +109,7 @@ export function VideoPlayer({ url, poster }: VideoPlayerProps) {
           ref={videoRef} 
           src={url} 
           poster={poster}
+          preload="metadata"
           onTimeUpdate={handleTimeUpdate}
           onEnded={() => setIsPlaying(false)}
           onCanPlay={() => setIsLoading(false)}

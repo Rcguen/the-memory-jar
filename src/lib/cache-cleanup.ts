@@ -1,6 +1,9 @@
 "use client";
 
+import { clearSignedUrlCache } from "@/lib/media/signed-url-cache";
+
 export async function clearPrivateClientData() {
+  clearSignedUrlCache();
   // 1. Clear private localStorage entries
   try {
     const keysToRemove = [

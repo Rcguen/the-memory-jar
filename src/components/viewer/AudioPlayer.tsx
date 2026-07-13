@@ -172,7 +172,7 @@ function AudioPlayerBody({ url }: AudioPlayerProps) {
       <audio 
         ref={audioRef} 
         src={url} 
-        preload="auto"
+        preload="metadata"
         playsInline
         onLoadStart={() => setIsLoading(true)}
         onLoadedMetadata={(event) => {

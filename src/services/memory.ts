@@ -18,6 +18,7 @@ import {
 import { YearRecapStats, MemoryHighlights } from "@/types/storybook";
 import { mapDatabaseMemory } from "@/lib/mappers/memory.mapper";
 import { getMonthDayInTimezone, normalizeTimezone, todayDateOnlyInTimezone } from "@/lib/timezone";
+import { getCachedSignedUrl } from "@/lib/media/signed-url-cache";
 
 const ACTIVE_MEMORY_STATUSES = ["sealed", "unlocked", "opening"];
 const REACTION_EMOJIS: ReactionEmoji[] = ["❤️", "🥹", "😂", "😭", "😍", "🔥"];
@@ -39,6 +40,15 @@ function getStorageBucket(fileType: string): "memory-images" | "memory-voices" |
   if (fileType === "video") return "memory-videos";
   if (fileType === "thumbnail") return "memory-thumbnails";
   return "memory-images";
+}
+
+function getPrivateMediaCacheControl(bucket: "memory-images" | "memory-voices" | "memory-videos" | "memory-thumbnails") {
+  if (bucket === "memory-thumbnails") return "604800";
+  return "86400";
+}
+
+function isLinkedThumbnail(attachment: { file_type: string; metadata?: Record<string, unknown> | null }, sourcePath: string) {
+  return attachment.file_type === "thumbnail" && attachment.metadata?.source_attachment_path === sourcePath;
 }
 
 function mapComment(row: CommentRow, author?: CommentAuthor | null): MemoryComment {
@@ -1167,23 +1177,43 @@ export const memoryService = {
 
   async deleteAttachment(attachmentId: string): Promise<void> {
     const supabase = createClient();
-    
-    // 1. Get attachment details
-    const { data: attachment } = await supabase
+
+    const { data: attachment, error: attachmentError } = await supabase
       .from("memory_attachments")
       .select("*")
       .eq("id", attachmentId)
       .single();
-      
+
+    if (attachmentError) throw attachmentError;
     if (!attachment) return;
 
-    // 2. Delete from storage
-    const bucket = getStorageBucket(attachment.file_type);
+    const attachmentsToDelete = [attachment];
 
-    await supabase.storage.from(bucket).remove([attachment.url]);
+    if (attachment.file_type !== "thumbnail") {
+      const { data: thumbnailRows, error: thumbnailError } = await supabase
+        .from("memory_attachments")
+        .select("*")
+        .eq("memory_id", attachment.memory_id)
+        .eq("file_type", "thumbnail");
 
-    // 3. Delete from DB
-    await supabase.from("memory_attachments").delete().eq("id", attachmentId);
+      if (thumbnailError) throw thumbnailError;
+      attachmentsToDelete.push(...(thumbnailRows ?? []).filter((thumbnail) => isLinkedThumbnail(thumbnail, attachment.url)));
+    }
+
+    const pathsByBucket = new Map<string, string[]>();
+    for (const row of attachmentsToDelete) {
+      const bucket = getStorageBucket(row.file_type);
+      pathsByBucket.set(bucket, [...(pathsByBucket.get(bucket) ?? []), row.url]);
+    }
+
+    for (const [bucket, paths] of pathsByBucket.entries()) {
+      const { error } = await supabase.storage.from(bucket).remove(paths);
+      if (error) throw error;
+    }
+
+    const ids = attachmentsToDelete.map((row) => row.id);
+    const { error } = await supabase.from("memory_attachments").delete().in("id", ids);
+    if (error) throw error;
   },
 
   async uploadAttachment(
@@ -1207,7 +1237,10 @@ export const memoryService = {
 
     const { error } = await supabase.storage
       .from(bucket)
-      .upload(fileName, file);
+      .upload(fileName, file, {
+        cacheControl: getPrivateMediaCacheControl(bucket),
+        upsert: false,
+      });
 
     if (error) throw error;
 
@@ -1239,11 +1272,7 @@ export const memoryService = {
 
   async getAttachmentUrlAsync(fileType: string, path: string): Promise<string> {
     const bucket = getStorageBucket(fileType);
-    const supabase = createClient();
-    const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 3600);
-    if (error) throw error;
-    if (!data?.signedUrl) throw new Error("Storage did not return a signed attachment URL.");
-    return data.signedUrl;
+    return getCachedSignedUrl(bucket, path);
   },
 
   async saveVisualState(state: Omit<import("@/types/memory").MemoryVisualState, "id" | "created_at" | "updated_at">): Promise<void> {

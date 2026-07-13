@@ -3,7 +3,9 @@
 const MB = 1024 * 1024;
 const MAX_IMAGE_SIZE = 10 * MB;
 const MAX_IMAGE_DIMENSION = 2048;
+const MAX_THUMBNAIL_DIMENSION = 640;
 const IMAGE_QUALITY = 0.82;
+const THUMBNAIL_QUALITY = 0.72;
 
 function canvasSupportsType(type: string) {
   if (typeof document === "undefined") return false;
@@ -42,7 +44,7 @@ async function loadImageBitmap(file: File) {
   });
 }
 
-export async function compressImageForUpload(file: File) {
+async function renderImageToFile(file: File, maxDimension: number, quality: number, suffix?: string) {
   if (!file.type.startsWith("image/")) return file;
   if (file.type === "image/gif" || file.type === "image/svg+xml") return file;
 
@@ -50,7 +52,7 @@ export async function compressImageForUpload(file: File) {
     const bitmap = await loadImageBitmap(file);
     const sourceWidth = bitmap.width;
     const sourceHeight = bitmap.height;
-    const scale = Math.min(1, MAX_IMAGE_DIMENSION / Math.max(sourceWidth, sourceHeight));
+    const scale = Math.min(1, maxDimension / Math.max(sourceWidth, sourceHeight));
     const width = Math.max(1, Math.round(sourceWidth * scale));
     const height = Math.max(1, Math.round(sourceHeight * scale));
 
@@ -66,11 +68,14 @@ export async function compressImageForUpload(file: File) {
     }
 
     const outputType = canvasSupportsType("image/webp") ? "image/webp" : "image/jpeg";
-    const blob = await canvasToBlob(canvas, outputType, IMAGE_QUALITY);
+    const blob = await canvasToBlob(canvas, outputType, quality);
     if (!blob) return file;
 
     const extension = outputType === "image/webp" ? "webp" : "jpg";
-    const compressed = new File([blob], replaceExtension(file.name, extension), {
+    const fileName = suffix
+      ? replaceExtension(file.name, `${suffix}.${extension}`)
+      : replaceExtension(file.name, extension);
+    const compressed = new File([blob], fileName, {
       type: outputType,
       lastModified: file.lastModified,
     });
@@ -165,6 +170,29 @@ export async function generateVideoThumbnail(file: File) {
   } finally {
     URL.revokeObjectURL(url);
   }
+}
+
+export async function compressImageForUpload(file: File) {
+  return renderImageToFile(file, MAX_IMAGE_DIMENSION, IMAGE_QUALITY);
+}
+
+export async function generateImageThumbnail(file: File) {
+  if (!file.type.startsWith("image/")) return null;
+  if (file.type === "image/gif" || file.type === "image/svg+xml") return null;
+
+  const thumbnail = await renderImageToFile(file, MAX_THUMBNAIL_DIMENSION, THUMBNAIL_QUALITY, "thumb");
+  if (thumbnail === file) return null;
+
+  return {
+    file: thumbnail,
+    metadata: {
+      source_image_name: file.name,
+      source_image_size: file.size,
+      thumbnail_size: thumbnail.size,
+      max_dimension: MAX_THUMBNAIL_DIMENSION,
+      mime_type: thumbnail.type,
+    },
+  };
 }
 
 export function getPreferredAudioMimeType() {
