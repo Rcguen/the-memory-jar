@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Serwist emits these build artifacts into public/.
+    "public/sw*.js",
   ]),
 ]);
 
