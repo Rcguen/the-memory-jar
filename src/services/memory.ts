@@ -1117,13 +1117,16 @@ export const memoryService = {
     })) as ActivityLog[];
   },
 
-  async listNotifications(limit = 20): Promise<MemoryNotification[]> {
+  async listNotifications(limit = 20, offset = 0): Promise<MemoryNotification[]> {
+    const safeLimit = Math.max(1, Math.min(limit, 50));
+    const safeOffset = Math.max(0, offset);
     const supabase = createClient();
     const { data, error } = await supabase
       .from("notifications")
       .select("*, profiles(id,display_name,username,avatar), memories(id,title,type,deleted_at)")
       .order("created_at", { ascending: false })
-      .limit(limit);
+      .order("id", { ascending: false })
+      .range(safeOffset, safeOffset + safeLimit - 1);
 
     if (error) throw error;
 
