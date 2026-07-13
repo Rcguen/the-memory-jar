@@ -432,3 +432,116 @@
   .dark .keepsake-photo, .dark .keepsake-letter, .dark .keepsake-promise, .dark .keepsake-note { color: #342d24; }
   @media (max-width: 767px) { .keepsake-photo, .keepsake-note { transform: none; } }
 }
+
+/* Launch-only boot screen: compositor-only motion during application startup. */
+.app-boot-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--surface-wood);
+  color: var(--jar-paper);
+  opacity: 1;
+  transition: opacity 720ms cubic-bezier(0.23, 1, 0.32, 1);
+  will-change: opacity;
+}
+
+.app-boot-loader[data-exiting="true"] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.app-boot-loader__texture {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 38%, color-mix(in srgb, var(--jar-paper) 14%, transparent), transparent 38%),
+    radial-gradient(ellipse at 15% 100%, color-mix(in srgb, var(--jar-forest) 46%, transparent), transparent 48%),
+    linear-gradient(120deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: auto, auto, 5px 5px;
+}
+
+.app-boot-loader__panel {
+  position: absolute;
+  inset-block: 0;
+  width: 50%;
+  background: color-mix(in srgb, var(--surface-wood) 91%, #000);
+  transform: translate3d(0, 0, 0);
+  transition: transform 720ms cubic-bezier(0.23, 1, 0.32, 1);
+  will-change: transform;
+}
+
+.app-boot-loader__panel--left {
+  inset-inline-start: 0;
+  border-inline-end: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.app-boot-loader__panel--right {
+  inset-inline-end: 0;
+  background: color-mix(in srgb, var(--surface-wood) 83%, var(--jar-forest));
+}
+
+.app-boot-loader[data-exiting="true"] .app-boot-loader__panel--left {
+  transform: translate3d(-102%, 0, 0);
+}
+
+.app-boot-loader[data-exiting="true"] .app-boot-loader__panel--right {
+  transform: translate3d(102%, 0, 0);
+}
+
+.app-boot-loader__content {
+  position: relative;
+  display: flex;
+  min-height: 100vh;
+  min-height: 100dvh;
+  align-items: center;
+  justify-content: center;
+  padding: max(2rem, env(safe-area-inset-top)) 1.5rem max(2rem, env(safe-area-inset-bottom));
+  transform: translate3d(0, 0, 0);
+  opacity: 1;
+  transition: transform 240ms cubic-bezier(0.23, 1, 0.32, 1), opacity 180ms cubic-bezier(0.23, 1, 0.32, 1);
+  will-change: transform, opacity;
+}
+
+.app-boot-loader[data-exiting="true"] .app-boot-loader__content {
+  transform: translate3d(0, -1rem, 0);
+  opacity: 0;
+}
+
+.app-boot-loader__label { color: color-mix(in srgb, var(--jar-paper) 72%, transparent); }
+.app-boot-loader__percentage { color: var(--jar-paper); }
+.app-boot-loader__copy { color: color-mix(in srgb, var(--jar-paper) 56%, transparent); }
+
+.app-boot-loader__track {
+  height: 1px;
+  margin-top: 1.75rem;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--jar-paper) 18%, transparent);
+}
+
+.app-boot-loader__progress {
+  height: 100%;
+  width: 100%;
+  transform-origin: left center;
+  background: linear-gradient(90deg, #d9bb76, #f2deac, var(--jar-forest));
+  transition: transform 120ms linear;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-boot-loader {
+    transition-duration: 180ms;
+  }
+
+  .app-boot-loader__panel,
+  .app-boot-loader__content {
+    transition-duration: 0ms;
+    transform: none !important;
+  }
+
+  .app-boot-loader__progress {
+    transition-duration: 0ms;
+  }
+}

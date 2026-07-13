@@ -49,3 +49,6 @@ logs/
 *.docx
 !.env.example
 dev.log
+
+.agents/
+skills-lock.json
