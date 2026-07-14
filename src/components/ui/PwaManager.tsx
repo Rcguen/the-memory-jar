@@ -193,9 +193,11 @@ export function PwaManager() {
     }
   };
 
-  const handleIosInstallInstructions = () => {
-    toast("To install on iOS", {
-      description: "Tap the Share button at the bottom of Safari, then select 'Add to Home Screen'.",
+  const handleInstallInstructions = () => {
+    toast("Install The Memory Jar", {
+      description: isIOS
+        ? "Tap the Share button at the bottom of Safari, then select 'Add to Home Screen'."
+        : "Open your browser menu, then choose Install app or Add to Home screen.",
       duration: 8000,
     });
     handleDismissForVisit();
@@ -251,14 +253,11 @@ export function PwaManager() {
                 <Download className="mr-2 h-4 w-4" />
                 Install App
               </Button>
-            ) : isIOS ? (
-              <Button onClick={handleIosInstallInstructions} variant="outline" className="w-full rounded-full border-stone-200 bg-stone-50 font-inter text-stone-700 transition-colors hover:bg-stone-100 hover:text-stone-900 motion-reduce:transition-none dark:border-stone-800 dark:bg-stone-900/50 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100">
-                How to install on iOS
-              </Button>
             ) : (
-              <p className="px-1 text-center font-inter text-xs leading-relaxed text-stone-500 dark:text-stone-400">
-                Use your browser menu and choose Install app or Add to Home screen.
-              </p>
+              <Button onClick={handleInstallInstructions} variant="outline" className="w-full rounded-full border-stone-200 bg-stone-50 font-inter text-stone-700 transition-colors hover:bg-stone-100 hover:text-stone-900 motion-reduce:transition-none dark:border-stone-800 dark:bg-stone-900/50 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100">
+                <Download className="mr-2 h-4 w-4" />
+                Install App
+              </Button>
             )}
             <Button onClick={handleDismissForVisit} variant="ghost" className="w-full rounded-full font-inter text-stone-500 transition-colors hover:text-stone-700 motion-reduce:transition-none dark:hover:text-stone-300">
               Not now
