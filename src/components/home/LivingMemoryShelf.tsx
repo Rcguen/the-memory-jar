@@ -32,7 +32,7 @@ export function LivingMemoryShelf({ children, className }: { children: ReactNode
               ease: "easeInOut",
               delay: i * 0.5
             }}
-            className="absolute w-1 h-1 bg-white/20 rounded-full blur-[1px]"
+            className="absolute w-1.5 h-1.5 bg-white/10 rounded-full"
             style={{
               left: `${30 + i * 20}%`,
               top: `${80 - i * 15}%`

@@ -195,11 +195,11 @@ export function GlassJar({ memoryCount }: GlassJarProps) {
       )}
 
       {isZoomed && (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm -z-10 transition-opacity duration-700" />
+        <div className="fixed inset-0 bg-black/60 -z-10 transition-opacity duration-700" />
       )}
 
       <motion.div
-        className="absolute inset-0 z-[-1] rounded-full bg-emerald-400/50 blur-[52px] pointer-events-none"
+        className="absolute inset-0 z-[-1] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(52,211,153,0.25)_0%,transparent_70%)] pointer-events-none"
         initial={false}
         animate={{
           opacity: partnerOnline ? 0.88 : 0,
@@ -214,7 +214,7 @@ export function GlassJar({ memoryCount }: GlassJarProps) {
 
       {/* Layer 2: Subtle Ambient Emotion Light */}
       <motion.div
-        className="absolute inset-0 z-[-2] rounded-full bg-amber-400/20 blur-[60px] pointer-events-none"
+        className="absolute inset-0 z-[-2] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(251,191,36,0.15)_0%,transparent_65%)] pointer-events-none"
         animate={reduceMotion ? undefined : { 
           opacity: [0.3, 0.4, 0.3],
           scale: [1, 1.05, 1]
@@ -280,15 +280,6 @@ export function GlassJar({ memoryCount }: GlassJarProps) {
               <stop offset="50%" stopColor="#b6895b" />
               <stop offset="100%" stopColor="#5c3a21" />
             </linearGradient>
-
-            <filter id="glowFilter" x="-20%" y="-20%" width="140%" height="140%">
-              <feGaussianBlur stdDeviation="15" result="blur" />
-              <feComposite in="SourceGraphic" in2="blur" operator="over" />
-            </filter>
-
-            <filter id="heavyShadow" x="-30%" y="-10%" width="160%" height="150%">
-              <feGaussianBlur stdDeviation="20" />
-            </filter>
           </defs>
 
           <g id="layer-contents">
@@ -312,7 +303,7 @@ export function GlassJar({ memoryCount }: GlassJarProps) {
                 animate={{ opacity: [0, 0.8, 0], scale: [0.5, 1.2, 0.5] }}
                 transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", repeatDelay: 2 }}
               >
-                <path d="M200 380 L202 388 L210 390 L202 392 L200 400 L198 392 L190 390 L198 388 Z" fill="#ffffff" filter="url(#glowFilter)" />
+                <path d="M200 380 L202 388 L210 390 L202 392 L200 400 L198 392 L190 390 L198 388 Z" fill="#ffffff" opacity="0.9" />
               </motion.g>
             )}
           </g>
