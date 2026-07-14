@@ -12,6 +12,7 @@ import { JarHeartbeat } from "@/components/jar/JarHeartbeat";
 import { getProfile } from "@/services/auth";
 import { Toaster } from "sonner";
 import { PwaManager } from "@/components/ui/PwaManager";
+import { PwaEventCatcher } from "@/components/ui/PwaEventCatcher";
 import { AppBootLoader } from "@/components/app/AppBootLoader";
 import "./globals.css";
 
@@ -60,6 +61,7 @@ export default async function RootLayout({
                       <MemoryViewerProvider>
                         <AppBootLoader />
                         <JarHeartbeat />
+                        <PwaEventCatcher />
                         <PwaManager />
                         {children}
                       </MemoryViewerProvider>

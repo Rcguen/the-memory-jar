@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { useIsPhone } from "@/hooks/useIsPhone";
+import { X } from "lucide-react";
 
 const validThemes = Object.keys(MEMORY_THEMES) as [MemoryThemeType, ...MemoryThemeType[]];
 const validDecorations = DECORATIONS.map(d => d.id) as [DecorationID, ...DecorationID[]];
@@ -148,18 +149,46 @@ export function DynamicMemoryForm({
     <motion.form 
       onSubmit={form.handleSubmit(onSubmit, onInvalid)}
       layout
-      className="flex flex-col gap-6 w-full max-w-2xl mx-auto pb-8"
+      className="flex w-full max-w-2xl flex-col pb-8 sm:pb-12"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
     >
-      <div className="space-y-4">
+      {/* Sticky Header with Close Button */}
+      <div className={cn(
+        "sticky top-0 z-50 flex items-center justify-between border-b border-stone-200/50 bg-[var(--surface-paper)] py-3",
+        isPhone ? "pt-[calc(env(safe-area-inset-top)+1rem)] -mx-4 px-4" : "px-2 mb-6"
+      )}>
+        <div className="flex flex-col" aria-hidden="true">
+          <span className="font-inter text-xs font-semibold uppercase tracking-wider text-stone-500">
+            {type.replace("_", " ")}
+          </span>
+          {isLoaded && draft && draft.type === type && (
+            <span className="font-inter text-[10px] text-stone-400">Draft saved locally</span>
+          )}
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={onCancel}
+          disabled={isSubmitting}
+          className="h-11 w-11 rounded-full text-stone-500 hover:bg-stone-100 hover:text-stone-900 focus-visible:ring-2 focus-visible:ring-rose-500 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+          aria-label="Close memory form"
+        >
+          <X className="h-5 w-5" />
+        </Button>
+      </div>
+
+      <div className={cn("flex flex-col gap-6", isPhone ? "px-0 pt-4" : "px-2")}>
         {/* Title Field */}
-        <div>
+        <div className="space-y-1">
+          <Label htmlFor="title" className="sr-only">Title</Label>
           <Input 
+            id="title"
             {...form.register("title")} 
             placeholder="Give this memory a title..." 
-            className="h-auto border-none bg-transparent px-0 font-cormorant text-[2rem] shadow-none placeholder:text-zinc-400 focus-visible:ring-0 md:text-3xl"
+            className="h-auto rounded-none border-b border-transparent bg-transparent px-2 py-3 font-cormorant text-3xl font-medium leading-tight text-stone-900 shadow-none transition-colors placeholder:text-stone-400 hover:border-stone-200 focus-visible:border-rose-300 focus-visible:bg-stone-50/50 focus-visible:ring-0 dark:text-stone-100 dark:placeholder:text-stone-600 dark:hover:border-stone-800 dark:focus-visible:bg-stone-900/50"
           />
           {form.formState.errors.title && (
             <p className="text-red-500 text-xs mt-1 px-2">{form.formState.errors.title.message}</p>
@@ -168,11 +197,13 @@ export function DynamicMemoryForm({
 
         {/* Content Field */}
         {showContent && (
-          <div className="space-y-6">
+          <div className="space-y-4">
+            <Label htmlFor="content" className="sr-only">Letter Content</Label>
             <Textarea 
+              id="content"
               {...form.register("content")} 
               placeholder="Pour your heart out here..." 
-              className="min-h-[220px] resize-none rounded-2xl border-zinc-200 bg-white/60 px-4 py-4 font-inter text-base leading-7 dark:border-zinc-800 dark:bg-zinc-900/50"
+              className="min-h-[140px] max-h-[50vh] resize-y rounded-xl border border-stone-200 bg-stone-50/50 px-4 py-4 font-inter text-base leading-7 text-stone-800 transition-colors focus-visible:border-rose-300 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-rose-500/20 dark:border-stone-800 dark:bg-stone-900/50 dark:text-stone-200 dark:focus-visible:bg-stone-950 sm:min-h-[220px]"
             />
             
             <ThemePicker 
@@ -244,19 +275,19 @@ export function DynamicMemoryForm({
         </div>
 
         {/* Date */}
-        <div className={cn("pt-2 flex items-center justify-between", isPhone && "flex-col gap-4")}>
-          <div className={cn("flex flex-col gap-1 w-1/2 pr-2", isPhone && "w-full pr-0")}>
-            <label className="text-xs text-zinc-500 px-2 uppercase tracking-wider font-semibold">Date</label>
+        <div className={cn("flex items-center justify-between pt-2 border-t border-stone-100 dark:border-stone-800/50 mt-4", isPhone && "flex-col gap-4 items-start")}>
+          <div className={cn("flex w-1/2 flex-col gap-1.5 pr-2", isPhone && "w-full pr-0")}>
+            <label htmlFor="memory_date" className="font-inter text-[11px] font-semibold uppercase tracking-wider text-stone-500">Date</label>
             <Input 
+              id="memory_date"
               type="date" 
               {...form.register("memory_date")} 
-              className="h-12 rounded-2xl border-zinc-200 bg-white/60 px-4 font-inter text-sm shadow-none dark:border-zinc-800 dark:bg-zinc-900/50"
+              className="h-11 rounded-lg border-stone-200 bg-stone-50/50 px-3 font-inter text-sm shadow-none transition-colors focus-visible:border-rose-300 focus-visible:ring-2 focus-visible:ring-rose-500/20 dark:border-stone-800 dark:bg-stone-900/50"
             />
           </div>
           
-          
-          <div className={cn("flex flex-col gap-1 w-1/2 pl-2 border-l border-zinc-200 dark:border-zinc-800", isPhone && "w-full border-l-0 border-t pt-4 pl-0")}>
-            <label className="text-xs text-zinc-500 px-2 uppercase tracking-wider font-semibold">Time Capsule</label>
+          <div className={cn("flex w-1/2 flex-col gap-1.5 pl-4 sm:border-l sm:border-stone-200 sm:dark:border-stone-800", isPhone && "w-full pl-0")}>
+            <label className="font-inter text-[11px] font-semibold uppercase tracking-wider text-stone-500">Time Capsule</label>
             <TimeCapsulePicker 
               value={form.watch("unlock_at") ?? undefined} 
               onChange={(val) => form.setValue("unlock_at", val, { shouldValidate: true })} 
@@ -269,13 +300,14 @@ export function DynamicMemoryForm({
           <motion.div 
             initial={{ opacity: 0, height: 0 }} 
             animate={{ opacity: 1, height: 'auto' }} 
-            className="pt-2 flex items-center justify-between bg-rose-50/50 dark:bg-rose-950/20 p-3 rounded-lg border border-rose-100 dark:border-rose-900/30"
+            className="mt-2 flex items-center justify-between rounded-xl border border-rose-100 bg-rose-50/50 p-4 dark:border-rose-900/30 dark:bg-rose-950/20"
           >
-            <div className="flex flex-col gap-0.5">
-              <Label className="text-sm font-medium text-rose-900 dark:text-rose-300">Seal Together</Label>
-              <p className="text-xs text-rose-700/70 dark:text-rose-400/70">Wait for your partner to add their message before sealing.</p>
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="seal-together" className="font-inter text-sm font-medium text-rose-900 dark:text-rose-300">Seal Together</Label>
+              <p className="font-inter text-xs leading-relaxed text-rose-700/70 dark:text-rose-400/70">Wait for your partner to add their message before sealing.</p>
             </div>
             <button
+              id="seal-together"
               type="button"
               role="switch"
               aria-checked={form.watch("is_collaborative")}
@@ -297,20 +329,14 @@ export function DynamicMemoryForm({
       </div>
 
       {/* Actions */}
-      <div className={cn("flex items-center justify-end gap-3 border-t border-zinc-200 pt-6 dark:border-zinc-800", isPhone && "sticky bottom-0 -mx-6 mt-2 bg-white/92 px-6 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-4 backdrop-blur-xl dark:bg-zinc-950/92 md:static md:mx-0 md:bg-transparent md:px-0 md:pb-0 md:backdrop-blur-0")}>
-        <Button 
-          type="button" 
-          variant="ghost" 
-          onClick={onCancel}
-          disabled={isSubmitting}
-          className="text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
-        >
-          Cancel
-        </Button>
+      <div className={cn(
+        "mt-8 flex items-center justify-end",
+        isPhone ? "sticky bottom-0 z-50 -mx-4 border-t border-stone-200/50 bg-[var(--surface-paper)] px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-3 shadow-[0_-4px_12px_rgba(0,0,0,0.02)] dark:border-stone-800/50" : "border-t border-stone-100 pt-6 dark:border-stone-800/50"
+      )}>
         <Button 
           type="submit" 
           disabled={isSubmitting}
-          className="rounded-full bg-rose-600 px-8 shadow-md transition-all hover:bg-rose-700 text-white min-h-11"
+          className="min-h-[44px] w-full rounded-full bg-rose-600 px-8 font-inter font-medium text-white shadow-sm transition-colors hover:bg-rose-700 focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 motion-reduce:transition-none sm:w-auto"
         >
           {isSubmitting ? "Carefully placing your memory..." : "Save Memory"}
         </Button>
