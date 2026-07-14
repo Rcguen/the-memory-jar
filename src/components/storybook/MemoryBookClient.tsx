@@ -96,27 +96,40 @@ export function MemoryBookClient() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-950">
-        <div className="w-12 h-12 rounded-full border-4 border-amber-500/20 border-t-amber-500 animate-spin" />
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#1a1410] gap-6" aria-label="Loading your storybook">
+        <div
+          className="relative h-32 w-24 animate-pulse rounded-r-lg"
+          aria-hidden="true"
+          style={{
+            background: 'linear-gradient(160deg, #7c4a1e 0%, #4a2208 100%)',
+            boxShadow: '4px 4px 16px rgba(0,0,0,0.5)',
+          }}
+        >
+          <div className="absolute inset-0 rounded-r-lg" style={{ background: 'linear-gradient(to right, rgba(0,0,0,0.2) 0%, transparent 20%)' }} />
+          <div className="absolute right-0 top-2 bottom-2 w-1 rounded-l" style={{ background: 'rgba(235,210,160,0.15)' }} />
+        </div>
+        <p className="font-cormorant text-lg text-amber-200/50 tracking-wide">Opening your storybook…</p>
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-950 px-6">
-        <div className="text-center max-w-md">
-          <h2 className="text-2xl font-serif text-amber-200/80 mb-4">
-            We couldn&apos;t load your storybook.
+      <div className="min-h-screen flex items-center justify-center bg-[#1a1410] px-6">
+        <div className="text-center max-w-sm">
+          <p aria-hidden="true" className="mb-5 text-3xl opacity-40">📖</p>
+          <h2 className="font-cormorant text-2xl text-amber-200/75 mb-3">
+            We couldn&apos;t open your storybook.
           </h2>
-          <p className="text-white/50">
-            {error instanceof Error ? error.message : "Please try again in a moment."}
+          <p className="text-sm text-amber-100/35 leading-relaxed">
+            {error instanceof Error ? error.message : "Something went wrong. Please try again in a moment."}
           </p>
           <button
+            type="button"
             onClick={() => router.refresh()}
-            className="mt-8 px-6 py-2 rounded-full bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 transition-colors"
+            className="mt-8 px-6 py-2 rounded-full border border-amber-200/15 bg-amber-50/5 text-sm text-amber-200/55 hover:bg-amber-50/10 hover:text-amber-100/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/40"
           >
-            Retry
+            Try again
           </button>
         </div>
       </div>
@@ -125,20 +138,21 @@ export function MemoryBookClient() {
 
   if (!bookData || bookData.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-950 px-6">
-        <div className="text-center max-w-md">
-          <div className="text-6xl mb-6 opacity-50">Book</div>
-          <h2 className="text-2xl font-serif text-amber-200/60 mb-4">
-            Your storybook is waiting for its first memory.
+      <div className="min-h-screen flex items-center justify-center bg-[#1a1410] px-6">
+        <div className="text-center max-w-sm">
+          <p aria-hidden="true" className="mb-5 text-3xl opacity-30">📖</p>
+          <h2 className="font-cormorant text-2xl text-amber-200/65 mb-3">
+            Your storybook is waiting.
           </h2>
-          <p className="text-white/40">
-            Start adding memories to your jar to see your relationship storybook come to life.
+          <p className="text-sm text-amber-100/35 leading-relaxed">
+            Every memory you add to the jar becomes a page in your story. Start with one small moment.
           </p>
           <button
+            type="button"
             onClick={() => router.back()}
-            className="mt-8 px-6 py-2 rounded-full bg-white/5 border border-white/10 text-white/70 hover:bg-white/10 transition-colors"
+            className="mt-8 px-6 py-2 rounded-full border border-amber-200/15 bg-amber-50/5 text-sm text-amber-200/55 hover:bg-amber-50/10 hover:text-amber-100/70 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/40"
           >
-            Go Back
+            Go back
           </button>
         </div>
       </div>

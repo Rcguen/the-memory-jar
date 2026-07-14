@@ -197,7 +197,7 @@ export function BookLayout({
   return (
     <div
       ref={containerRef}
-      className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-black/90 p-4 md:p-12"
+      className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-[#0f0c08]/92 p-4 md:p-12"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       role="dialog"
@@ -211,29 +211,32 @@ export function BookLayout({
       </div>
 
       <button
+        type="button"
         onClick={onClose}
-        className="absolute right-6 top-6 z-50 p-2 text-white/70"
+        className="absolute right-3 top-3 md:right-5 md:top-5 z-50 flex h-11 w-11 items-center justify-center rounded-full border border-amber-100/10 bg-amber-50/5 text-amber-100/45 transition-colors hover:bg-amber-50/12 hover:text-amber-100/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-color)]"
         aria-label="Close Book"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
       </button>
 
       {isOpen && (
         <div className="pointer-events-none absolute top-1/2 z-50 flex w-full -translate-y-1/2 justify-between px-2 md:px-8">
           <button
+            type="button"
             onClick={handlePrev}
-            className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-md transition-colors hover:bg-white/20"
+            className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full border border-amber-100/12 bg-amber-50/8 text-amber-100/60 backdrop-blur-sm transition-colors hover:bg-amber-50/15 hover:text-amber-100/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/40"
             aria-label="Previous Page"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg>
           </button>
           <button
+            type="button"
             onClick={handleNext}
             disabled={currentIndex + (isMobile ? 1 : 2) >= totalPages}
-            className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-md transition-colors hover:bg-white/20 disabled:pointer-events-none disabled:opacity-30"
+            className="pointer-events-auto flex h-11 w-11 items-center justify-center rounded-full border border-amber-100/12 bg-amber-50/8 text-amber-100/60 backdrop-blur-sm transition-colors hover:bg-amber-50/15 hover:text-amber-100/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/40 disabled:pointer-events-none disabled:opacity-25"
             aria-label="Next Page"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>
           </button>
         </div>
       )}
@@ -278,17 +281,14 @@ export function BookLayout({
             {!isOpen ? (
               <motion.div
                 key="cover"
-                className="absolute inset-0 cursor-pointer md:inset-y-0 md:left-1/2 md:right-0 md:origin-left"
+                className="absolute inset-0 md:inset-y-0 md:left-1/2 md:right-0 md:origin-left"
                 exit={{ rotateY: -100, opacity: 0, transition: { duration: 0.8 } }}
-                onClick={() => {
-                  if (!entranceSettled) return;
-                  setIsOpen(true);
-                }}
               >
                 <BookCover
                   title={title}
                   subtitle={subtitle}
                   dateStr={dateStr}
+                  reduceMotion={shouldReduceMotion ?? false}
                   onClick={() => {
                     if (!entranceSettled) return;
                     setIsOpen(true);
@@ -304,7 +304,7 @@ export function BookLayout({
                 transition={{ duration: 0.5 }}
               >
                 {!isMobile && (
-                  <div className="pointer-events-none absolute bottom-0 left-1/2 top-0 z-20 -ml-4 w-8 bg-gradient-to-r from-black/5 via-black/40 to-black/5 shadow-inner" />
+                  <div aria-hidden="true" className="pointer-events-none absolute bottom-0 left-1/2 top-0 z-20 -ml-3 w-6 bg-gradient-to-r from-black/0 via-black/28 to-black/0 shadow-inner" />
                 )}
 
                 <div className="relative h-full w-full flex-1 overflow-visible">
