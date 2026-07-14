@@ -41,7 +41,20 @@ export default async function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <head />
+      <head>
+        <script
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.__PWA_PROMPT__ = null;
+              window.addEventListener('beforeinstallprompt', function(e) {
+                e.preventDefault();
+                window.__PWA_PROMPT__ = e;
+              });
+            `,
+          }}
+        />
+      </head>
       <body
         suppressHydrationWarning
         className={`${cormorantGaramond.variable} ${inter.variable} font-sans antialiased min-h-screen bg-background text-foreground flex flex-col overflow-x-hidden`}
