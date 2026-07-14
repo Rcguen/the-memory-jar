@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, Variants } from "framer-motion";
+import { motion, Variants, useReducedMotion } from "framer-motion";
 import { MemoryType } from "@/types/memory";
 import {
   HeartHandshake,
@@ -33,35 +33,31 @@ const MEMORY_TYPES: { id: MemoryType; label: string; icon: React.ElementType; de
   { id: "random_thought", label: "Thought", icon: MessageCircleQuestion, description: "Just something on my mind." },
 ];
 
-const containerVariants: Variants = {
-  hidden: { opacity: 0, y: 18, scale: 0.985, filter: "blur(8px)" },
+const getContainerVariants = (reduceMotion: boolean): Variants => ({
+  hidden: { opacity: 0, y: reduceMotion ? 0 : 12 },
   show: {
     opacity: 1,
     y: 0,
-    scale: 1,
-    filter: "blur(0px)",
-    transition: { staggerChildren: 0.08, delayChildren: 0.18, ease: [0.22, 1, 0.36, 1] },
+    transition: { staggerChildren: reduceMotion ? 0 : 0.05, delayChildren: 0.1, ease: "easeOut" },
   },
   exit: {
     opacity: 0,
-    y: 18,
-    scale: 0.985,
-    filter: "blur(8px)",
-    transition: { duration: 0.34, staggerChildren: 0.035, staggerDirection: -1, ease: [0.55, 0, 0.1, 1] },
+    y: reduceMotion ? 0 : 8,
+    transition: { duration: 0.2, ease: "easeIn" },
   },
-};
+});
 
-const titleVariants: Variants = {
-  hidden: { opacity: 0, y: -18 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.7, delay: 0.08, ease: [0.22, 1, 0.36, 1] } },
-  exit: { opacity: 0, y: -14, transition: { duration: 0.2, ease: [0.55, 0, 0.1, 1] } },
-};
+const getTitleVariants = (reduceMotion: boolean): Variants => ({
+  hidden: { opacity: 0, y: reduceMotion ? 0 : -10 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" } },
+  exit: { opacity: 0, transition: { duration: 0.15 } },
+});
 
-const subtitleVariants: Variants = {
-  hidden: { opacity: 0, y: -8 },
-  show: { opacity: 0.7, y: 0, transition: { duration: 0.7, delay: 0.18, ease: [0.22, 1, 0.36, 1] } },
-  exit: { opacity: 0, y: -8, transition: { duration: 0.18, ease: [0.55, 0, 0.1, 1] } },
-};
+const getSubtitleVariants = (reduceMotion: boolean): Variants => ({
+  hidden: { opacity: 0, y: reduceMotion ? 0 : -4 },
+  show: { opacity: 0.7, y: 0, transition: { duration: 0.4, delay: 0.05, ease: "easeOut" } },
+  exit: { opacity: 0, transition: { duration: 0.15 } },
+});
 
 const gridVariants: Variants = {
   hidden: {},
@@ -69,18 +65,19 @@ const gridVariants: Variants = {
   exit: { transition: { staggerChildren: 0.035, staggerDirection: -1 } },
 };
 
-const itemVariants: Variants = {
-  hidden: { opacity: 0, y: 18, scale: 0.98 },
-  show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 220, damping: 22 } },
-  exit: { opacity: 0, y: 16, scale: 0.97, transition: { duration: 0.22, ease: [0.55, 0, 0.1, 1] } },
-};
+const getItemVariants = (reduceMotion: boolean): Variants => ({
+  hidden: { opacity: 0, y: reduceMotion ? 0 : 12, scale: reduceMotion ? 1 : 0.98 },
+  show: { opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 260, damping: 24 } },
+  exit: { opacity: 0, scale: reduceMotion ? 1 : 0.98, transition: { duration: 0.15 } },
+});
 
 export function MemoryTypeSelector({ onSelect, onCancel }: MemoryTypeSelectorProps) {
   const isPhone = useIsPhone();
+  const shouldReduceMotion = useReducedMotion() ?? false;
 
   return (
     <motion.div
-      variants={containerVariants}
+      variants={getContainerVariants(shouldReduceMotion)}
       initial="hidden"
       animate="show"
       exit="exit"
@@ -101,15 +98,15 @@ export function MemoryTypeSelector({ onSelect, onCancel }: MemoryTypeSelectorPro
       )}
 
       <motion.h2
-        variants={titleVariants}
-        className="mb-3 text-center font-cormorant text-[2.35rem] leading-none text-zinc-800 dark:text-zinc-200 md:text-5xl"
+        variants={getTitleVariants(shouldReduceMotion)}
+        className="mb-3 text-center font-cormorant text-[2.35rem] leading-none text-zinc-900 dark:text-zinc-100 md:text-5xl"
       >
         What would you like to preserve?
       </motion.h2>
 
       <motion.p
-        variants={subtitleVariants}
-        className="mb-8 max-w-md text-center font-inter text-sm text-zinc-500 dark:text-zinc-400 md:mb-12"
+        variants={getSubtitleVariants(shouldReduceMotion)}
+        className="mb-8 max-w-md text-center font-inter text-sm text-zinc-600 dark:text-zinc-400 md:mb-12"
       >
         Select a memory type to begin.
       </motion.p>
@@ -118,19 +115,18 @@ export function MemoryTypeSelector({ onSelect, onCancel }: MemoryTypeSelectorPro
         {MEMORY_TYPES.map((type) => (
           <motion.button
             key={type.id}
-            variants={itemVariants}
+            variants={getItemVariants(shouldReduceMotion)}
             onClick={() => onSelect(type.id)}
-            whileHover={isPhone ? undefined : { scale: 1.02, y: -2 }}
+            whileHover={isPhone || shouldReduceMotion ? undefined : { y: -2 }}
             whileTap={{ scale: 0.98 }}
-            className="group relative flex min-h-[132px] flex-col items-center justify-center overflow-hidden rounded-[1.4rem] border border-white/50 bg-white/55 p-4 text-center transition-colors backdrop-blur-md hover:bg-white/60 dark:border-zinc-800/50 dark:bg-zinc-900/40 dark:hover:bg-zinc-800/60 md:min-h-[150px] md:p-8"
+            className="group relative flex min-h-[120px] flex-col items-center justify-center overflow-hidden rounded-xl border border-[rgba(58,49,39,0.08)] bg-white/70 p-4 text-center transition-all hover:bg-white/95 hover:border-[rgba(58,49,39,0.15)] hover:shadow-sm dark:border-white/10 dark:bg-zinc-900/60 dark:hover:bg-zinc-800/80 md:min-h-[140px] md:p-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-color)]"
+            aria-label={`Select ${type.label}`}
           >
-            <div className="absolute inset-0 -translate-x-[150%] skew-x-12 bg-gradient-to-r from-transparent via-white/20 to-transparent group-hover:animate-sweep pointer-events-none" />
-
-            <type.icon className="mb-3 h-7 w-7 text-rose-500/70 transition-transform duration-500 group-hover:scale-110 dark:text-rose-400/70 md:mb-4 md:h-10 md:w-10" />
-            <h3 className="mb-1 font-cormorant text-[1.4rem] font-semibold text-zinc-800 dark:text-zinc-200 md:mb-2 md:text-2xl">
+            <type.icon className="mb-3 h-7 w-7 text-stone-500 transition-colors duration-300 group-hover:text-rose-600 dark:text-stone-400 dark:group-hover:text-rose-400 md:mb-4 md:h-8 md:w-8" />
+            <h3 className="mb-1 font-cormorant text-xl font-semibold text-zinc-900 dark:text-zinc-100 md:mb-2 md:text-2xl">
               {type.label}
             </h3>
-            <p className="font-inter text-[11px] leading-4 text-zinc-500 opacity-100 transition-opacity duration-300 dark:text-zinc-400 md:text-sm md:opacity-0 md:group-hover:opacity-100">
+            <p className="font-inter text-[11px] leading-tight text-zinc-500 opacity-100 transition-opacity duration-300 dark:text-zinc-400 md:text-xs">
               {type.description}
             </p>
           </motion.button>

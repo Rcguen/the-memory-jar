@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
 import { useMemoryModal } from "@/providers/memory-modal-provider";
 import { MemoryTypeSelector } from "./MemoryTypeSelector";
@@ -23,6 +23,7 @@ export function MemoryModal() {
   const [step, setStep] = useState<ModalStep>("select_type");
   const [selectedType, setSelectedType] = useState<MemoryType | null>(null);
   const isPhone = useIsPhone();
+  const shouldReduceMotion = useReducedMotion();
 
   // Lock body scroll when modal is open
   useEffect(() => {
@@ -109,21 +110,24 @@ export function MemoryModal() {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
           className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-auto"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Create a Memory"
         >
-          {/* Background Darken & Blur */}
+          {/* Background Wash */}
           <motion.div
-            initial={{ opacity: 0, backdropFilter: "blur(0px)" }}
-            animate={{ opacity: 1, backdropFilter: "blur(12px)" }}
-            exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
-            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute inset-0 bg-black/40 dark:bg-black/60 pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
+            className="absolute inset-0 bg-stone-900/80 dark:bg-black/85 pointer-events-none"
           />
 
           {/* Modal Content Container */}
           <motion.div
-            initial={{ opacity: 0, y: 18, scale: 0.985, filter: "blur(6px)" }}
-            animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-            exit={{ opacity: 0, y: 18, scale: 0.985, filter: "blur(8px)" }}
+            initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 18, scale: shouldReduceMotion ? 1 : 0.985 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: shouldReduceMotion ? 0 : 18, scale: shouldReduceMotion ? 1 : 0.985 }}
             transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
             className={isPhone ? "relative z-10 flex h-full w-full overflow-y-auto custom-scrollbar p-0" : "relative z-10 flex h-full w-full overflow-y-auto custom-scrollbar p-3 sm:p-8"}
           >
@@ -135,11 +139,11 @@ export function MemoryModal() {
               {step === "form" && selectedType && (
                 <motion.div
                   key="form"
-                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                  initial={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.95, y: shouldReduceMotion ? 0 : 20 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                  transition={{ duration: 0.8, ease: "easeOut" }}
-                  className={isPhone ? "m-auto min-h-full w-full rounded-none border-y border-white/30 bg-white/92 p-4 pb-0 shadow-2xl backdrop-blur-2xl dark:border-zinc-800/40 dark:bg-zinc-950/92" : "m-auto w-full max-w-2xl rounded-[2rem] border border-white/40 bg-white/85 p-5 shadow-2xl backdrop-blur-2xl dark:border-zinc-800/50 dark:bg-zinc-950/85 md:p-10"}
+                  exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.95, y: shouldReduceMotion ? 0 : 20 }}
+                  transition={{ duration: 0.6, ease: "easeOut" }}
+                  className={isPhone ? "m-auto min-h-full w-full rounded-none bg-[var(--surface-paper)] p-4 pb-0 shadow-2xl dark:bg-[var(--surface-paper)]" : "m-auto w-full max-w-2xl rounded-3xl border border-[rgba(58,49,39,0.08)] bg-[var(--surface-paper)] p-5 shadow-[var(--shadow-modal)] dark:border-white/5 dark:bg-[var(--surface-paper)] md:p-10"}
                 >
                   <DynamicMemoryForm 
                     type={selectedType} 
@@ -156,21 +160,28 @@ export function MemoryModal() {
                 >
                   {/* The Cinematic Fold, Shrink, and Move Animation */}
                   <motion.div
-                    initial={{ opacity: 1, scale: 1, rotateX: 0, rotateY: 0 }}
-                    animate={{
-                      scale: [1, 0.8, 0.4, 0],
-                      rotateX: [0, 45, 180, 180], // Folding effect
-                      rotateZ: [0, -10, 45, 90],
-                      y: [0, -20, 150, 300], // Moves down towards the jar
-                      opacity: [1, 1, 0.8, 0],
-                    }}
+                    initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1, rotateX: 0, rotateY: 0 }}
+                    animate={
+                      shouldReduceMotion
+                        ? { opacity: [1, 1, 0.5, 0] }
+                        : {
+                            scale: [1, 0.8, 0.4, 0],
+                            rotateX: [0, 45, 180, 180],
+                            rotateZ: [0, -10, 45, 90],
+                            y: [0, -20, 150, 300],
+                            opacity: [1, 1, 0.8, 0],
+                          }
+                    }
                     transition={{
                       duration: 1.5,
                       times: [0, 0.4, 0.8, 1],
-                      ease: "backIn",
+                      ease: shouldReduceMotion ? "easeInOut" : "backIn",
                     }}
-                    className="w-64 h-80 bg-[#fdfbf7] rounded-md shadow-2xl relative overflow-hidden"
+                    className="w-64 h-80 bg-[var(--surface-paper)] rounded-md shadow-[var(--shadow-floating)] relative overflow-hidden border border-[rgba(58,49,39,0.1)] flex items-center justify-center"
+                    role="status"
+                    aria-live="polite"
                   >
+                    <span className="sr-only">Carefully placing your memory into the jar</span>
                     {/* Ribbon wrap simulation appearing mid-animation */}
                     <motion.div
                       initial={{ scaleX: 0, opacity: 0 }}
