@@ -159,6 +159,19 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
     [activities, isCompact],
   );
 
+  const normalizedSearch = search.trim();
+  const normalizedDebounced = debouncedSearch.trim();
+  const isTyping = normalizedSearch !== normalizedDebounced;
+  const isSearching = normalizedDebounced.length > 0;
+
+  const searchStatus = isTyping || !isSearching
+    ? ""
+    : isLoading
+    ? "Searching memories"
+    : visibleMemories.length === 0
+    ? "No memories match this search"
+    : `${visibleMemories.length} memories found`;
+
   const favoriteMutation = useMutation({
     mutationFn: ({ memory, favorite }: { memory: Memory; favorite: boolean }) => memoryService.setFavorite(memory.id, favorite),
     onMutate: async ({ memory, favorite }) => {
@@ -368,13 +381,24 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                   >
                     <div className="flex gap-2">
                       <label className="relative min-w-0 flex-1">
-                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+                        <span className="sr-only">Search memories</span>
+                        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" aria-hidden="true" />
                         <input
                           value={search}
                           onChange={(event) => setSearch(event.target.value)}
                           placeholder="Search"
-                          className="h-11 w-full rounded-full border border-white/[0.1] bg-black/35 pl-9 pr-3 text-sm text-zinc-100 placeholder:text-zinc-400 outline-none transition focus:border-emerald-400/50 focus:ring-2 focus:ring-emerald-400/15"
+                          className="h-11 w-full rounded-full border border-white/[0.1] bg-black/35 pl-9 pr-11 text-sm text-zinc-100 placeholder:text-zinc-400 outline-none transition focus-visible:border-emerald-400/50 focus-visible:ring-2 focus-visible:ring-emerald-400/15"
                         />
+                        {search && (
+                          <button
+                            type="button"
+                            onClick={() => setSearch("")}
+                            aria-label="Clear search"
+                            className="absolute right-0.5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full text-zinc-500 hover:text-zinc-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
+                          >
+                            <X className="h-4 w-4" aria-hidden="true" />
+                          </button>
+                        )}
                       </label>
                       <button
                         onClick={() => setSort(sort === "newest" ? "oldest" : "newest")}
@@ -406,9 +430,27 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                     </div>
 
                     <div className="mt-3 max-h-[58vh] space-y-2 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.18)_transparent] sm:mt-4 sm:max-h-[52vh]">
+                      <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+                        {searchStatus}
+                      </div>
+
                       {isLoading && <div className="space-y-3 px-1 py-3" aria-label="Loading memories">{[0, 1, 2].map((item) => <div key={item} className="h-24 animate-pulse rounded-[1.15rem] bg-[linear-gradient(110deg,rgba(255,255,255,0.06),rgba(255,255,255,0.13),rgba(255,255,255,0.06))]" />)}</div>}
                       {!isLoading && visibleMemories.length === 0 && (
-                        <div className="px-5 py-10 text-center"><BookOpen className="mx-auto h-6 w-6 text-amber-200/55" /><p className="mt-3 font-cormorant text-xl text-zinc-200">This drawer is waiting for a keepsake.</p><p className="mt-1 text-xs leading-5 text-zinc-500">Try another filter, or place a new little moment in the jar.</p></div>
+                        <div className="px-5 py-10 text-center">
+                          {search ? (
+                            <>
+                              <Search className="mx-auto h-6 w-6 text-amber-200/55" aria-hidden="true" />
+                              <p className="mt-3 font-cormorant text-xl text-zinc-200">No matching keepsakes.</p>
+                              <p className="mt-1 text-xs leading-5 text-zinc-500">Try a different search term or check your filters.</p>
+                            </>
+                          ) : (
+                            <>
+                              <BookOpen className="mx-auto h-6 w-6 text-amber-200/55" aria-hidden="true" />
+                              <p className="mt-3 font-cormorant text-xl text-zinc-200">This drawer is waiting for a keepsake.</p>
+                              <p className="mt-1 text-xs leading-5 text-zinc-500">Try another filter, or place a new little moment in the jar.</p>
+                            </>
+                          )}
+                        </div>
                       )}
 
                       <AnimatePresence initial={false}>

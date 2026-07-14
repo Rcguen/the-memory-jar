@@ -240,40 +240,45 @@ export function TimelineView() {
                   <div className="space-y-6">
                     {group.months.map((month) => (
                       <div key={month.key} className="rounded-[1.4rem] border border-white/10 bg-white/50 p-4 backdrop-blur-xl dark:bg-zinc-950/35 sm:rounded-[1.5rem] sm:p-5">
-                        <div className="sticky top-14 z-10 -mx-1 mb-4 flex items-center gap-2 rounded-full bg-white/72 px-3 py-2 text-[11px] uppercase tracking-[0.18em] text-zinc-500 backdrop-blur-lg dark:bg-zinc-950/72 sm:static sm:mx-0 sm:bg-transparent sm:px-0 sm:py-0 sm:text-sm sm:backdrop-blur-0">
+                        <div className="mb-3 flex items-center gap-2 rounded-full text-[11px] uppercase tracking-[0.18em] text-zinc-500 sm:text-sm sm:backdrop-blur-0">
                           <CalendarDays className="h-4 w-4 text-emerald-500" />
                           {month.monthLabel}
                         </div>
 
                         <div className="space-y-3">
-                          {month.memories.map((memory) => (
-                            <motion.button
-                              key={memory.id}
-                              type="button"
-                              whileHover={isPhone ? undefined : { x: 2 }}
-                              onClick={() => openViewer(memory.id)}
-                              className="group flex w-full items-start gap-3 rounded-[1.2rem] border border-white/10 bg-white/70 px-4 py-4 text-left transition-colors hover:bg-white/85 dark:bg-zinc-950/50 dark:hover:bg-zinc-900/58 sm:gap-4"
-                            >
-                              <span className={cn("mt-1 block h-3 w-3 shrink-0 rounded-full shadow-sm", memoryAccent(memory))} />
-                              <div className="min-w-0 flex-1">
-                                <div className="mb-1 flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-zinc-500">
-                                  <span>{memory.type.replace("_", " ")}</span>
-                                  <span className="opacity-50">•</span>
-                                  <span>{new Date(`${memory.memory_date}T00:00:00Z`).getUTCDate()}</span>
-                                </div>
-                                <h2 className="font-cormorant text-[2rem] leading-none text-zinc-900 dark:text-zinc-50 sm:text-3xl">
+                          {month.memories.map((memory) => {
+                            const formattedDay = new Date(`${memory.memory_date}T00:00:00Z`).getUTCDate();
+                            const fullVisibleDate = `${month.monthLabel} ${formattedDay}, ${group.year}`;
+                            
+                            return (
+                              <motion.button
+                                key={memory.id}
+                                type="button"
+                                aria-label={`Open ${memory.type} memory: ${memory.title || "Untitled memory"}, ${fullVisibleDate}`}
+                                onClick={() => openViewer(memory.id)}
+                                className="group flex w-full items-start gap-3 rounded-[1rem] border border-white/10 bg-white/70 p-3 text-left transition-colors hover:bg-white/90 active:bg-white/60 dark:bg-zinc-950/50 dark:hover:bg-zinc-900/58 sm:gap-4 sm:p-4"
+                              >
+                                <span className={cn("mt-1.5 block h-2.5 w-2.5 shrink-0 rounded-full shadow-sm", memoryAccent(memory))} />
+                                <div className="min-w-0 flex-1">
+                                  <div className="mb-1 flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-zinc-500">
+                                    <span>{memory.type.replace("_", " ")}</span>
+                                    <span className="opacity-50">•</span>
+                                    <span>{formattedDay}</span>
+                                  </div>
+                                <h2 className="font-cormorant text-[1.5rem] leading-tight text-zinc-900 dark:text-zinc-50 sm:text-2xl">
                                   <EmojiText text={memory.title || "Untitled memory"} />
                                 </h2>
-                                <p className="mt-2 line-clamp-3 text-sm leading-6 text-zinc-600 dark:text-zinc-300">
+                                <p className="mt-1 line-clamp-2 text-sm leading-snug text-zinc-600 dark:text-zinc-300">
                                   <EmojiText text={memory.content || "Open to revisit this memory."} />
                                 </p>
                               </div>
-                              <span className="mt-1 hidden shrink-0 items-center gap-1 text-sm text-zinc-500 transition-transform group-hover:translate-x-1 dark:text-zinc-300 sm:inline-flex">
+                              <span className="mt-1.5 hidden shrink-0 items-center gap-1 text-sm text-zinc-500 transition-colors group-hover:text-zinc-800 dark:text-zinc-300 sm:inline-flex">
                                 Open
                                 <ChevronRight className="h-4 w-4" />
                               </span>
                             </motion.button>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     ))}
