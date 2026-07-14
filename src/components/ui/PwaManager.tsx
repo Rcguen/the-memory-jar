@@ -10,7 +10,8 @@ import { useAuth } from "@/providers/auth-provider";
 
 const OFFLINE_TOAST_ID = "pwa-offline-status";
 const DISMISSAL_KEY = "jar_pwa_dismissed_until";
-const DISMISSAL_DAYS = 7;
+const REMINDER_DISMISSAL_DAYS = 1;
+const NATIVE_PROMPT_DISMISSAL_DAYS = 3;
 
 type DeferredInstallPrompt = Event & {
   prompt: () => void;
@@ -200,12 +201,11 @@ export function PwaManager() {
     return () => mediaQuery.removeEventListener("change", handleDisplayModeChange);
   }, []);
 
-  const dismissPromotion = useCallback(() => {
-    const expiry = Date.now() + DISMISSAL_DAYS * 24 * 60 * 60 * 1000;
+  const dismissPromotion = useCallback((days = REMINDER_DISMISSAL_DAYS) => {
+    const expiry = Date.now() + days * 24 * 60 * 60 * 1000;
     localStorage.setItem(DISMISSAL_KEY, String(expiry));
     setDismissed(true);
   }, []);
-
   const handleInstallClick = async () => {
     const promptEvent = deferredPrompt as DeferredInstallPrompt | null;
     if (!promptEvent || promptConsumedRef.current) return;
@@ -215,13 +215,16 @@ export function PwaManager() {
 
     try {
       promptEvent.prompt();
-      await promptEvent.userChoice;
+      const { outcome } = await promptEvent.userChoice;
+      if (outcome === "dismissed") {
+        dismissPromotion(NATIVE_PROMPT_DISMISSAL_DAYS);
+      } else {
+        setDismissed(true);
+      }
     } finally {
       pwaStore.clearPrompt();
-      dismissPromotion();
     }
   };
-
   const handleIosInstallInstructions = () => {
     toast("Add The Memory Jar to Home Screen", {
       description: "Open Safari Share, choose Add to Home Screen, then tap Add.",
@@ -252,7 +255,7 @@ export function PwaManager() {
         >
           <button
             type="button"
-            onClick={dismissPromotion}
+            onClick={() => dismissPromotion()}
             className="absolute right-4 top-4 flex min-h-10 min-w-10 items-center justify-center text-stone-400 transition-colors hover:text-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 dark:hover:text-stone-300"
             aria-label="Dismiss install promotion"
           >
@@ -284,7 +287,7 @@ export function PwaManager() {
                 How to install on iOS
               </Button>
             )}
-            <Button onClick={dismissPromotion} variant="ghost" className="min-h-11 w-full rounded-full font-inter text-stone-500 transition-colors hover:text-stone-700 motion-reduce:transition-none dark:hover:text-stone-300">
+            <Button onClick={() => dismissPromotion()} variant="ghost" className="min-h-11 w-full rounded-full font-inter text-stone-500 transition-colors hover:text-stone-700 motion-reduce:transition-none dark:hover:text-stone-300">
               Not now
             </Button>
           </div>

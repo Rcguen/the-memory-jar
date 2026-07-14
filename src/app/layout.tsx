@@ -41,7 +41,21 @@ export default async function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-
+      <head>
+        <script
+          suppressHydrationWarning
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.__tmjBeforeInstallPrompt = null;
+              window.__tmjCaptureBeforeInstallPrompt = function(event) {
+                event.preventDefault();
+                window.__tmjBeforeInstallPrompt = event;
+              };
+              window.addEventListener("beforeinstallprompt", window.__tmjCaptureBeforeInstallPrompt);
+            `,
+          }}
+        />
+      </head>
       <body
         suppressHydrationWarning
         className={`${cormorantGaramond.variable} ${inter.variable} font-sans antialiased min-h-screen bg-background text-foreground flex flex-col overflow-x-hidden`}

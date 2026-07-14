@@ -19,6 +19,7 @@ export const pwaStore = {
     listeners.forEach((listener) => listener(null));
   },
   subscribe: (listener: PwaStoreCallback) => {
+    listener(deferredPrompt);
     listeners.add(listener);
     return () => {
       listeners.delete(listener);
