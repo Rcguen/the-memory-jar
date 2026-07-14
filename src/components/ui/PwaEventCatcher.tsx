@@ -3,19 +3,23 @@
 import { useEffect } from "react";
 import { pwaStore } from "@/lib/pwa-store";
 
+type PwaWindow = Window & typeof globalThis & {
+  __PWA_PROMPT__?: Event | null;
+};
+
 export function PwaEventCatcher() {
   useEffect(() => {
-    // Check if the event was caught by the inline script in layout.tsx before React hydration
-    if (typeof window !== "undefined" && (window as any).__PWA_PROMPT__ && !pwaStore.getPrompt()) {
-      pwaStore.setPrompt((window as any).__PWA_PROMPT__);
+    const pwaWindow = window as PwaWindow;
+
+    // Check if the event was caught by the inline script in layout.tsx before React hydration.
+    if (pwaWindow.__PWA_PROMPT__ && !pwaStore.getPrompt()) {
+      pwaStore.setPrompt(pwaWindow.__PWA_PROMPT__);
     }
 
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      if (typeof window !== "undefined") {
-        (window as any).__PWA_PROMPT__ = e;
-      }
-      pwaStore.setPrompt(e);
+    const handleBeforeInstallPrompt = (event: Event) => {
+      event.preventDefault();
+      pwaWindow.__PWA_PROMPT__ = event;
+      pwaStore.setPrompt(event);
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);

@@ -9,43 +9,50 @@ import { useAuth } from "@/providers/auth-provider";
 import Image from "next/image";
 
 const OFFLINE_TOAST_ID = "pwa-offline-status";
-const DISMISSAL_KEY = "jar_pwa_dismissed_until";
-const DISMISSAL_DAYS = 7;
+const LEGACY_DISMISSAL_KEY = "jar_pwa_dismissed_until";
+const PERMANENT_DISMISSAL_KEY = "jar_pwa_promotion_disabled";
 
 export function PwaManager() {
   const { profile } = useAuth();
-  
   const [isOffline, setIsOffline] = useState(
-    () => typeof navigator !== "undefined" && !navigator.onLine
+    () => typeof navigator !== "undefined" && !navigator.onLine,
   );
   const [isIOS] = useState(() =>
-    typeof navigator !== "undefined" ? /iPad|iPhone|iPod/.test(navigator.userAgent) && !("MSStream" in window) : false
+    typeof navigator !== "undefined"
+      ? /iPad|iPhone|iPod/.test(navigator.userAgent) && !("MSStream" in window)
+      : false,
   );
   const [isStandalone, setIsStandalone] = useState(() =>
-    typeof window !== "undefined" ? window.matchMedia("(display-mode: standalone)").matches || ("standalone" in window.navigator && !!(window.navigator as unknown as { standalone: boolean }).standalone) : true
-  ); // default true to prevent flash
-  
+    typeof window !== "undefined"
+      ? window.matchMedia("(display-mode: standalone)").matches
+        || ("standalone" in window.navigator
+          && !!(window.navigator as unknown as { standalone: boolean }).standalone)
+      : true,
+  );
   const [deferredPrompt, setDeferredPrompt] = useState<Event | null>(pwaStore.getPrompt());
-  const [dismissed, setDismissed] = useState(true); // default true until hydrated
+  const [dismissedForVisit, setDismissedForVisit] = useState(true);
+  const [isPermanentlyDismissed, setIsPermanentlyDismissed] = useState(
+    () => typeof window !== "undefined" && localStorage.getItem(PERMANENT_DISMISSAL_KEY) === "true",
+  );
+  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
-    // Hydrate dismissal state
-    const dismissedUntil = localStorage.getItem(DISMISSAL_KEY);
-    if (dismissedUntil && Date.now() < parseInt(dismissedUntil, 10)) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setDismissed(true);
-    } else {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setDismissed(false);
-    }
+    // Legacy timed dismissals should no longer suppress the reminder after a reload.
+    localStorage.removeItem(LEGACY_DISMISSAL_KEY);
+    const hydrationTimer = window.setTimeout(() => {
+      setDismissedForVisit(false);
+      setIsHydrated(true);
+    }, 0);
 
-    // Subscribe to store updates
     const unsubscribe = pwaStore.subscribe((prompt) => {
       setDeferredPrompt(prompt);
       if (prompt) setIsStandalone(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      window.clearTimeout(hydrationTimer);
+      unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
@@ -77,7 +84,6 @@ export function PwaManager() {
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
 
-    // Watch for appinstalled event to hide the banner natively
     const handleAppInstalled = () => {
       if (process.env.NODE_ENV === "development") {
         console.debug("[pwa] appinstalled event received");
@@ -85,7 +91,7 @@ export function PwaManager() {
       setIsStandalone(true);
       pwaStore.clearPrompt();
     };
-    
+
     window.addEventListener("appinstalled", handleAppInstalled);
 
     if ("serviceWorker" in navigator && "serwist" in window) {
@@ -139,29 +145,41 @@ export function PwaManager() {
     };
   }, []);
 
-  // Track standalone display mode changes dynamically (e.g. if the user installs and it launches immediately)
   useEffect(() => {
     const mediaQuery = window.matchMedia("(display-mode: standalone)");
-    const handleChange = (e: MediaQueryListEvent) => {
-      if (e.matches) {
+    const handleChange = (event: MediaQueryListEvent) => {
+      if (event.matches) {
         setIsStandalone(true);
         pwaStore.clearPrompt();
       } else {
         setIsStandalone(false);
       }
     };
-    
+
     mediaQuery.addEventListener("change", handleChange);
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
+  const handleDismissForVisit = useCallback(() => {
+    setDismissedForVisit(true);
+  }, []);
+
+  const handlePermanentDismiss = useCallback(() => {
+    localStorage.setItem(PERMANENT_DISMISSAL_KEY, "true");
+    setIsPermanentlyDismissed(true);
+    setDismissedForVisit(true);
+  }, []);
+
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
-    const promptEvent = deferredPrompt as unknown as { prompt: () => void; userChoice: Promise<{ outcome: string }> };
-    
+    const promptEvent = deferredPrompt as unknown as {
+      prompt: () => void;
+      userChoice: Promise<{ outcome: string }>;
+    };
+
     promptEvent.prompt();
     const { outcome } = await promptEvent.userChoice;
-    
+
     if (outcome === "accepted") {
       if (process.env.NODE_ENV === "development") {
         console.debug("[pwa] user accepted install prompt");
@@ -171,25 +189,24 @@ export function PwaManager() {
       if (process.env.NODE_ENV === "development") {
         console.debug("[pwa] user dismissed install prompt");
       }
-      handleDismiss();
+      handleDismissForVisit();
     }
   };
-
-  const handleDismiss = useCallback(() => {
-    setDismissed(true);
-    const expiry = Date.now() + DISMISSAL_DAYS * 24 * 60 * 60 * 1000;
-    localStorage.setItem(DISMISSAL_KEY, expiry.toString());
-  }, []);
 
   const handleIosInstallInstructions = () => {
     toast("To install on iOS", {
       description: "Tap the Share button at the bottom of Safari, then select 'Add to Home Screen'.",
       duration: 8000,
     });
-    handleDismiss();
+    handleDismissForVisit();
   };
 
   const connectivityStatus = isOffline ? "You're offline" : "You're online";
+  const shouldShowPromotion = !isStandalone
+    && isHydrated
+    && !dismissedForVisit
+    && !isPermanentlyDismissed
+    && profile;
 
   if (isStandalone) {
     return (
@@ -199,9 +216,6 @@ export function PwaManager() {
     );
   }
 
-  // Only show the promotion when a user is logged in
-  const shouldShowPromotion = !isStandalone && (deferredPrompt || isIOS) && !dismissed && profile;
-
   return (
     <>
       <span className="sr-only" aria-live="polite" suppressHydrationWarning>
@@ -210,21 +224,22 @@ export function PwaManager() {
 
       {shouldShowPromotion && (
         <div className="fixed bottom-4 left-4 right-4 z-[90] flex flex-col overflow-hidden rounded-[1.2rem] border border-stone-200 bg-[var(--surface-paper)] p-5 shadow-xl dark:border-stone-800 md:bottom-6 md:left-auto md:right-6 md:w-80">
-          <button 
-            onClick={handleDismiss} 
-            className="absolute right-4 top-4 text-stone-400 transition-colors hover:text-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 dark:hover:text-stone-300" 
-            aria-label="Dismiss install promotion"
+          <button
+            type="button"
+            onClick={handleDismissForVisit}
+            className="absolute right-4 top-4 text-stone-400 transition-colors hover:text-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 dark:hover:text-stone-300"
+            aria-label="Dismiss install promotion for this visit"
           >
             <X className="h-5 w-5" />
           </button>
-          
+
           <div className="mb-4 flex items-center gap-4">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-stone-100 shadow-sm dark:bg-stone-900">
               <Image src="/icons/icon-192x192.png" alt="The Memory Jar App Icon" width={48} height={48} className="object-cover" />
             </div>
             <div className="flex flex-col pr-6">
               <h3 className="font-inter text-sm font-semibold text-stone-900 dark:text-stone-100">The Memory Jar</h3>
-              <p className="font-inter text-xs leading-relaxed text-stone-500 dark:text-stone-400 mt-0.5">
+              <p className="mt-0.5 font-inter text-xs leading-relaxed text-stone-500 dark:text-stone-400">
                 Install it for quicker access and a more immersive experience.
               </p>
             </div>
@@ -232,18 +247,29 @@ export function PwaManager() {
 
           <div className="flex flex-col gap-2">
             {deferredPrompt ? (
-              <Button onClick={handleInstallClick} className="w-full rounded-full bg-stone-900 text-white transition-colors hover:bg-stone-800 dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white motion-reduce:transition-none font-inter">
+              <Button onClick={handleInstallClick} className="w-full rounded-full bg-stone-900 font-inter text-white transition-colors hover:bg-stone-800 motion-reduce:transition-none dark:bg-stone-100 dark:text-stone-900 dark:hover:bg-white">
                 <Download className="mr-2 h-4 w-4" />
                 Install App
               </Button>
             ) : isIOS ? (
-              <Button onClick={handleIosInstallInstructions} variant="outline" className="w-full rounded-full border-stone-200 bg-stone-50 text-stone-700 transition-colors hover:bg-stone-100 hover:text-stone-900 dark:border-stone-800 dark:bg-stone-900/50 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100 motion-reduce:transition-none font-inter">
+              <Button onClick={handleIosInstallInstructions} variant="outline" className="w-full rounded-full border-stone-200 bg-stone-50 font-inter text-stone-700 transition-colors hover:bg-stone-100 hover:text-stone-900 motion-reduce:transition-none dark:border-stone-800 dark:bg-stone-900/50 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-stone-100">
                 How to install on iOS
               </Button>
-            ) : null}
-            <Button onClick={handleDismiss} variant="ghost" className="w-full rounded-full text-stone-500 hover:text-stone-700 dark:hover:text-stone-300 transition-colors motion-reduce:transition-none font-inter">
+            ) : (
+              <p className="px-1 text-center font-inter text-xs leading-relaxed text-stone-500 dark:text-stone-400">
+                Use your browser menu and choose Install app or Add to Home screen.
+              </p>
+            )}
+            <Button onClick={handleDismissForVisit} variant="ghost" className="w-full rounded-full font-inter text-stone-500 transition-colors hover:text-stone-700 motion-reduce:transition-none dark:hover:text-stone-300">
               Not now
             </Button>
+            <button
+              type="button"
+              onClick={handlePermanentDismiss}
+              className="min-h-10 rounded-full px-3 font-inter text-xs text-stone-400 transition-colors hover:text-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 motion-reduce:transition-none dark:hover:text-stone-300"
+            >
+              Don&apos;t show this again
+            </button>
           </div>
         </div>
       )}
