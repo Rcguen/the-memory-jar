@@ -1,6 +1,6 @@
 ﻿import { Memory, MemoryAttachment } from "@/types/memory";
 import { format } from "date-fns";
-import { X, ChevronLeft, ChevronRight, AlertCircle, Heart, Share2, Download, Sparkles } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, AlertCircle, Heart, Share2, Download, Loader2, Sparkles } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useMemoryViewer } from "@/providers/memory-viewer-provider";
 import { usePhysics } from "@/providers/physics-provider";
@@ -126,6 +126,11 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
   const thumbnailAttachments = attachments.filter((attachment) => attachment.file_type === "thumbnail");
   const playableAttachments = attachments.filter((attachment) => attachment.file_type === "voice" || attachment.file_type === "video");
   const downloadableAttachment = attachments.find((attachment) => attachment.file_type !== "thumbnail");
+  const downloadTargets = photoAttachments.length > 1
+    ? photoAttachments
+    : downloadableAttachment
+      ? [downloadableAttachment]
+      : [];
   const quickReactions: ReactionEmoji[] = ["❤️", "🥹", "😂", "😍"];
   const isReadingMemory = ["letter", "promise", "wish", "gratitude", "random_thought", "travel"].includes(fullMemory?.type ?? "");
 
@@ -178,24 +183,47 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
   };
 
   const handleDownload = async () => {
-    if (!downloadableAttachment || isDownloading) return;
+    if (downloadTargets.length === 0 || isDownloading) return;
     setIsDownloading(true);
     trigger("light");
+
     try {
-      const signedUrl = await memoryService.getAttachmentUrlAsync(downloadableAttachment.file_type, downloadableAttachment.url);
-      const response = await fetch(signedUrl);
-      if (!response.ok) throw new Error(`Could not download media (${response.status})`);
-      const blob = await response.blob();
-      if (blob.size === 0) throw new Error("Downloaded media was empty");
-      const objectUrl = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = objectUrl;
-      link.download = downloadableAttachment.url.split("/").pop() || "memory-attachment";
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
-      toast.success("Saved to your device.");
+      const results = await Promise.allSettled(downloadTargets.map(async (attachment) => {
+        const signedUrl = await memoryService.getAttachmentUrlAsync(attachment.file_type, attachment.url);
+        const response = await fetch(signedUrl);
+        if (!response.ok) throw new Error(`Could not download media (${response.status})`);
+        const blob = await response.blob();
+        if (blob.size === 0) throw new Error("Downloaded media was empty");
+        return { attachment, blob };
+      }));
+
+      const successfulDownloads = results.filter(
+        (result): result is PromiseFulfilledResult<{ attachment: MemoryAttachment; blob: Blob }> => result.status === "fulfilled",
+      );
+
+      successfulDownloads.forEach(({ value }) => {
+        const objectUrl = URL.createObjectURL(value.blob);
+        const link = document.createElement("a");
+        link.href = objectUrl;
+        link.download = value.attachment.url.split("/").pop() || "memory-attachment";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+      });
+
+      if (successfulDownloads.length > 0) {
+        toast.success(
+          successfulDownloads.length === 1
+            ? "Saved to your device."
+            : `Saved ${successfulDownloads.length} photos to your device.`,
+        );
+      }
+
+      if (successfulDownloads.length !== downloadTargets.length) {
+        const failedCount = downloadTargets.length - successfulDownloads.length;
+        toast.error(`Could not save ${failedCount} photo${failedCount === 1 ? "" : "s"}.`);
+      }
     } catch (error) {
       toast.error(`Save failed: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
@@ -403,7 +431,7 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
               <button type="button" onClick={handleFavorite} disabled={isFavoriting} className={cn("inline-flex min-h-11 flex-col items-center justify-center rounded-[var(--radius-small)] text-[10px] font-medium", fullMemory.is_favorite ? "bg-rose-100 text-rose-700" : "bg-white/55 text-stone-600")}><Heart className={cn("mb-0.5 h-4 w-4", fullMemory.is_favorite && "fill-current")} />Favorite</button>
               <button type="button" onClick={() => setIsActionRailExpanded((value) => !value)} className={cn("inline-flex min-h-11 flex-col items-center justify-center rounded-[var(--radius-small)] bg-white/55 text-[10px] font-medium text-stone-600", isActionRailExpanded && "bg-amber-100 text-amber-800")}><Sparkles className="mb-0.5 h-4 w-4" />React</button>
               <button type="button" onClick={handleShare} className="inline-flex min-h-11 flex-col items-center justify-center rounded-[var(--radius-small)] bg-white/55 text-[10px] font-medium text-stone-600"><Share2 className="mb-0.5 h-4 w-4" />{canShare ? "Share" : "Copy"}</button>
-              <button type="button" onClick={handleDownload} disabled={!downloadableAttachment || isDownloading} className="inline-flex min-h-11 flex-col items-center justify-center rounded-[var(--radius-small)] bg-white/55 text-[10px] font-medium text-stone-600 disabled:opacity-40"><Download className="mb-0.5 h-4 w-4" />Save</button>
+              <button type="button" onClick={handleDownload} disabled={downloadTargets.length === 0 || isDownloading} className="inline-flex min-h-11 flex-col items-center justify-center rounded-[var(--radius-small)] bg-white/55 px-1 text-[10px] font-medium leading-tight text-stone-600 disabled:opacity-40">{isDownloading ? <Loader2 className="mb-0.5 h-4 w-4 animate-spin" /> : <Download className="mb-0.5 h-4 w-4" />}{isDownloading ? "Saving" : photoAttachments.length > 1 ? `Save all (${photoAttachments.length})` : "Save"}</button>
             </div>
           </div>
           <MemoryComments memoryId={memoryId} className="min-h-0 flex-1" />

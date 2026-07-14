@@ -6,6 +6,7 @@ import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-q
 import type { InfiniteData } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { createPortal } from "react-dom";
 import {
   AlertCircle,
   Bell,
@@ -210,7 +211,8 @@ export function NotificationBell() {
         )}
       </button>
 
-      <AnimatePresence>
+      {typeof document !== "undefined" && createPortal(
+        <AnimatePresence>
         {isOpen && (
           <>
             <motion.div
@@ -227,7 +229,7 @@ export function NotificationBell() {
               ref={panelRef}
               role="dialog"
               aria-label="Notifications"
-              className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-[200] max-h-[min(82dvh,38rem)] overflow-hidden rounded-[1.35rem] border border-white/10 bg-zinc-950/95 text-zinc-100 shadow-2xl backdrop-blur-2xl sm:absolute sm:bottom-auto sm:right-0 sm:top-full sm:mt-3 sm:w-[23rem] sm:max-w-[calc(100vw-2rem)] sm:rounded-2xl"
+              className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.75rem)] z-[200] max-h-[min(82dvh,38rem)] overflow-hidden rounded-[1.35rem] border border-white/10 bg-zinc-950/95 text-zinc-100 shadow-2xl backdrop-blur-2xl sm:inset-x-auto sm:bottom-auto sm:right-6 sm:top-[4.75rem] sm:w-[23rem] sm:max-w-[calc(100vw-2rem)] sm:rounded-2xl"
             >
               <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
                 <div>
@@ -344,7 +346,9 @@ export function NotificationBell() {
             </motion.div>
           </>
         )}
-      </AnimatePresence>
+        </AnimatePresence>,
+        document.body,
+      )}
     </div>
   );
 }
