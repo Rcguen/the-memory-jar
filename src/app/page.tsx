@@ -57,6 +57,8 @@ import { TodaysLetter } from "@/components/home/TodaysLetter";
 import { LivingMemoryShelf } from "@/components/home/LivingMemoryShelf";
 import { RelationshipOnboarding } from "@/components/onboarding/RelationshipOnboarding";
 
+const MotionLink = motion.create(Link);
+
 const MemoryCommandCenter = dynamic(
   () => import("@/components/jar/MemoryCommandCenter").then((mod) => mod.MemoryCommandCenter),
   { ssr: false },
@@ -239,49 +241,55 @@ export default function Home() {
       <header className="pointer-events-none absolute inset-x-0 top-0 z-20 px-3 pt-3 sm:p-6">
         <div className="flex items-start justify-between gap-3">
         <div className="pointer-events-auto hidden items-center gap-2 md:flex">
-            <Link
+            <MotionLink
               href="/timeline"
               onMouseEnter={prefetchTimeline}
               onTouchStart={prefetchTimeline}
               onFocus={prefetchTimeline}
-              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-zinc-950/35 px-4 py-2 text-sm text-zinc-200 shadow-lg backdrop-blur-xl transition-colors hover:bg-zinc-950/55"
+              whileTap={{ scale: 0.96 }}
+              transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+              className="inline-flex items-center gap-2 rounded-full border border-[var(--divider)] bg-[var(--surface-wood)]/60 px-4 py-2 text-sm text-[var(--text-primary)] shadow-[var(--shadow-2)] backdrop-blur-xl transition-colors hover:bg-[var(--surface-wood)]/80 focus-ring-premium"
             >
             <Compass className="h-4 w-4 text-emerald-400" />
             Timeline
-          </Link>
-            <Link
+          </MotionLink>
+            <MotionLink
               href="/dashboard"
               onMouseEnter={prefetchDashboard}
               onTouchStart={prefetchDashboard}
               onFocus={prefetchDashboard}
-              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-zinc-950/35 px-4 py-2 text-sm text-zinc-200 shadow-lg backdrop-blur-xl transition-colors hover:bg-zinc-950/55"
+              whileTap={{ scale: 0.96 }}
+              transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+              className="inline-flex items-center gap-2 rounded-full border border-[var(--divider)] bg-[var(--surface-wood)]/60 px-4 py-2 text-sm text-[var(--text-primary)] shadow-[var(--shadow-2)] backdrop-blur-xl transition-colors hover:bg-[var(--surface-wood)]/80 focus-ring-premium"
             >
             <LayoutDashboard className="h-4 w-4 text-rose-300" />
             Dashboard
-          </Link>
-            <Link
+          </MotionLink>
+            <MotionLink
               href="/memory-book"
               onMouseEnter={prefetchBook}
               onTouchStart={prefetchBook}
               onFocus={prefetchBook}
-              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-zinc-950/35 px-4 py-2 text-sm text-zinc-200 shadow-lg backdrop-blur-xl transition-colors hover:bg-zinc-950/55"
+              whileTap={{ scale: 0.96 }}
+              transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+              className="inline-flex items-center gap-2 rounded-full border border-[var(--divider)] bg-[var(--surface-wood)]/60 px-4 py-2 text-sm text-[var(--text-primary)] shadow-[var(--shadow-2)] backdrop-blur-xl transition-colors hover:bg-[var(--surface-wood)]/80 focus-ring-premium"
             >
               <BookOpen className="h-4 w-4 text-amber-200" />
               Memory Book
-            </Link>
+            </MotionLink>
         </div>
         {profile && (
-          <div className="pointer-events-auto ml-auto flex items-center gap-2 rounded-full border border-white/10 bg-zinc-950/28 px-1.5 py-1 shadow-lg backdrop-blur-xl sm:gap-3 sm:bg-transparent sm:px-0 sm:py-0 sm:shadow-none">
+          <div className="pointer-events-auto ml-auto flex items-center gap-2 rounded-full border border-[var(--divider)] bg-[var(--surface-wood)]/50 px-1.5 py-1 shadow-[var(--shadow-2)] backdrop-blur-xl sm:gap-3 sm:bg-transparent sm:px-0 sm:py-0 sm:shadow-none sm:border-transparent">
           <NotificationBell />
           <DropdownMenu>
-            <DropdownMenuTrigger className="relative h-10 flex items-center gap-2 rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800 pr-4 pl-1 outline-none transition-colors">
+            <DropdownMenuTrigger className="relative h-10 flex items-center gap-2 rounded-full hover:bg-[var(--surface-raised)]/20 active:scale-[0.96] transition-[transform,background-color,border-color,box-shadow] pr-4 pl-1 outline-none focus-ring-premium">
               <Avatar className="h-8 w-8">
                 {avatarUrl && <AvatarImage src={avatarUrl} alt={profile.display_name} />}
                 <AvatarFallback className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
                   {profile.display_name.charAt(0)}
                 </AvatarFallback>
               </Avatar>
-              <span className="font-inter text-sm font-medium hidden sm:inline-block text-zinc-700 dark:text-zinc-300">
+              <span className="font-inter text-sm font-medium hidden sm:inline-block text-[var(--text-primary)]">
                 {profile.display_name}
               </span>
             </DropdownMenuTrigger>
