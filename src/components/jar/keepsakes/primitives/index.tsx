@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { EmojiText } from "@/components/ui/EmojiText";
@@ -17,7 +17,7 @@ export function KeepsakeActions({ children, className }: KeepsakeSlotProps) { re
 
 import { useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Heart, MessageCircle, Pin, SmilePlus, Star, Trash2, UsersRound } from "lucide-react";
+import { Heart, MessageCircle, Pin, SmilePlus, Star, Trash2, UsersRound, MoreHorizontal } from "lucide-react";
 import type { KeepsakeLayoutProps } from "../types";
 import type { ReactionEmoji } from "@/types/memory";
 
@@ -38,12 +38,12 @@ export function CompactKeepsakeShell(props: CompactKeepsakeShellProps) {
   const [showReactions, setShowReactions] = useState(false);
   const [reactionMenuPosition, setReactionMenuPosition] = useState<{ bottom: number; left: number } | null>(null);
   const [selectedReaction, setSelectedReaction] = useState<ReactionEmoji | null>(metadata.reaction ?? null);
+  const [showOverflow, setShowOverflow] = useState(false);
   const reactionTriggerRef = useRef<HTMLButtonElement>(null);
 
-  const stop = (event: React.MouseEvent<HTMLButtonElement>) => event.stopPropagation();
-  const actionClass = cn("inline-flex h-10 w-10 items-center justify-center text-stone-700 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 sm:h-9 sm:w-9", isForest ? "text-stone-100 hover:bg-white/10 hover:text-white" : "hover:bg-stone-100/80 hover:text-stone-950");
-  const footerClass = isForest ? "border-white/15 bg-[#1b2922] text-stone-200" : "border-stone-700/15 bg-[#f3eee4] text-stone-700";
-  const reactClass = isForest ? "text-stone-100 hover:bg-white/10" : "text-stone-800 hover:bg-stone-200/70";
+  const stop = (event: React.MouseEvent<HTMLButtonElement> | React.MouseEvent<HTMLDivElement> | React.MouseEvent<HTMLButtonElement>) => event.stopPropagation();
+  const actionClass = cn("inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600", isForest ? "text-stone-300 hover:bg-white/10 hover:text-white" : "text-stone-500 hover:bg-stone-200 hover:text-stone-900");
+  const footerClass = isForest ? "border-white/15 bg-[#1b2922] text-stone-200" : "border-[rgba(92,75,54,0.18)] bg-[#f3eee4] text-stone-700";
   const activeReaction = metadata.reaction ?? selectedReaction;
   const visibleReactionCount = Math.max(metadata.reactions ?? 0, activeReaction ? 1 : 0);
   const affectionCount = metadata.favorites + visibleReactionCount;
@@ -66,41 +66,52 @@ export function CompactKeepsakeShell(props: CompactKeepsakeShellProps) {
   return (
     <>
     <article className={cn(
-      "group relative flex w-full flex-col overflow-visible rounded-[var(--radius-medium)] border",
-      "h-[190px] sm:h-[176px]",
-      isForest ? "border-emerald-100/15 bg-[#1b2922] text-stone-100" : "border-[rgba(92,75,54,0.18)] bg-[#f3eee4] text-stone-800",
-      showReactions && "z-20",
+      "group relative flex w-full flex-col overflow-visible rounded-xl border transition-shadow hover:shadow-[var(--shadow-1)]",
+      isForest ? "border-emerald-100/15 bg-[#1b2922] text-stone-100" : "border-[rgba(92,75,54,0.18)] bg-[#fdfbf7] text-stone-800",
+      (showReactions || showOverflow) && "z-20",
     )}>
-      <button type="button" onClick={onOpen} className="absolute inset-0 z-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500" aria-label={`Open ${memory.type} memory: ${metadata.title}`} />
-      
-      <div className={cn("absolute right-2 top-2 z-10 flex items-center overflow-hidden rounded-[0.7rem] border shadow-sm sm:right-3 sm:top-3", isForest ? "border-white/15 bg-[#23342b]/95" : "border-stone-300/85 bg-[#fffaf0]/95")}>
-        {isCollaborative && <span className="pointer-events-auto inline-flex h-7 w-7 items-center justify-center text-emerald-800 dark:text-emerald-100" title="Shared memory"><UsersRound className="h-3.5 w-3.5" /><span className="sr-only">Shared memory</span></span>}
-        {onPin && <button type="button" onClick={(event) => { stop(event); onPin(); }} className={cn(actionClass, "pointer-events-auto border-l border-stone-300/70 first:border-l-0", isForest && "border-white/15")} aria-label={isPinned ? "Unpin memory" : "Pin memory"}><Pin className={isPinned ? "h-3.5 w-3.5 fill-emerald-700 text-emerald-700" : "h-3.5 w-3.5"} /></button>}
-        <button type="button" onClick={(event) => { stop(event); onFavorite(); }} className={cn(actionClass, "pointer-events-auto border-l border-stone-300/70 first:border-l-0", isForest && "border-white/15")} aria-label={isFavorite ? "Remove memory from favorites" : "Favorite memory"}><Star className={isFavorite ? "h-3.5 w-3.5 fill-rose-500 text-rose-500" : "h-3.5 w-3.5"} /></button>
-        {onDelete ? <button type="button" onClick={(event) => { stop(event); onDelete(); }} className={cn(actionClass, "pointer-events-auto border-l border-stone-300/70 text-rose-600 hover:text-rose-700", isForest && "border-white/15")} aria-label="Delete memory"><Trash2 className="h-3.5 w-3.5" /></button> : !canDelete && <button type="button" disabled className={cn(actionClass, "pointer-events-auto border-l border-stone-300/70 cursor-not-allowed text-stone-400 opacity-45", isForest && "border-white/15")} aria-label="Only the memory creator can delete this memory" title="Only the memory creator can delete this memory"><Trash2 className="h-3.5 w-3.5" /></button>}
-      </div>
-
-      <div className="relative z-[1] grid flex-1 grid-cols-[72px_minmax(0,1fr)] gap-3 p-3 pb-14 sm:grid-cols-[120px_minmax(0,1fr)] sm:gap-4 sm:pb-12 pointer-events-none">
-        <div className={cn("min-h-0 overflow-hidden rounded-[var(--radius-small)] border", isForest ? "border-white/10 bg-[#101712]" : "border-[rgba(104,83,54,0.18)] bg-[#fffaf0]")}>{preview}</div>
-        <div className="min-w-0 pt-10 sm:pt-0 sm:pr-24 flex flex-col justify-center">
-          <div className={cn("flex items-center gap-1.5 text-[11px] font-medium", isForest ? "text-emerald-100/65" : "text-stone-500")}>
-            {icon}<span>{label}</span><span aria-hidden="true">Â·</span><span>{metadata.dateLabel}</span>
+      <button type="button" onClick={onOpen} className="relative z-0 flex w-full flex-col items-start rounded-t-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 hover:bg-stone-500/5 transition-colors" aria-label={`Open ${memory.type} memory: ${metadata.title}`}>
+        <div className="relative flex w-full p-3 gap-3 sm:p-4 sm:gap-4 pointer-events-none">
+          <div className={cn("w-16 h-16 sm:w-20 sm:h-20 shrink-0 overflow-hidden rounded-[var(--radius-small)] border", isForest ? "border-white/10 bg-[#101712]" : "border-[rgba(104,83,54,0.18)] bg-[#fffaf0]")}>{preview}</div>
+          <div className="min-w-0 flex-1 flex flex-col justify-center">
+            <div className={cn("flex items-center gap-1.5 text-[11px] font-medium tracking-wide", isForest ? "text-emerald-100/65" : "text-stone-500")}>
+              {icon}<span>{label}</span><span aria-hidden="true">·</span><span>{metadata.dateLabel}</span>
+              {isCollaborative && <span className="inline-flex h-3.5 w-3.5 items-center justify-center text-emerald-600" title="Shared memory"><UsersRound className="h-3 w-3" /><span className="sr-only">Shared memory</span></span>}
+            </div>
+            <h3 className={cn("mt-0.5 truncate font-cormorant text-[18px] font-semibold leading-tight sm:text-[20px]", isForest ? "text-stone-50" : "text-stone-800")}><EmojiText text={metadata.title} /></h3>
+            {excerpt && <div className={cn("mt-0.5 line-clamp-1 text-[13px] leading-snug", isForest ? "text-stone-300/80" : "text-stone-600")}>{typeof excerpt === "string" ? <EmojiText text={excerpt} /> : excerpt}</div>}
+            {metadata.tags && metadata.tags.length > 0 && <p className={cn("mt-1 truncate text-[11px]", isForest ? "text-emerald-100/55" : "text-stone-500")}>{metadata.tags.slice(0, 2).map((tag) => `#${tag}`).join("  ")}</p>}
           </div>
-          <h3 className={cn("mt-1 truncate font-cormorant text-[18px] font-semibold leading-[1.1] sm:text-[20px]", isForest ? "text-stone-50" : "text-stone-800")}><EmojiText text={metadata.title} /></h3>
-          {excerpt && <div className={cn("mt-1 line-clamp-2 text-[14px] leading-5", isForest ? "text-stone-300/80" : "text-stone-600")}>{typeof excerpt === "string" ? <EmojiText text={excerpt} /> : excerpt}</div>}
-          {metadata.tags && metadata.tags.length > 0 && <p className={cn("mt-1 truncate text-[11px]", isForest ? "text-emerald-100/55" : "text-stone-500")}>{metadata.tags.slice(0, 2).map((tag) => `#${tag}`).join("  ")}</p>}
         </div>
-      </div>
+      </button>
 
-      <footer className={cn("absolute inset-x-3 bottom-0 z-30 flex min-h-11 items-center justify-between border-t pt-1 text-[12px]", footerClass)}>
-        <div className="relative pointer-events-auto">
-          <button ref={reactionTriggerRef} type="button" onClick={toggleReactionMenu} className={cn("inline-flex min-h-8 items-center gap-1.5 rounded-md border px-2 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600", isForest ? "border-white/15 bg-white/5 text-stone-100 hover:bg-white/12" : "border-stone-300/80 bg-white/45 text-stone-800 hover:bg-white", showReactions && (isForest ? "bg-emerald-100/15 text-emerald-50" : "border-emerald-700/35 bg-emerald-50 text-emerald-800"))} aria-expanded={showReactions} aria-label="Choose a reaction">{activeReaction ? <EmojiText text={activeReaction} /> : <SmilePlus className="h-3.5 w-3.5" aria-hidden="true" />}<span>{activeReaction ? `Reacted (${visibleReactionCount})` : "React"}</span></button>
-
-        </div>
-        <span className="flex items-center gap-2" aria-label={`${affectionCount} favorites and reactions, and ${metadata.comments} comments`}>
-          <span className="inline-flex items-center gap-1"><Heart className="h-3.5 w-3.5" />{affectionCount}</span>
-          <span className="inline-flex items-center gap-1"><MessageCircle className="h-3.5 w-3.5" />{metadata.comments}</span>
-        </span>
+      <footer className={cn("relative z-10 flex min-h-[2.75rem] items-center justify-between border-t px-2 py-1.5 text-[12px] rounded-b-xl", footerClass)}>
+         <div className="flex items-center gap-0.5">
+           {onPin && <button onClick={(e) => { stop(e); onPin(); }} className={actionClass} aria-label={isPinned ? "Unpin memory" : "Pin memory"}><Pin className={isPinned ? "h-3.5 w-3.5 fill-emerald-700 text-emerald-700" : "h-3.5 w-3.5"} /></button>}
+           <button onClick={(e) => { stop(e); onFavorite(); }} className={actionClass} aria-label={isFavorite ? "Remove memory from favorites" : "Favorite memory"}><Star className={isFavorite ? "h-3.5 w-3.5 fill-rose-500 text-rose-500" : "h-3.5 w-3.5"} /></button>
+           
+           <button ref={reactionTriggerRef} type="button" onClick={toggleReactionMenu} className={cn("ml-1.5 inline-flex h-7 items-center gap-1.5 rounded-full border px-2 text-[11px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600", isForest ? "border-white/15 bg-white/5 text-stone-100 hover:bg-white/12" : "border-stone-300/80 bg-white/45 text-stone-800 hover:bg-white", showReactions && (isForest ? "bg-emerald-100/15 text-emerald-50" : "border-emerald-700/35 bg-emerald-50 text-emerald-800"))} aria-expanded={showReactions} aria-label="Choose a reaction">
+             {activeReaction ? <EmojiText text={activeReaction} /> : <SmilePlus className="h-3.5 w-3.5" aria-hidden="true" />}<span className="hidden sm:inline-block">{activeReaction ? `Reacted (${visibleReactionCount})` : "React"}</span>
+           </button>
+         </div>
+         
+         <div className="flex items-center gap-2.5 px-1 pr-0.5">
+           <span className="flex items-center gap-1 font-medium text-stone-500" aria-label={`${affectionCount} favorites and reactions`}><Heart className="h-3.5 w-3.5" />{affectionCount}</span>
+           <span className="flex items-center gap-1 font-medium text-stone-500" aria-label={`${metadata.comments} comments`}><MessageCircle className="h-3.5 w-3.5" />{metadata.comments}</span>
+           
+           {(onDelete || !canDelete) && (
+             <div className="relative ml-1.5 border-l border-stone-300/30 pl-1.5">
+                <button onClick={(e) => { stop(e); setShowOverflow(!showOverflow); }} className={actionClass} aria-label="More actions" aria-expanded={showOverflow}><MoreHorizontal className="h-4 w-4" /></button>
+                {showOverflow && (
+                   <div className={cn("absolute bottom-full right-0 mb-2 rounded-md border shadow-lg p-1 w-32", isForest ? "border-stone-600 bg-[#2a3c31]" : "border-stone-200 bg-white")}>
+                      <button onClick={(e) => { stop(e); setShowOverflow(false); if(onDelete) onDelete(); }} disabled={!canDelete} className="w-full flex items-center gap-2 rounded px-2 py-1.5 text-xs text-rose-600 hover:bg-rose-50 disabled:opacity-50">
+                        <Trash2 className="h-3.5 w-3.5" /> Delete
+                      </button>
+                   </div>
+                )}
+             </div>
+           )}
+         </div>
       </footer>
     </article>
       {showReactions && reactionMenuPosition && typeof document !== "undefined" && createPortal(

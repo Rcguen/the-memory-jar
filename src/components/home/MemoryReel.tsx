@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemories } from "@/hooks/useMemoryData";
 import { useMemoryViewer } from "@/providers/memory-viewer-provider";
@@ -31,7 +31,7 @@ function ReelThumbnail({ memory, onClick }: { memory: Memory, onClick: () => voi
       aria-label={`Open memory: $<EmojiText text={memory.title || "Photo"} />`}
     >
       <img src={url} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
-      <div className="absolute inset-0 bg-black/10 group-hover:bg-black/40 group-hover:backdrop-blur-[1px] transition-all duration-300 flex items-end p-1.5 opacity-0 group-hover:opacity-100">
+      <div className="absolute inset-0 bg-black/10 group-hover:bg-black/45 transition-opacity duration-300 flex items-end p-1.5 opacity-0 group-hover:opacity-100">
         <span className="text-[9px] text-white font-medium line-clamp-2 leading-tight drop-shadow-md">
           <EmojiText text={memory.title || "Photo"} />
         </span>

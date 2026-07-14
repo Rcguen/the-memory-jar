@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -291,11 +291,11 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
         ) : (
           <motion.section
             key="memory-shelf-panel"
-            initial={{ opacity: 0, x: -28, scale: 0.985, filter: "blur(8px)" }}
-            animate={{ opacity: 1, x: 0, scale: 1, filter: "blur(0px)" }}
-            exit={{ opacity: 0, x: -28, scale: 0.985, filter: "blur(8px)" }}
-            transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
-            className="relative overflow-hidden rounded-[1.35rem] border border-white/[0.12] bg-[linear-gradient(145deg,rgba(38,33,26,0.94),rgba(18,27,24,0.92))] shadow-[0_22px_72px_rgba(25,17,9,0.38),inset_0_1px_rgba(255,255,255,0.09)] backdrop-blur-xl sm:bg-[linear-gradient(145deg,rgba(38,33,26,0.86),rgba(18,27,24,0.82))] xl:bg-[linear-gradient(145deg,rgba(38,33,26,0.68),rgba(18,27,24,0.66))]"
+            initial={{ opacity: 0, x: useSimpleMotion ? 0 : -16, scale: useSimpleMotion ? 1 : 0.985 }}
+            animate={{ opacity: 1, x: 0, scale: 1 }}
+            exit={{ opacity: 0, x: useSimpleMotion ? 0 : -16, scale: useSimpleMotion ? 1 : 0.985 }}
+            transition={{ duration: useSimpleMotion ? 0.15 : 0.34, ease: [0.22, 1, 0.36, 1] }}
+            className="relative overflow-hidden rounded-[1.35rem] border border-white/[0.12] bg-[linear-gradient(145deg,rgba(38,33,26,0.98),rgba(18,27,24,0.96))] shadow-2xl backdrop-blur-md sm:bg-[linear-gradient(145deg,rgba(38,33,26,0.92),rgba(18,27,24,0.88))] xl:bg-[linear-gradient(145deg,rgba(38,33,26,0.85),rgba(18,27,24,0.80))]"
           >
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(222,176,106,0.16),transparent_42%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.12),transparent_46%),linear-gradient(180deg,rgba(255,255,255,0.075),transparent_36%)]" />
 
@@ -323,7 +323,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
             </div>
 
             <div className="relative p-4">
-              <div className="grid grid-cols-2 rounded-[1rem] border border-white/[0.1] bg-black/35 p-1">
+              <div className="flex gap-4 border-b border-white/[0.08] px-2">
                 {[
                   { id: "memories" as const, label: "Memories", icon: BookOpen },
                   { id: "activity" as const, label: "Activity", icon: Flame },
@@ -334,20 +334,21 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                     <button
                       key={item.id}
                       onClick={() => setActiveView(item.id)}
+                      aria-pressed={selected}
                       className={cn(
-                        "relative h-10 rounded-[0.9rem] text-sm transition-colors",
-                        selected ? "text-white" : "text-zinc-300 hover:text-zinc-100",
+                        "relative pb-2.5 pt-1 text-[13px] font-medium tracking-wide transition-colors focus-ring-premium",
+                        selected ? "text-emerald-400" : "text-zinc-400 hover:text-zinc-200"
                       )}
                     >
                       {selected && (
                         <motion.span
                           layoutId="memory-shelf-tab"
-                          className="absolute inset-0 rounded-full bg-emerald-600/90 shadow-lg shadow-emerald-950/30"
-                          transition={{ type: "spring", stiffness: 330, damping: 30 }}
+                          className="absolute inset-x-0 bottom-[-1px] h-[2px] bg-emerald-400"
+                          transition={useSimpleMotion ? { duration: 0.15 } : { type: "spring", stiffness: 300, damping: 30 }}
                         />
                       )}
                       <span className="relative inline-flex items-center gap-1.5">
-                        <Icon className="w-4 h-4" />
+                        <Icon className="h-3.5 w-3.5" />
                         {item.label}
                       </span>
                     </button>
@@ -359,10 +360,10 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                 {activeView === "memories" ? (
                   <motion.div
                     key="memory-shelf-memories"
-                    initial={{ opacity: 0, y: 12, filter: "blur(5px)" }}
-                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                    exit={{ opacity: 0, y: -10, filter: "blur(5px)" }}
-                    transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+                    initial={{ opacity: 0, y: useSimpleMotion ? 0 : 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: useSimpleMotion ? 0 : -8 }}
+                    transition={{ duration: useSimpleMotion ? 0.15 : 0.24, ease: [0.22, 1, 0.36, 1] }}
                     className="mt-3 sm:mt-4"
                   >
                     <div className="flex gap-2">
@@ -383,21 +384,25 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                       </button>
                     </div>
 
-                    <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] sm:flex-wrap sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
-                      {FILTERS.map((item) => (
-                        <button
-                          key={item.id}
-                          onClick={() => setFilter(item.id)}
-                          className={cn(
-                            "shrink-0 rounded-full px-2.5 py-1 text-[11px] transition-colors",
-                            filter === item.id
-                              ? "bg-emerald-500/95 text-white"
-                              : "bg-white/[0.08] text-zinc-300 hover:bg-white/[0.12] hover:text-zinc-100",
-                          )}
-                        >
-                          {item.label}
-                        </button>
-                      ))}
+                    <div className="mt-4 flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none] sm:flex-wrap sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
+                      {FILTERS.map((item) => {
+                        const selected = filter === item.id;
+                        return (
+                          <button
+                            key={item.id}
+                            onClick={() => setFilter(item.id)}
+                            aria-pressed={selected}
+                            className={cn(
+                              "relative shrink-0 rounded-sm px-2.5 py-1 text-[11px] font-medium tracking-wide transition-colors focus-ring-premium",
+                              selected
+                                ? "bg-[var(--surface-paper)] text-stone-900 shadow-sm"
+                                : "text-zinc-400 hover:bg-white/[0.08] hover:text-zinc-200"
+                            )}
+                          >
+                            {item.label}
+                          </button>
+                        );
+                      })}
                     </div>
 
                     <div className="mt-3 max-h-[58vh] space-y-2 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.18)_transparent] sm:mt-4 sm:max-h-[52vh]">
@@ -442,10 +447,10 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                 ) : (
                   <motion.div
                     key="memory-shelf-activity"
-                    initial={{ opacity: 0, y: 12, filter: "blur(5px)" }}
-                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                    exit={{ opacity: 0, y: -10, filter: "blur(5px)" }}
-                    transition={{ duration: useSimpleMotion ? 0.14 : 0.24, ease: [0.22, 1, 0.36, 1] }}
+                    initial={{ opacity: 0, y: useSimpleMotion ? 0 : 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: useSimpleMotion ? 0 : -8 }}
+                    transition={{ duration: useSimpleMotion ? 0.15 : 0.24, ease: [0.22, 1, 0.36, 1] }}
                     className="mt-3 max-h-[58vh] space-y-2 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.18)_transparent] sm:mt-4"
                   >
                     {renderedActivities.map((activity) => (
