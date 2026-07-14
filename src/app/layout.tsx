@@ -50,6 +50,7 @@ export default async function RootLayout({
               window.__tmjCaptureBeforeInstallPrompt = function(event) {
                 event.preventDefault();
                 window.__tmjBeforeInstallPrompt = event;
+                window.dispatchEvent(new Event("tmj:beforeinstallprompt"));
               };
               window.addEventListener("beforeinstallprompt", window.__tmjCaptureBeforeInstallPrompt);
             `,

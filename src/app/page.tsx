@@ -30,6 +30,7 @@ import { DropMemoryButton } from "@/components/jar/DropMemoryButton";
 import { WritingDesk } from "@/components/jar/WritingDesk";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
+import { PwaInstallMenuItem } from "@/components/ui/PwaInstallMenuItem";
 import { usePhysics } from "@/providers/physics-provider";
 import { memoryService } from "@/services/memory";
 import { createClient } from "@/lib/supabase/client";
@@ -312,6 +313,7 @@ export default function Home() {
                 <User className="mr-2 h-4 w-4" />
                 <span>Profile</span>
               </DropdownMenuItem>
+              <PwaInstallMenuItem />
               <DropdownMenuItem 
                 className="cursor-pointer text-rose-600 dark:text-rose-400 focus:text-rose-600 dark:focus:text-rose-400" 
                 onClick={() => startTransition(async () => { await clearPrivateClientData(); await logoutAction(); })}
