@@ -274,12 +274,27 @@ export function NotificationBell() {
                   </div>
                 )}
 
-                <div className="space-y-1.5">
-                  {notifications.map((notification) => {
+                <motion.div 
+                  className="space-y-1.5"
+                  initial="hidden"
+                  animate="visible"
+                  variants={{
+                    visible: {
+                      transition: { staggerChildren: shouldReduceMotion ? 0 : 0.035 }
+                    }
+                  }}
+                >
+                  {notifications.map((notification, i) => {
                     const Icon = getNotificationIcon(notification.type);
                     const isUnread = !notification.read_at;
+                    // Cap animation to first 10 visible items to avoid excessive motion
+                    const itemVariants = (shouldReduceMotion || i > 10) ? undefined : {
+                      hidden: { opacity: 0, y: 12 },
+                      visible: { opacity: 1, y: 0, transition: { type: "spring" as const, bounce: 0, duration: 0.4 } }
+                    };
                     return (
-                      <button
+                      <motion.button
+                        variants={itemVariants}
                         key={notification.id}
                         type="button"
                         onClick={() => void openNotification(notification)}
@@ -307,10 +322,10 @@ export function NotificationBell() {
                           </span>
                           {notification.actor && <ActorMark notification={notification} />}
                         </div>
-                      </button>
+                      </motion.button>
                     );
                   })}
-                </div>
+                </motion.div>
 
                 {notificationsQuery.hasNextPage && (
                   <div className="px-2 py-3">

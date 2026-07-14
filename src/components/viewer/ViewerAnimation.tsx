@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MemoryType, Memory } from "@/types/memory";
 
@@ -21,42 +21,42 @@ function getTypeReadingVariants(type: MemoryType) {
     case "letter":
     case "promise":
       return {
-        initial: { opacity: 0, y: 34, rotateX: -58, scale: 0.92, filter: "blur(8px)" },
-        animate: { opacity: 1, y: 0, rotateX: 0, scale: 1, filter: "blur(0px)" },
-        exit: { opacity: 0, y: 42, rotateX: 64, rotateZ: -3, scale: 0.82, filter: "blur(10px)" },
+        initial: { opacity: 0, y: 34, rotateX: -58, scale: 0.92 },
+        animate: { opacity: 1, y: 0, rotateX: 0, scale: 1 },
+        exit: { opacity: 0, y: 42, rotateX: 64, rotateZ: -3, scale: 0.82 },
       };
     case "photo":
       return {
-        initial: { opacity: 0, y: 28, rotateZ: -4, scale: 0.88, filter: "blur(6px) saturate(0.75)" },
-        animate: { opacity: 1, y: 0, rotateZ: 0, scale: 1, filter: "blur(0px) saturate(1)" },
-        exit: { opacity: 0, y: 30, rotateZ: 6, scale: 0.78, filter: "blur(8px) saturate(0.65)" },
+        initial: { opacity: 0, y: 28, rotateZ: -4, scale: 0.88 },
+        animate: { opacity: 1, y: 0, rotateZ: 0, scale: 1 },
+        exit: { opacity: 0, y: 30, rotateZ: 6, scale: 0.78 },
       };
     case "random_thought":
     case "wish":
     case "gratitude":
       return {
-        initial: { opacity: 0, y: -24, scale: 0.9, filter: "blur(14px) brightness(1.25)" },
-        animate: { opacity: 1, y: 0, scale: 1, filter: "blur(0px) brightness(1)" },
-        exit: { opacity: 0, y: -30, rotateZ: 10, scale: 0.72, filter: "blur(18px) brightness(1.3)" },
+        initial: { opacity: 0, y: -24, scale: 0.9 },
+        animate: { opacity: 1, y: 0, scale: 1 },
+        exit: { opacity: 0, y: -30, rotateZ: 10, scale: 0.72 },
       };
     case "voice":
     case "video":
       return {
-        initial: { opacity: 0, y: 22, rotateX: 18, scale: 0.9, filter: "blur(7px)" },
-        animate: { opacity: 1, y: 0, rotateX: 0, scale: 1, filter: "blur(0px)" },
-        exit: { opacity: 0, y: 34, rotateX: -28, scale: 0.8, filter: "blur(10px)" },
+        initial: { opacity: 0, y: 22, rotateX: 18, scale: 0.9 },
+        animate: { opacity: 1, y: 0, rotateX: 0, scale: 1 },
+        exit: { opacity: 0, y: 34, rotateX: -28, scale: 0.8 },
       };
     case "travel":
       return {
-        initial: { opacity: 0, x: 38, y: 18, rotateZ: 5, scale: 0.9, filter: "blur(6px)" },
-        animate: { opacity: 1, x: 0, y: 0, rotateZ: 0, scale: 1, filter: "blur(0px)" },
-        exit: { opacity: 0, x: -48, y: 22, rotateZ: -7, scale: 0.78, filter: "blur(8px)" },
+        initial: { opacity: 0, x: 38, y: 18, rotateZ: 5, scale: 0.9 },
+        animate: { opacity: 1, x: 0, y: 0, rotateZ: 0, scale: 1 },
+        exit: { opacity: 0, x: -48, y: 22, rotateZ: -7, scale: 0.78 },
       };
     default:
       return {
-        initial: { opacity: 0, scale: 0.92, y: 20, filter: "blur(7px)" },
-        animate: { opacity: 1, scale: 1, y: 0, filter: "blur(0px)" },
-        exit: { opacity: 0, scale: 0.8, y: 28, filter: "blur(10px)" },
+        initial: { opacity: 0, scale: 0.92, y: 20 },
+        animate: { opacity: 1, scale: 1, y: 0 },
+        exit: { opacity: 0, scale: 0.8, y: 28 },
       };
   }
 }
@@ -147,7 +147,7 @@ export function ViewerAnimation({ memoryId, type, fullMemory, onClose, stage: in
       case "promise":
         return (
           <motion.div
-            animate={isUnveiling ? { scale: 1.1, filter: "brightness(1.2)" } : {}}
+            animate={isUnveiling ? { scale: 1.1 } : {}}
             transition={{ duration: 0.8 }}
           >
             <WaxSealDoc {...commonProps} />
@@ -176,7 +176,7 @@ export function ViewerAnimation({ memoryId, type, fullMemory, onClose, stage: in
       case "gratitude":
         return (
           <motion.div
-            animate={isUnveiling ? { scale: 1.5, filter: "brightness(1.5) blur(2px)" } : {}}
+            animate={isUnveiling ? { scale: 1.5 } : {}}
             transition={{ duration: 0.8 }}
           >
             <GlowingNote {...commonProps} />
@@ -185,7 +185,7 @@ export function ViewerAnimation({ memoryId, type, fullMemory, onClose, stage: in
       default:
         return (
           <motion.div
-            animate={isUnveiling ? { y: [0, -14, 0], rotate: [0, 8, -2], scale: [1, 1.18, 1.04], filter: ["blur(0px)", "blur(2px)", "blur(0px)"] } : {}}
+            animate={isUnveiling ? { y: [0, -14, 0], rotate: [0, 8, -2], scale: [1, 1.18, 1.04] } : {}}
             transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
           >
             <TinySlip {...commonProps} />
@@ -209,15 +209,15 @@ export function ViewerAnimation({ memoryId, type, fullMemory, onClose, stage: in
         };
       case "romantic":
         return {
-          initial: { opacity: 0, filter: "blur(20px)", scale: 1.1 },
-          animate: { opacity: 1, filter: "blur(0px)", scale: 1 },
-          exit: { opacity: 0, filter: "blur(10px)", scale: 1.05 }
+          initial: { opacity: 0, scale: 1.1 },
+          animate: { opacity: 1, scale: 1 },
+          exit: { opacity: 0, scale: 1.05 }
         };
       case "dream":
         return {
-          initial: { opacity: 0, y: -50, filter: "blur(10px)" },
-          animate: { opacity: 1, y: 0, filter: "blur(0px)" },
-          exit: { opacity: 0, y: -50, filter: "blur(10px)" }
+          initial: { opacity: 0, y: -50, scale: 0.95 },
+          animate: { opacity: 1, y: 0, scale: 1 },
+          exit: { opacity: 0, y: -50, scale: 0.95 }
         };
       case "nature":
         return {
@@ -227,9 +227,9 @@ export function ViewerAnimation({ memoryId, type, fullMemory, onClose, stage: in
         };
       case "dark":
         return {
-          initial: { opacity: 0, scale: 0.9, filter: "brightness(0.5)" },
-          animate: { opacity: 1, scale: 1, filter: "brightness(1)" },
-          exit: { opacity: 0, scale: 0.9, filter: "brightness(0.5)" }
+          initial: { opacity: 0, scale: 0.9 },
+          animate: { opacity: 1, scale: 1 },
+          exit: { opacity: 0, scale: 0.9 }
         };
       case "modern":
         return {
@@ -260,7 +260,7 @@ export function ViewerAnimation({ memoryId, type, fullMemory, onClose, stage: in
           <motion.div
             key="physical-object"
             initial={{ opacity: 1 }}
-            exit={{ opacity: 0, scale: 1.5, filter: "blur(10px)" }}
+            exit={{ opacity: 0, scale: 1.5 }}
             transition={{ duration: 0.6, ease: "easeOut" }}
             className="absolute z-20 flex flex-col items-center justify-center gap-2"
           >
@@ -287,8 +287,19 @@ export function ViewerAnimation({ memoryId, type, fullMemory, onClose, stage: in
             exit="exit"
             variants={readingVariants}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+            onAnimationStart={() => {
+              // Enable will-change only during active transitions
+              document.documentElement.style.setProperty('--reading-will-change', 'transform, opacity');
+            }}
+            onAnimationComplete={() => {
+              // Remove will-change when idle
+              document.documentElement.style.setProperty('--reading-will-change', 'auto');
+            }}
             className="relative z-30 h-full w-full perspective-1000"
-            style={{ transformStyle: "preserve-3d" }}
+            style={{ 
+              transformStyle: "preserve-3d",
+              willChange: "var(--reading-will-change, auto)"
+            }}
           >
             {/* The actual reading experience */}
             <ViewerContent memoryId={memoryId} type={type} fullMemory={fullMemory} onClose={onClose} />

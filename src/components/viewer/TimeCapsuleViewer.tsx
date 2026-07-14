@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Memory } from "@/types/memory";
 import { useUnlockScheduler } from "@/providers/unlock-scheduler";
 import { useAuth } from "@/providers/auth-provider";
@@ -202,22 +202,26 @@ export function TimeCapsuleViewer({ memory, onClose, onEdit, onDelete }: TimeCap
             className="flex gap-3 mt-8 justify-center"
           >
             {onEdit && (
-              <button
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: "spring", bounce: 0, duration: 0.4 }}
                 onClick={onEdit}
-                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-zinc-800/60 hover:bg-zinc-700/80 text-zinc-300 hover:text-white border border-zinc-700/50 transition-all"
+                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-zinc-800/60 hover:bg-zinc-700/80 text-zinc-300 hover:text-white border border-zinc-700/50 transition-colors"
               >
                 <Pencil className="w-3.5 h-3.5" />
                 Edit
-              </button>
+              </motion.button>
             )}
             {onDelete && (
-              <button
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: "spring", bounce: 0, duration: 0.4 }}
                 onClick={onDelete}
-                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-rose-950/60 hover:bg-rose-900/80 text-rose-400 hover:text-rose-200 border border-rose-800/50 transition-all"
+                className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-rose-950/60 hover:bg-rose-900/80 text-rose-400 hover:text-rose-200 border border-rose-800/50 transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 Delete
-              </button>
+              </motion.button>
             )}
           </motion.div>
         )}
@@ -240,9 +244,18 @@ export function TimeCapsuleViewer({ memory, onClose, onEdit, onDelete }: TimeCap
                   animate={{ rotate: ceremonyPhase === "release" ? 12 : 0, scale: ceremonyPhase === "release" ? 1.05 : 1 }}
                   transition={{ duration: 0.8, ease: "easeOut" }}
                 />
-                <span className="relative font-cormorant text-5xl text-amber-50">
-                  {ceremonyPhase === "countdown" ? countdownValue : "Open"}
-                </span>
+                <AnimatePresence mode="popLayout">
+                  <motion.span
+                    key={ceremonyPhase === "countdown" ? countdownValue : "Open"}
+                    initial={{ opacity: 0, scale: 0.5, filter: "blur(4px)" }}
+                    animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                    exit={{ opacity: 0, scale: 1.5, filter: "blur(4px)" }}
+                    transition={{ duration: 0.4, type: "spring", bounce: 0 }}
+                    className="relative block font-cormorant text-5xl text-amber-50"
+                  >
+                    {ceremonyPhase === "countdown" ? countdownValue : "Open"}
+                  </motion.span>
+                </AnimatePresence>
               </div>
               <div className="space-y-3">
                 <motion.div
@@ -268,27 +281,31 @@ export function TimeCapsuleViewer({ memory, onClose, onEdit, onDelete }: TimeCap
               </div>
             </div>
 
-            <button
+            <motion.button
               type="button"
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", bounce: 0, duration: 0.4 }}
               onClick={handleSkipCeremony}
               className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-zinc-200 transition-colors hover:bg-white/10"
             >
               <SkipForward className="h-4 w-4" />
               Skip animation
-            </button>
+            </motion.button>
           </motion.div>
         )}
 
         {!isLocked && memory.is_collaborative && ceremonyPhase === "idle" && (
           <div className="mt-8 space-y-4">
             {!hasKnocked ? (
-              <button
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: "spring", bounce: 0, duration: 0.4 }}
                 onClick={handleKnock}
                 className="bg-amber-600 hover:bg-amber-500 text-amber-50 px-6 py-2 rounded-full font-medium transition-colors shadow-lg flex items-center gap-2 mx-auto"
               >
                 <DoorOpen className="w-4 h-4" />
                 Knock to open
-              </button>
+              </motion.button>
             ) : (
               <div className="text-amber-400/80 italic">
                 {partnerKnocked ? "Opening together..." : `Waiting for ${partnerName} to knock...`}
@@ -304,13 +321,15 @@ export function TimeCapsuleViewer({ memory, onClose, onEdit, onDelete }: TimeCap
 
         {!isLocked && !memory.is_collaborative && ceremonyPhase === "idle" && (
           <div className="mt-8 space-y-4">
-            <button
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", bounce: 0, duration: 0.4 }}
               onClick={handleOpenSolo}
               className="bg-amber-600 hover:bg-amber-500 text-amber-50 px-6 py-2 rounded-full font-medium transition-colors shadow-lg flex items-center gap-2 mx-auto"
             >
               <DoorOpen className="w-4 h-4" />
               Open Memory
-            </button>
+            </motion.button>
           </div>
         )}
       </motion.div>
@@ -318,7 +337,8 @@ export function TimeCapsuleViewer({ memory, onClose, onEdit, onDelete }: TimeCap
       <motion.button
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 1 }}
+        whileTap={{ scale: 0.95 }}
+        transition={{ delay: 1, type: "spring", bounce: 0, duration: 0.4 }}
         onClick={onClose}
         className="mt-12 text-zinc-500 hover:text-zinc-300 transition-colors text-sm font-medium tracking-widest uppercase"
       >
