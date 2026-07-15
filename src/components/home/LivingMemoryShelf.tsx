@@ -3,7 +3,13 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { ReactNode } from "react";
 
-export function LivingMemoryShelf({ children, className }: { children: ReactNode; className?: string }) {
+export function LivingMemoryShelf({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   const reduceMotion = useReducedMotion();
 
   if (reduceMotion) {
@@ -12,36 +18,24 @@ export function LivingMemoryShelf({ children, className }: { children: ReactNode
 
   return (
     <motion.div
-      className={`relative group ${className || ""}`}
+      className={`group relative ${className || ""}`}
       whileHover={{ y: -1 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
+      transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
     >
-      {/* Subtle dust particles on hover */}
-      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000">
-        {[...Array(3)].map((_, i) => (
-          <motion.div
-            key={i}
-            animate={{
-              y: [0, -10, 0],
-              x: [0, i % 2 === 0 ? 5 : -5, 0],
-              opacity: [0, 0.5, 0]
-            }}
-            transition={{
-              duration: 3 + i,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: i * 0.5
-            }}
-            className="absolute w-1.5 h-1.5 bg-white/10 rounded-full"
-            style={{
-              left: `${30 + i * 20}%`,
-              top: `${80 - i * 15}%`
-            }}
+      <div
+        className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-3xl opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+        aria-hidden="true"
+      >
+        {[30, 50, 70].map((left, index) => (
+          <span
+            key={left}
+            className="absolute h-1.5 w-1.5 rounded-full bg-white/10"
+            style={{ left: `${left}%`, top: `${80 - index * 15}%` }}
           />
         ))}
       </div>
 
-      <div className="relative z-10 transition-shadow duration-500 group-hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)] rounded-3xl">
+      <div className="relative z-10 rounded-3xl transition-shadow duration-300 group-hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
         {children}
       </div>
     </motion.div>

@@ -38,6 +38,7 @@ import { MemoryType } from "@/types/memory";
 import { useRelationshipContext } from "@/hooks/useRelationshipContext";
 import { useAvatarUrl } from "@/hooks/useAvatarUrl";
 import { useRoutePrefetch } from "@/hooks/useRoutePrefetch";
+import { useHomeAmbientMotion } from "@/hooks/useHomeAmbientMotion";
 import { RelationshipAmbientBackdrop } from "@/components/experience/RelationshipAmbientBackdrop";
 import { OnThisDayCard } from "@/components/experience/OnThisDayCard";
 import { MobileBottomNav } from "@/components/mobile/MobileBottomNav";
@@ -84,6 +85,7 @@ export default function Home() {
   const router = useRouter();
   const [memoryCount, setMemoryCount] = useState<number | null>(null);
   const [isPending, startTransition] = useTransition();
+  const ambientMotion = useHomeAmbientMotion();
 
   const hasLoadedJar = useRef(false);
 
@@ -226,7 +228,11 @@ export default function Home() {
 
       {/* 1. Ambient Background Gradients & Vignette */}
       {relationship?.relationshipTimezone && (
-        <RelationshipAmbientBackdrop timezone={relationship.relationshipTimezone} />
+        <RelationshipAmbientBackdrop
+          timezone={relationship.relationshipTimezone}
+          motionActive={ambientMotion.isActive}
+          isPhone={ambientMotion.isPhone}
+        />
       )}
       {/* Radial soft lighting */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-teal-100/40 via-emerald-50/20 to-transparent dark:from-teal-900/20 dark:via-emerald-950/30 dark:to-transparent pointer-events-none z-0" />
@@ -348,13 +354,17 @@ export default function Home() {
         </motion.div>
 
         {/* Couple Presence Avatars */}
-        <CouplePresenceAvatars />
+        <CouplePresenceAvatars motionActive={ambientMotion.isActive} />
 
         {/* The Physical Glass Jar */}
         {memoryCount !== null && (
           <div className="relative">
             <ErrorBoundary fallbackMessage="The Jar engine crashed. Physics might be temporarily disabled.">
-              <GlassJar memoryCount={memoryCount} />
+              <GlassJar
+                memoryCount={memoryCount}
+                ambientMotionActive={ambientMotion.isActive}
+                isPhone={ambientMotion.isPhone}
+              />
             </ErrorBoundary>
           </div>
         )}
@@ -385,7 +395,7 @@ export default function Home() {
       <div className="relative z-10 mt-8 w-full max-w-[23rem] px-3 sm:max-w-3xl sm:px-4 xl:absolute xl:bottom-6 xl:left-6 xl:top-24 xl:mt-0 xl:w-[24rem] xl:max-w-none xl:px-0 xl:pb-0 2xl:w-[34rem] xl:overflow-y-auto xl:[scrollbar-width:none] xl:[&::-webkit-scrollbar]:hidden">
         <div className="flex flex-col relative z-10 xl:pr-3 xl:pb-12 min-h-full">
           <LivingMemoryShelf className="home-shelf relative min-h-[500px] flex-1">
-            <DeskCat />
+            <DeskCat motionActive={ambientMotion.isActive} isPhone={ambientMotion.isPhone} />
             <ErrorBoundary fallbackMessage="Memory tools failed to load.">
               <MemoryCommandCenter className="xl:mt-0 xl:max-w-none h-full" />
             </ErrorBoundary>
@@ -395,7 +405,7 @@ export default function Home() {
 
       {/* RIGHT PANEL: Storytelling & Ambient Cards */}
       <div className="relative z-10 mt-4 w-full max-w-[23rem] px-3 pb-32 sm:max-w-3xl sm:px-4 xl:absolute xl:bottom-6 xl:right-6 xl:top-24 xl:mt-0 xl:w-[24rem] xl:max-w-none xl:px-0 xl:pb-0 2xl:w-[32rem] xl:overflow-y-auto xl:[scrollbar-width:none] xl:[&::-webkit-scrollbar]:hidden">
-        <CozyDetails />
+        <CozyDetails motionActive={ambientMotion.isActive} isPhone={ambientMotion.isPhone} />
         <AmbientManager />
         
         <div className="home-desk grid grid-cols-1 gap-3 sm:gap-4 relative z-10 xl:grid-cols-2 xl:pl-3 xl:pr-2 xl:pb-12 min-h-full">

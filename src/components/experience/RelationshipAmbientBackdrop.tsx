@@ -11,25 +11,34 @@ interface Spark {
   left: number;
   top: number;
   size: number;
-  delay: number;
-  duration: number;
 }
 
 function createAmbientParticles(count: number, minSize: number, maxSize: number): Spark[] {
-  return Array.from({ length: count }).map((_, index) => ({
-    id: index,
-    left: Math.random() * 100,
-    top: Math.random() * 100,
-    size: minSize + Math.random() * (maxSize - minSize),
-    delay: Math.random() * -8,
-    duration: 6 + Math.random() * 10,
-  }));
+  return Array.from({ length: count }).map((_, index) => {
+    const sizeStep = count <= 1 ? 0 : index / (count - 1);
+    return {
+      id: index,
+      left: (13 + index * 37) % 100,
+      top: (29 + index * 53) % 100,
+      size: minSize + sizeStep * (maxSize - minSize),
+    };
+  });
 }
 
-export function RelationshipAmbientBackdrop({ timezone }: { timezone: string }) {
+export function RelationshipAmbientBackdrop({
+  timezone,
+  motionActive = true,
+  isPhone: phoneOverride,
+}: {
+  timezone: string;
+  motionActive?: boolean;
+  isPhone?: boolean;
+}) {
   const { now } = useUnlockScheduler();
   const reduceMotion = useReducedMotion();
-  const isPhone = useIsPhone();
+  const detectedIsPhone = useIsPhone();
+  const isPhone = phoneOverride ?? detectedIsPhone;
+  const shouldAnimate = motionActive && !reduceMotion && !isPhone;
   const period = getTimezonePeriod(timezone, now);
   const isNight = period === "night";
   const isConstrainedDevice = useMemo(() => {
@@ -76,8 +85,8 @@ export function RelationshipAmbientBackdrop({ timezone }: { timezone: string }) 
         <motion.div
           aria-hidden="true"
           className="absolute left-1/2 top-[-5.5rem] h-64 w-64 -translate-x-1/2 rounded-full bg-amber-100/35 blur-3xl dark:bg-amber-300/10 sm:-top-24 sm:h-72 sm:w-72"
-          animate={reduceMotion ? undefined : { scale: [1, 1.04, 1], opacity: [0.5, 0.72, 0.5] }}
-          transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+          animate={shouldAnimate ? { scale: [1, 1.04, 1], opacity: [0.5, 0.72, 0.5] } : { scale: 1, opacity: 0.6 }}
+          transition={shouldAnimate ? { duration: 9, repeat: Infinity, ease: "easeInOut" } : { duration: 0.2 }}
         />
       )}
 
@@ -94,8 +103,8 @@ export function RelationshipAmbientBackdrop({ timezone }: { timezone: string }) 
                 width: `${star.size}px`,
                 height: `${star.size}px`,
               }}
-              animate={reduceMotion ? undefined : { opacity: [0.25, 0.95, 0.35], scale: [1, 1.35, 1] }}
-              transition={{ duration: star.duration, repeat: Infinity, delay: star.delay, ease: "easeInOut" }}
+              animate={{ opacity: 0.55, scale: 1 }}
+              transition={{ duration: 0.2 }}
             />
           ))}
           {fireflies.map((fly) => (
@@ -109,16 +118,8 @@ export function RelationshipAmbientBackdrop({ timezone }: { timezone: string }) 
                 width: `${fly.size}px`,
                 height: `${fly.size}px`,
               }}
-              animate={
-                reduceMotion
-                  ? undefined
-                  : {
-                      x: [0, 18, -10, 0],
-                      y: [0, -10, 12, 0],
-                      opacity: [0.15, 0.8, 0.25],
-                    }
-              }
-              transition={{ duration: fly.duration, repeat: Infinity, delay: fly.delay, ease: "easeInOut" }}
+              animate={{ x: 0, y: 0, opacity: 0.42 }}
+              transition={{ duration: 0.2 }}
             />
           ))}
           <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-emerald-950/12 to-transparent" />

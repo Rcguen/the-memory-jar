@@ -1,54 +1,70 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 
-export function DeskCat() {
+interface DeskCatProps {
+  motionActive?: boolean;
+  isPhone?: boolean;
+}
+
+export function DeskCat({ motionActive = true, isPhone = false }: DeskCatProps) {
   const [state, setState] = useState<"sitting" | "sleeping" | "looking">("sleeping");
-  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
-    if (reduceMotion) return;
+    if (!motionActive || isPhone) return;
 
     const changeState = () => {
       const states: ("sitting" | "sleeping" | "looking")[] = ["sitting", "sleeping", "looking"];
-      const nextState = states[Math.floor(Math.random() * states.length)];
-      setState(nextState);
+      setState(states[Math.floor(Math.random() * states.length)]);
     };
 
-    const interval = setInterval(changeState, 15000 + Math.random() * 10000);
-    return () => clearInterval(interval);
-  }, [reduceMotion]);
+    const interval = window.setInterval(changeState, 15000 + Math.random() * 10000);
+    return () => window.clearInterval(interval);
+  }, [isPhone, motionActive]);
 
-  // A tiny abstract SVG cat icon that subtly animates
+  if (isPhone) return null;
+
+  const activeAnimation =
+    state === "sleeping"
+      ? { scaleY: [1, 0.95, 1], y: [0, 2, 0], rotate: 0 }
+      : state === "looking"
+        ? { rotate: [0, 10, -5, 0], scaleY: 1, y: 0 }
+        : { y: [0, -1, 0], scaleY: 1, rotate: 0 };
+
   return (
-    <div className="absolute -top-12 right-6 z-20 opacity-70 hover:opacity-100 transition-opacity hidden sm:block">
+    <div className="absolute -top-12 right-6 z-20 hidden opacity-70 transition-opacity hover:opacity-100 sm:block">
       <motion.div
-        animate={
-          state === "sleeping" 
-            ? { scaleY: [1, 0.95, 1], y: [0, 2, 0] } 
-            : state === "looking" 
-            ? { rotate: [0, 10, -5, 0] } 
-            : { y: [0, -1, 0] }
-        }
+        animate={motionActive ? activeAnimation : { scaleY: 1, y: 0, rotate: 0 }}
         transition={
-          state === "sleeping" 
-            ? { duration: 3, repeat: Infinity, ease: "easeInOut" } 
-            : { duration: 2, repeat: Infinity, repeatDelay: 5 }
+          motionActive
+            ? state === "sleeping"
+              ? { duration: 3, repeat: Infinity, ease: "easeInOut" }
+              : { duration: 2, repeat: Infinity, repeatDelay: 5 }
+            : { duration: 0.2 }
         }
         className="relative"
       >
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-400">
+        <svg
+          width="32"
+          height="32"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="text-zinc-400"
+          aria-hidden="true"
+        >
           {state === "sleeping" ? (
             <>
-              {/* Sleeping cat abstract shape */}
               <path d="M4 18c0-3.3 2.7-6 6-6s6 2.7 6 6" />
               <path d="M4 18h12" />
               <path d="M16 18c1.7 0 3-1.3 3-3s-1.3-3-3-3" />
             </>
           ) : state === "looking" ? (
             <>
-              {/* Looking cat */}
               <path d="M12 5c-3.3 0-6 2.7-6 6v7h12v-7c0-3.3-2.7-6-6-6z" />
               <path d="M6 11l-2-2" />
               <path d="M18 11l2-2" />
@@ -57,7 +73,6 @@ export function DeskCat() {
             </>
           ) : (
             <>
-              {/* Sitting cat */}
               <path d="M12 5c-3.3 0-6 2.7-6 6v7h12v-7c0-3.3-2.7-6-6-6z" />
               <path d="M6 11l-2-2" />
               <path d="M18 11l2-2" />

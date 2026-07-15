@@ -1,74 +1,53 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { motion } from "framer-motion";
-import { useReducedMotion } from "framer-motion";
+import { useEffect, useState } from "react";
 
 type TimeOfDay = "morning" | "day" | "evening" | "night";
 
+const PARTICLES = [
+  { id: 0, x: 12, y: 18, size: 2 },
+  { id: 1, x: 31, y: 67, size: 1 },
+  { id: 2, x: 48, y: 34, size: 2 },
+  { id: 3, x: 66, y: 76, size: 1 },
+  { id: 4, x: 82, y: 24, size: 2 },
+  { id: 5, x: 91, y: 58, size: 1 },
+] as const;
+
 export function AmbientParticles() {
-  const prefersReducedMotion = useReducedMotion();
   const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>("day");
-  const [particles, setParticles] = useState<Array<{ id: number; x: number; y: number; size: number; delay: number; duration: number }>>([]);
 
   useEffect(() => {
     const hour = new Date().getHours();
-    let newTime: TimeOfDay = "day";
-    if (hour >= 5 && hour < 11) newTime = "morning";
-    else if (hour >= 11 && hour < 17) newTime = "day";
-    else if (hour >= 17 && hour < 20) newTime = "evening";
-    else newTime = "night";
-    
-    const t = setTimeout(() => setTimeOfDay(newTime), 0);
-    return () => clearTimeout(t);
-
-    // Generate stable random particles on mount to avoid hydration mismatch
-    if (!prefersReducedMotion) {
-      const generated = Array.from({ length: 30 }).map((_, i) => ({
-        id: i,
-        x: Math.random() * 100, // percentage
-        y: Math.random() * 100, // percentage
-        size: Math.random() * 3 + 1,
-        delay: Math.random() * 5,
-        duration: Math.random() * 10 + 10,
-      }));
-      setParticles(generated);
-    }
-  }, [prefersReducedMotion]);
-
-  if (prefersReducedMotion) return null;
+    const nextTime: TimeOfDay =
+      hour >= 5 && hour < 11
+        ? "morning"
+        : hour >= 11 && hour < 17
+          ? "day"
+          : hour >= 17 && hour < 20
+            ? "evening"
+            : "night";
+    const timer = window.setTimeout(() => setTimeOfDay(nextTime), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const particleColors = {
-    morning: "bg-orange-300/40", // warm dust
-    day: "bg-emerald-200/40",    // light particles
-    evening: "bg-amber-400/40",  // golden dust
-    night: "bg-yellow-200/60 shadow-[0_0_8px_rgba(253,224,71,0.8)]", // fireflies
+    morning: "bg-orange-300/30",
+    day: "bg-emerald-200/30",
+    evening: "bg-amber-400/30",
+    night: "bg-yellow-200/45 shadow-[0_0_6px_rgba(253,224,71,0.45)]",
   };
 
-  const currentColor = particleColors[timeOfDay];
-
   return (
-    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-      {particles.map((p) => (
-        <motion.div
-          key={p.id}
-          className={`absolute rounded-full ${currentColor}`}
+    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
+      {PARTICLES.map((particle) => (
+        <span
+          key={particle.id}
+          className={`absolute rounded-full ${particleColors[timeOfDay]}`}
           style={{
-            left: `${p.x}%`,
-            top: `${p.y}%`,
-            width: p.size,
-            height: p.size,
-          }}
-          animate={{
-            y: [0, -50, -100],
-            x: timeOfDay === "night" ? [0, 20, -20, 0] : [0, 10, -10, 0],
-            opacity: [0, 1, 1, 0],
-          }}
-          transition={{
-            duration: timeOfDay === "night" ? p.duration * 0.7 : p.duration,
-            repeat: Infinity,
-            delay: p.delay,
-            ease: "easeInOut",
+            left: `${particle.x}%`,
+            top: `${particle.y}%`,
+            width: particle.size,
+            height: particle.size,
           }}
         />
       ))}

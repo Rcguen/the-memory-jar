@@ -8,7 +8,7 @@ import { usePresence } from "@/hooks/usePresence";
 import { useAvatarUrl } from "@/hooks/useAvatarUrl";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-export function CouplePresenceAvatars() {
+export function CouplePresenceAvatars({ motionActive = true }: { motionActive?: boolean }) {
   const { profile } = useAuth();
   const { data: relationship } = useRelationshipContext();
   const { data: myAvatarUrl } = useAvatarUrl(profile?.avatar);
@@ -21,11 +21,7 @@ export function CouplePresenceAvatars() {
   );
 
   const bothOnline = partnerOnline; // We assume the current user is online if they are viewing this component
-  const prefersReducedMotion = typeof window !== "undefined" 
-    ? window.matchMedia("(prefers-reduced-motion: reduce)").matches 
-    : false;
-
-  const gapSize = bothOnline ? -8 : 12; // Negative gap brings them closer, positive pushes them apart
+const gapSize = bothOnline ? -8 : 12; // Negative gap brings them closer, positive pushes them apart
   const partnerOpacity = bothOnline ? 1 : 0.45;
   const partnerRing = bothOnline ? "ring-rose-400" : "ring-white/10";
   const myRing = "ring-emerald-400"; // Always online
@@ -41,7 +37,7 @@ export function CouplePresenceAvatars() {
       <motion.div 
         className="flex items-center justify-center"
         style={{ gap: gapSize }}
-        animate={{ gap: gapSize, scale: prefersReducedMotion ? 1 : scale }}
+        animate={{ gap: gapSize, scale: motionActive ? scale : 1 }}
         transition={{ type: "spring", stiffness: 100, damping: 20 }}
       >
         {/* Current User */}
@@ -65,8 +61,12 @@ export function CouplePresenceAvatars() {
           className="relative z-30 -mx-4"
         >
           <motion.div
-            animate={bothOnline && !prefersReducedMotion ? { scale: [1, 1.15, 1] } : {}}
-            transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+            animate={bothOnline && motionActive ? { scale: [1, 1.15, 1] } : { scale: 1 }}
+            transition={
+              bothOnline && motionActive
+                ? { repeat: Infinity, duration: 2, ease: "easeInOut" }
+                : { duration: 0.2 }
+            }
             className="bg-rose-500/20 backdrop-blur-md rounded-full p-1 border border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.5)]"
           >
             <Heart className="w-4 h-4 text-rose-400 fill-rose-400" />

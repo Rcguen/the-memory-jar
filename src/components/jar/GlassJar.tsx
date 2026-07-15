@@ -9,9 +9,15 @@ import { useMemoryViewer } from "@/providers/memory-viewer-provider";
 
 interface GlassJarProps {
   memoryCount: number;
+  ambientMotionActive?: boolean;
+  isPhone?: boolean;
 }
 
-export function GlassJar({ memoryCount }: GlassJarProps) {
+export function GlassJar({
+  memoryCount,
+  ambientMotionActive = true,
+  isPhone = false,
+}: GlassJarProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const frameRef = useRef<number | null>(null);
   const lastPointerRef = useRef<{ x: number; y: number } | null>(null);
@@ -46,8 +52,20 @@ export function GlassJar({ memoryCount }: GlassJarProps) {
     };
   }, []);
 
+  useEffect(() => {
+    if (ambientMotionActive && !reduceMotion && !isPhone) return;
+
+    if (frameRef.current !== null) {
+      cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+    }
+    lastPointerRef.current = null;
+    mouseX.set(0.5);
+    mouseY.set(0.5);
+  }, [ambientMotionActive, isPhone, mouseX, mouseY, reduceMotion]);
+
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (reduceMotion) return;
+    if (reduceMotion || !ambientMotionActive || isPhone) return;
     lastPointerRef.current = { x: e.clientX, y: e.clientY };
     if (frameRef.current !== null) return;
 
@@ -215,26 +233,27 @@ export function GlassJar({ memoryCount }: GlassJarProps) {
       {/* Layer 2: Subtle Ambient Emotion Light */}
       <motion.div
         className="absolute inset-0 z-[-2] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(251,191,36,0.15)_0%,transparent_65%)] pointer-events-none"
-        animate={reduceMotion ? undefined : { 
-          opacity: [0.3, 0.4, 0.3],
-          scale: [1, 1.05, 1]
-        }}
-        transition={{
-          duration: 8,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
+        animate={
+          ambientMotionActive && !reduceMotion && !isPhone
+            ? { opacity: [0.3, 0.4, 0.3], scale: [1, 1.05, 1] }
+            : { opacity: 0.34, scale: 1 }
+        }
+        transition={
+          ambientMotionActive && !reduceMotion && !isPhone
+            ? { duration: 8, repeat: Infinity, ease: "easeInOut" }
+            : { duration: 0.2 }
+        }
       />
 
       <motion.div
         className="w-full h-full relative"
         style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-        animate={reduceMotion ? undefined : { y: [0, -2, 0] }}
-        transition={{
-          duration: 6,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
+        animate={ambientMotionActive && !reduceMotion ? { y: [0, -2, 0] } : { y: 0 }}
+        transition={
+          ambientMotionActive && !reduceMotion
+            ? { duration: 6, repeat: Infinity, ease: "easeInOut" }
+            : { duration: 0.2 }
+        }
       >
         <div className="absolute inset-0 pointer-events-none" />
 
@@ -300,8 +319,8 @@ export function GlassJar({ memoryCount }: GlassJarProps) {
             {states.length === 0 && memoryCount === 0 && (
               <motion.g
                 initial={{ opacity: 0, scale: 0 }}
-                animate={{ opacity: [0, 0.8, 0], scale: [0.5, 1.2, 0.5] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", repeatDelay: 2 }}
+                animate={{ opacity: 0.65, scale: 1 }}
+                transition={{ duration: 0.2 }}
               >
                 <path d="M200 380 L202 388 L210 390 L202 392 L200 400 L198 392 L190 390 L198 388 Z" fill="#ffffff" opacity="0.9" />
               </motion.g>

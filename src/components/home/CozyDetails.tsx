@@ -1,19 +1,30 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { motion, useReducedMotion } from "framer-motion";
-import { cn } from "@/lib/utils";
+import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 
-export function CozyDetails() {
-  const [hour, setHour] = useState(() => 
-    typeof window !== "undefined" ? new Date().getHours() : 12
-  );
-  const reduceMotion = useReducedMotion();
+interface CozyDetailsProps {
+  motionActive?: boolean;
+  isPhone?: boolean;
+}
+
+export function CozyDetails({ motionActive = true, isPhone = false }: CozyDetailsProps) {
+  const [hour, setHour] = useState(12);
 
   useEffect(() => {
-    const interval = setInterval(() => setHour(new Date().getHours()), 60000);
-    return () => clearInterval(interval);
-  }, []);
+    const updateHour = () => setHour(new Date().getHours());
+    const initialSync = window.setTimeout(updateHour, 0);
+
+    if (!motionActive) {
+      return () => window.clearTimeout(initialSync);
+    }
+
+    const interval = window.setInterval(updateHour, 60000);
+    return () => {
+      window.clearTimeout(initialSync);
+      window.clearInterval(interval);
+    };
+  }, [motionActive]);
 
   const timeOfDay = useMemo(() => {
     if (hour >= 5 && hour < 12) return "morning";
@@ -22,21 +33,16 @@ export function CozyDetails() {
     return "night";
   }, [hour]);
 
-  const [fireflies] = useState(() => 
-    Array.from({ length: 5 }).map(() => ({
-      duration: 3 + Math.random() * 3,
-      delay: Math.random() * 2,
-      left: 20 + Math.random() * 60,
-      top: 30 + Math.random() * 50,
-      xDest: Math.random() * 20 - 10,
-      yDest: Math.random() * -20,
-    }))
+  const fireflies = useMemo(
+    () => [
+      { duration: 4.8, delay: -1.2, left: 32, top: 62, xDest: 8, yDest: -14 },
+      { duration: 5.6, delay: -2.8, left: 68, top: 44, xDest: -9, yDest: -10 },
+    ],
+    [],
   );
 
-  if (reduceMotion) return null;
-
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-3xl z-0">
+    <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-3xl">
       {timeOfDay === "morning" && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -44,7 +50,7 @@ export function CozyDetails() {
           className="absolute inset-0 bg-gradient-to-tr from-transparent via-amber-200 to-transparent"
         />
       )}
-      
+
       {timeOfDay === "afternoon" && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -52,7 +58,7 @@ export function CozyDetails() {
           className="absolute inset-0 bg-gradient-to-b from-transparent to-emerald-900"
         />
       )}
-      
+
       {timeOfDay === "evening" && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -60,31 +66,39 @@ export function CozyDetails() {
           className="absolute inset-0 bg-gradient-to-l from-orange-400/20 to-transparent mix-blend-overlay"
         />
       )}
-      
+
       {timeOfDay === "night" && (
         <div className="absolute inset-0 opacity-30">
-           {/* Tiny fireflies */}
-           {fireflies.map((ff, i) => (
-             <motion.div
-               key={i}
-               animate={{ 
-                 opacity: [0, 1, 0],
-                 scale: [0.8, 1.2, 0.8],
-                 x: [0, ff.xDest, 0],
-                 y: [0, ff.yDest, 0]
-               }}
-               transition={{ 
-                 duration: ff.duration, 
-                 repeat: Infinity, 
-                 delay: ff.delay 
-               }}
-               className="absolute w-1 h-1 rounded-full bg-yellow-200 blur-[1px]"
-               style={{ 
-                 left: `${ff.left}%`, 
-                 top: `${ff.top}%` 
-               }}
-             />
-           ))}
+          {fireflies.map((firefly, index) => {
+            const animateFirefly = motionActive && !isPhone;
+            return (
+              <motion.div
+                key={index}
+                animate={
+                  animateFirefly
+                    ? {
+                        opacity: [0.2, 0.8, 0.2],
+                        scale: [0.9, 1.15, 0.9],
+                        x: [0, firefly.xDest, 0],
+                        y: [0, firefly.yDest, 0],
+                      }
+                    : { opacity: 0.45, scale: 1, x: 0, y: 0 }
+                }
+                transition={
+                  animateFirefly
+                    ? {
+                        duration: firefly.duration,
+                        repeat: Infinity,
+                        delay: firefly.delay,
+                        ease: "easeInOut",
+                      }
+                    : { duration: 0.2 }
+                }
+                className="absolute h-1 w-1 rounded-full bg-yellow-200"
+                style={{ left: `${firefly.left}%`, top: `${firefly.top}%` }}
+              />
+            );
+          })}
         </div>
       )}
     </div>
