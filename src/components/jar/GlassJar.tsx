@@ -285,7 +285,7 @@ export function GlassJar({ memoryCount }: GlassJarProps) {
           <g id="layer-contents">
             <foreignObject x="0" y="0" width="400" height="500">
               <div
-                className="relative w-full h-full pointer-events-auto select-none"
+                className="relative h-full w-full translate-y-[2%] pointer-events-auto select-none sm:translate-y-0"
                 style={{ touchAction: "manipulation" }}
                 onPointerDown={handleContentsPointerDown}
                 onPointerUp={handleContentsPointerUp}
