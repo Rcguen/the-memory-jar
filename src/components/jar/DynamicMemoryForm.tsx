@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import type { FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -76,10 +76,12 @@ export function DynamicMemoryForm({
   existingAttachments = [],
   onRemoveAttachment
 }: DynamicMemoryFormProps) {
-  const { draft, saveDraft, isLoaded } = useMemoryDraft();
+  const { draft, saveDraft, flushDraft, isDraftSaved, isLoaded } = useMemoryDraft();
   const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isPhone = useIsPhone();
+  const renderCountRef = useRef(0);
+  renderCountRef.current += 1;
 
   const form = useForm<MemoryFormData>({
     resolver: zodResolver(memorySchema),
@@ -125,6 +127,7 @@ export function DynamicMemoryForm({
   const onSubmit = async (data: MemoryFormData) => {
     try {
       setIsSubmitting(true);
+      flushDraft();
       await onSave(data, files);
     } catch (error: unknown) {
       console.error("Save Memory Error:", error);
@@ -139,6 +142,18 @@ export function DynamicMemoryForm({
     toast.error("Please fill out all required fields.");
   };
 
+  const handleCancel = () => {
+    flushDraft();
+    onCancel();
+  };
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development" && isDraftSaved && draft?.type === type) {
+      console.debug("[memory-form] draft render snapshot", {
+        renderCount: renderCountRef.current,
+      });
+    }
+  }, [draft, isDraftSaved, type]);
   // Determine which fields to show based on type
   const showContent = ["letter", "promise", "wish", "gratitude", "random_thought", "travel"].includes(type);
   const showPhotos = ["photo", "travel"].includes(type);
@@ -163,7 +178,7 @@ export function DynamicMemoryForm({
           <span className="font-inter text-xs font-semibold uppercase tracking-wider text-stone-500">
             {type.replace("_", " ")}
           </span>
-          {isLoaded && draft && draft.type === type && (
+          {isLoaded && isDraftSaved && draft && draft.type === type && (
             <span className="font-inter text-[10px] text-stone-400">Draft saved locally</span>
           )}
         </div>
@@ -171,7 +186,7 @@ export function DynamicMemoryForm({
           type="button"
           variant="ghost"
           size="icon"
-          onClick={onCancel}
+          onClick={handleCancel}
           disabled={isSubmitting}
           className="h-11 w-11 rounded-full text-stone-500 hover:bg-stone-100 hover:text-stone-900 focus-visible:ring-2 focus-visible:ring-rose-500 dark:hover:bg-stone-800 dark:hover:text-stone-100"
           aria-label="Close memory form"
