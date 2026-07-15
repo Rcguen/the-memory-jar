@@ -6,6 +6,8 @@ import { MemoryType } from "@/types/memory";
 import { useVisualStatePersistence } from "@/hooks/useVisualStatePersistence";
 import { MotionValue } from "framer-motion";
 
+export type PhysicsPauseReason = "memory-modal" | "memory-viewer" | "document-hidden" | "page-hidden";
+
 interface PhysicsContextType {
   states: NormalizedVisualState[];
   setContainerRef: (node: HTMLDivElement | null) => void;
@@ -14,20 +16,62 @@ interface PhysicsContextType {
   removeMemory: (id: string) => void;
   updateMemoryMeta: (id: string, meta: Partial<{ status: NormalizedVisualState["status"], capsuleStyle: NormalizedVisualState["capsuleStyle"], unlockAt: string | null, isCollaborative: boolean }>) => void;
   pokeMemory: (id: string) => void;
-  pauseEngine: () => void;
-  resumeEngine: () => void;
+  pausePhysics: (reason: PhysicsPauseReason) => void;
+  resumePhysics: (reason: PhysicsPauseReason) => void;
+  isPhysicsRunning: boolean;
   registerMotionValues: (id: string, x: MotionValue<number | string>, y: MotionValue<number | string>, rotate: MotionValue<number | string>) => void;
   unregisterMotionValues: (id: string) => void;
 }
 
 const PhysicsContext = createContext<PhysicsContextType | undefined>(undefined);
+const isDevelopment = process.env.NODE_ENV === "development";
 
 export function PhysicsProvider({ children }: { children: ReactNode }) {
   const engineRef = useRef<EngineCore | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [states, setStates] = useState<NormalizedVisualState[]>([]);
+  const [isPhysicsRunning, setIsPhysicsRunning] = useState(false);
   const statesRef = useRef<NormalizedVisualState[]>([]);
   const motionValuesRef = useRef<Map<string, { x: MotionValue<number | string>, y: MotionValue<number | string>, rotate: MotionValue<number | string> }>>(new Map());
+  const pauseReasonsRef = useRef<Set<PhysicsPauseReason>>(new Set());
+  const isProviderMountedRef = useRef(false);
+
+  const syncRunner = useCallback(() => {
+    const core = engineRef.current;
+    if (!core || core.destroyed) return;
+
+    const shouldRun = pauseReasonsRef.current.size === 0;
+    const changed = shouldRun ? core.resume() : core.pause();
+    const running = core.isRunning();
+
+    if (isProviderMountedRef.current) {
+      setIsPhysicsRunning((current) => current === running ? current : running);
+    }
+
+    if (isDevelopment && changed) {
+      const diagnostics = core.getLifecycleDiagnostics();
+      console.debug("[physics-lifecycle]", {
+        running: diagnostics.running,
+        pauseReasonCount: pauseReasonsRef.current.size,
+        startCount: diagnostics.startCount,
+        stopCount: diagnostics.stopCount,
+        reasons: Array.from(pauseReasonsRef.current),
+      });
+    }
+  }, []);
+
+  const pausePhysics = useCallback((reason: PhysicsPauseReason) => {
+    const reasons = pauseReasonsRef.current;
+    const previousSize = reasons.size;
+    reasons.add(reason);
+    if (reasons.size !== previousSize) syncRunner();
+  }, [syncRunner]);
+
+  const resumePhysics = useCallback((reason: PhysicsPauseReason) => {
+    const reasons = pauseReasonsRef.current;
+    const removed = reasons.delete(reason);
+    if (removed) syncRunner();
+  }, [syncRunner]);
 
   const registerMotionValues = useCallback((id: string, x: MotionValue<number | string>, y: MotionValue<number | string>, rotate: MotionValue<number | string>) => {
     motionValuesRef.current.set(id, { x, y, rotate });
@@ -38,11 +82,13 @@ export function PhysicsProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Initialize engine with dummy dimensions, will be updated via ResizeObserver
-    engineRef.current = new EngineCore(400, 500);
-    
-    engineRef.current.onUpdate((newStates) => {
-      // 1. Direct Motion Value updates for 60fps without React renders
+    const core = new EngineCore(400, 500);
+    const pauseReasons = pauseReasonsRef.current;
+    const motionValues = motionValuesRef.current;
+    engineRef.current = core;
+    isProviderMountedRef.current = true;
+
+    core.onUpdate((newStates) => {
       for (const state of newStates) {
         const mvs = motionValuesRef.current.get(state.id);
         if (mvs) {
@@ -52,7 +98,6 @@ export function PhysicsProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      // 2. Diff check to only render on structural or sleep state changes
       let needsRender = false;
       if (statesRef.current.length !== newStates.length) {
         needsRender = true;
@@ -73,17 +118,41 @@ export function PhysicsProvider({ children }: { children: ReactNode }) {
       statesRef.current = newStates;
     });
 
-    // Persistence is now handled by useVisualStatePersistence hook
-    engineRef.current.onWake((id) => {
-      // No longer need to manage timeouts
-    });
+    core.onWake(() => undefined);
 
-    engineRef.current.start();
+    const syncDocumentVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        pausePhysics("document-hidden");
+      } else {
+        resumePhysics("document-hidden");
+      }
+    };
+    const handlePageHide = () => pausePhysics("page-hidden");
+    const handlePageShow = () => {
+      resumePhysics("page-hidden");
+      syncDocumentVisibility();
+    };
+
+    document.addEventListener("visibilitychange", syncDocumentVisibility);
+    window.addEventListener("pagehide", handlePageHide);
+    window.addEventListener("pageshow", handlePageShow);
+    syncDocumentVisibility();
+    syncRunner();
 
     return () => {
-      engineRef.current?.stop();
+      document.removeEventListener("visibilitychange", syncDocumentVisibility);
+      window.removeEventListener("pagehide", handlePageHide);
+      window.removeEventListener("pageshow", handlePageShow);
+      pauseReasons.clear();
+      motionValues.clear();
+      statesRef.current = [];
+      isProviderMountedRef.current = false;
+      if (engineRef.current === core) {
+        engineRef.current = null;
+      }
+      core.destroy();
     };
-  }, []);
+  }, [pausePhysics, resumePhysics, syncRunner]);
 
   const observerRef = useRef<ResizeObserver | null>(null);
 
@@ -94,7 +163,7 @@ export function PhysicsProvider({ children }: { children: ReactNode }) {
       observerRef.current.disconnect();
       observerRef.current = null;
     }
-    
+
     containerRef.current = node;
 
     if (node) {
@@ -108,8 +177,7 @@ export function PhysicsProvider({ children }: { children: ReactNode }) {
       });
 
       observerRef.current.observe(node);
-      
-      // Initial size
+
       const rect = node.getBoundingClientRect();
       if (rect.width > 0 && rect.height > 0) {
         engineRef.current?.updateDimensions(rect.width, rect.height);
@@ -137,14 +205,6 @@ export function PhysicsProvider({ children }: { children: ReactNode }) {
     engineRef.current?.pokeMemory(id);
   }, []);
 
-  const pauseEngine = useCallback(() => {
-    engineRef.current?.pause();
-  }, []);
-
-  const resumeEngine = useCallback(() => {
-    engineRef.current?.resume();
-  }, []);
-
   const contextValue = useMemo(() => ({
     states,
     setContainerRef: setContainerNode,
@@ -153,11 +213,12 @@ export function PhysicsProvider({ children }: { children: ReactNode }) {
     removeMemory,
     updateMemoryMeta,
     pokeMemory,
-    pauseEngine,
-    resumeEngine,
+    pausePhysics,
+    resumePhysics,
+    isPhysicsRunning,
     registerMotionValues,
     unregisterMotionValues,
-  }), [states, setContainerNode, dropMemory, loadMemory, removeMemory, updateMemoryMeta, pokeMemory, pauseEngine, resumeEngine, registerMotionValues, unregisterMotionValues]);
+  }), [states, setContainerNode, dropMemory, loadMemory, removeMemory, updateMemoryMeta, pokeMemory, pausePhysics, resumePhysics, isPhysicsRunning, registerMotionValues, unregisterMotionValues]);
 
   return (
     <PhysicsContext.Provider value={contextValue}>

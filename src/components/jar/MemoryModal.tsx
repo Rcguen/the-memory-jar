@@ -26,7 +26,7 @@ function elapsedMs(startedAt: number): number {
 export function MemoryModal() {
   const { isOpen, closeModal } = useMemoryModal();
   const { clearDraft } = useMemoryDraft();
-  const { dropMemory } = usePhysics();
+  const { dropMemory, pausePhysics, resumePhysics } = usePhysics();
   const [step, setStep] = useState<ModalStep>("select_type");
   const [selectedType, setSelectedType] = useState<MemoryType | null>(null);
   const saveInFlightRef = useRef(false);
@@ -44,6 +44,13 @@ export function MemoryModal() {
       document.body.style.overflow = "unset";
     };
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    pausePhysics("memory-modal");
+    return () => resumePhysics("memory-modal");
+  }, [isOpen, pausePhysics, resumePhysics]);
 
   const handleSelectType = (type: MemoryType) => {
     setSelectedType(type);

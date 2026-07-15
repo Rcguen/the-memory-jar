@@ -47,8 +47,12 @@ export interface NormalizedVisualState {
 
 export class EngineCore {
   public engine: Matter.Engine;
-  public runner: Matter.Runner;
+  private runner: Matter.Runner;
   private width: number;
+  private isRunnerRunning = false;
+  private isEngineDestroyed = false;
+  private runnerStartCount = 0;
+  private runnerStopCount = 0;
   private height: number;
   private bodiesMap: Map<string, Matter.Body> = new Map();
   private metaMap: Map<string, { status: NormalizedVisualState["status"], capsuleStyle: NormalizedVisualState["capsuleStyle"], unlockAt: string | null, isCollaborative: boolean }> = new Map();
@@ -70,26 +74,66 @@ export class EngineCore {
     this.setupBoundaries();
 
     // Setup event listeners
-    Matter.Events.on(this.engine, "afterUpdate", this.handleUpdate.bind(this));
+    Matter.Events.on(this.engine, "afterUpdate", this.handleUpdate);
 
     this.runner = Matter.Runner.create();
   }
 
   public start() {
-    Matter.Runner.run(this.runner, this.engine);
-  }
-
-  public stop() {
-    Matter.Runner.stop(this.runner);
-    Matter.Engine.clear(this.engine);
+    return this.resume();
   }
 
   public pause() {
-    this.runner.enabled = false;
+    if (this.isEngineDestroyed || !this.isRunnerRunning) return false;
+
+    Matter.Runner.stop(this.runner);
+    this.isRunnerRunning = false;
+    this.runnerStopCount += 1;
+    return true;
   }
 
   public resume() {
-    this.runner.enabled = true;
+    if (this.isEngineDestroyed || this.isRunnerRunning) return false;
+
+    Matter.Runner.run(this.runner, this.engine);
+    this.isRunnerRunning = true;
+    this.runnerStartCount += 1;
+    return true;
+  }
+
+  public isRunning() {
+    return this.isRunnerRunning;
+  }
+
+  public get destroyed() {
+    return this.isEngineDestroyed;
+  }
+
+  public getLifecycleDiagnostics() {
+    return {
+      running: this.isRunnerRunning,
+      startCount: this.runnerStartCount,
+      stopCount: this.runnerStopCount,
+    };
+  }
+
+  public destroy() {
+    if (this.isEngineDestroyed) return;
+
+    this.pause();
+    Matter.Events.off(this.engine, "afterUpdate", this.handleUpdate);
+    Matter.Composite.clear(this.engine.world, false, true);
+    Matter.Engine.clear(this.engine);
+    this.bodiesMap.clear();
+    this.metaMap.clear();
+    this.updateCallback = undefined;
+    this.sleepCallback = undefined;
+    this.wakeCallback = undefined;
+    this.isEngineDestroyed = true;
+  }
+
+  public stop() {
+    this.destroy();
   }
 
   public onUpdate(cb: (states: NormalizedVisualState[]) => void) {
@@ -253,8 +297,8 @@ export class EngineCore {
     this.metaMap.set(id, { ...existing, ...meta });
   }
 
-  private handleUpdate() {
-    if (!this.updateCallback) return;
+  private readonly handleUpdate = () => {
+    if (!this.isRunnerRunning || !this.updateCallback) return;
     
     const states: NormalizedVisualState[] = [];
     

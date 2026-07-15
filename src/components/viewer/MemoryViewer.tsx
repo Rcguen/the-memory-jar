@@ -80,7 +80,7 @@ function getCloseMotion(type: MemoryType) {
 
 export function MemoryViewer() {
   const { viewingMemoryId, navigateDirection, closeViewer } = useMemoryViewer();
-  const { states, removeMemory } = usePhysics();
+  const { states, removeMemory, pausePhysics, resumePhysics } = usePhysics();
   const { profile } = useAuth();
   const queryClient = useQueryClient();
   const [isEditingCapsule, setIsEditingCapsule] = useState(false);
@@ -89,6 +89,7 @@ export function MemoryViewer() {
   const unlockedPushNotifiedRef = useRef<Set<string>>(new Set());
   const { data: fullMemory, isLoading, isError } = useMemory(viewingMemoryId);
   const isPhone = useIsPhone();
+  const isViewerOpen = Boolean(viewingMemoryId);
 
   const activeMemoryState = useMemo(() => {
     if (!viewingMemoryId) return null;
@@ -120,6 +121,13 @@ export function MemoryViewer() {
     if (fullMemory.status === "opening") return "OPENING";
     return "VIEWING";
   }, [currentTime, fullMemory, isError, isLoading]);
+
+  useEffect(() => {
+    if (!isViewerOpen) return;
+
+    pausePhysics("memory-viewer");
+    return () => resumePhysics("memory-viewer");
+  }, [isViewerOpen, pausePhysics, resumePhysics]);
 
   useEffect(() => {
     if (!fullMemory?.unlock_at) return;

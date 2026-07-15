@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode } from "react";
-import { usePhysics } from "./physics-provider";
 
 interface MemoryViewerContextType {
   viewingMemoryId: string | null;
@@ -15,12 +14,10 @@ const MemoryViewerContext = createContext<MemoryViewerContextType | undefined>(u
 export function MemoryViewerProvider({ children }: { children: ReactNode }) {
   const [viewingMemoryId, setViewingMemoryId] = useState<string | null>(null);
   const [navigateDirection, setNavigateDirection] = useState<"next" | "prev" | null>(null);
-  const { pauseEngine, resumeEngine } = usePhysics();
 
   const openViewer = (id: string, direction?: "next" | "prev") => {
     setNavigateDirection(direction || null);
     setViewingMemoryId(id);
-    pauseEngine();
     
     if (typeof window !== "undefined") {
       try {
@@ -35,7 +32,6 @@ export function MemoryViewerProvider({ children }: { children: ReactNode }) {
   const closeViewer = () => {
     setNavigateDirection(null);
     setViewingMemoryId(null);
-    resumeEngine();
   };
 
   return (
