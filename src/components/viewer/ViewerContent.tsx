@@ -50,6 +50,7 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
   const [isActionRailExpanded, setIsActionRailExpanded] = useState(false);
   const [isFavoriting, setIsFavoriting] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isPhotoGalleryOpen, setIsPhotoGalleryOpen] = useState(false);
   const deleteTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -293,7 +294,7 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
       })}
 
       {/* Header Actions */}
-      <div className={cn("absolute right-4 top-4 z-50 flex items-center gap-2", isPhone && "top-[calc(env(safe-area-inset-top)+0.75rem)]")}>
+      <div className={cn("absolute right-4 top-4 z-50 flex items-center gap-2", isPhone && "top-[calc(env(safe-area-inset-top)+0.75rem)]", isPhotoGalleryOpen && "hidden")}>
         
         {/* Creator Menu */}
         {profile?.id === fullMemory.created_by && (
@@ -413,7 +414,7 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
                 <p className="whitespace-pre-wrap font-normal text-stone-700"><EmojiText text={fullMemory.content} /></p>
               </div>
             )}
-            <PhotoGallery attachments={photoAttachments} />
+            <PhotoGallery attachments={photoAttachments} onFullscreenChange={setIsPhotoGalleryOpen} />
             {playableAttachments.map((attachment) => (
               <AttachmentRenderer key={attachment.id} attachment={attachment} thumbnail={attachment.file_type === "video" ? thumbnailAttachments[0] : undefined} />
             ))}

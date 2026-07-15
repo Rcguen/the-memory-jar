@@ -9,9 +9,10 @@ import { cn } from "@/lib/utils";
 
 interface PhotoGalleryProps {
   attachments: MemoryAttachment[];
+  onFullscreenChange?: (isOpen: boolean) => void;
 }
 
-export function PhotoGallery({ attachments }: PhotoGalleryProps) {
+export function PhotoGallery({ attachments, onFullscreenChange }: PhotoGalleryProps) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const urls = useQueries({
     queries: attachments.map((attachment) => ({
@@ -41,6 +42,14 @@ export function PhotoGallery({ attachments }: PhotoGalleryProps) {
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [activeIndex, loadedUrls.length]);
+
+  useEffect(() => {
+    onFullscreenChange?.(activeIndex !== null);
+  }, [activeIndex, onFullscreenChange]);
+
+  useEffect(() => {
+    return () => onFullscreenChange?.(false);
+  }, [onFullscreenChange]);
 
   if (attachments.length === 0) return null;
 
