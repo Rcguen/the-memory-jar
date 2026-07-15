@@ -2,6 +2,7 @@ import "server-only";
 
 import webpush, { WebPushError } from "web-push";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getRomanticNotificationCopy } from "@/lib/notifications/romantic-copy";
 
 type PushPayloadType = "partner_created_memory" | "time_capsule_unlocked" | "collaborative_capsule_waiting" | "test";
 
@@ -28,9 +29,10 @@ export type PushDeliverySummary = {
   failed: number;
 };
 
+const DEFAULT_ROMANTIC_COPY = getRomanticNotificationCopy({ category: "unknown" });
+
 const DEFAULT_PUSH_PAYLOAD: Required<Pick<SafePushPayload, "title" | "body" | "url">> = {
-  title: "The Memory Jar",
-  body: "Something new is waiting in your jar.",
+  ...DEFAULT_ROMANTIC_COPY,
   url: "/",
 };
 

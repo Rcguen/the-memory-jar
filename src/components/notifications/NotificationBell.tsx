@@ -12,35 +12,96 @@ import {
   Bell,
   CheckCheck,
   Clock,
-  Gift,
   Heart,
+  Image as ImageIcon,
   Inbox,
   Loader2,
+  Lock,
+  Mail,
   MessageCircle,
+  Mic,
+  Plane,
   Sparkles,
+  Star,
+  Unlock,
+  Users,
+  Video,
 } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { useUnreadNotificationCount } from "@/hooks/useMemoryData";
 import { useMemoryViewer } from "@/providers/memory-viewer-provider";
 import { memoryService } from "@/services/memory";
 import type { MemoryNotification, NotificationType } from "@/types/memory";
+import {
+  getRomanticNotificationCopy,
+  readRomanticNotificationCategory,
+  type RomanticNotificationCategory,
+} from "@/lib/notifications/romantic-copy";
 import { cn } from "@/lib/utils";
 
 const PAGE_SIZE = 20;
 
 type NotificationPages = InfiniteData<MemoryNotification[], number>;
 
-function getNotificationIcon(type: NotificationType) {
-  if (type === "partner_commented") return MessageCircle;
-  if (type === "partner_reacted") return Heart;
-  if (type === "time_capsule_unlocked") return Gift;
-  return Sparkles;
+type NotificationPresentation = {
+  title: string;
+  body: string;
+  category: RomanticNotificationCategory | null;
+};
+
+function getNotificationPresentation(notification: MemoryNotification): NotificationPresentation {
+  if (notification.type === "partner_commented" || notification.type === "partner_reacted") {
+    return { title: notification.title, body: notification.body, category: null };
+  }
+
+  const category = notification.type === "time_capsule_unlocked"
+    ? "capsule_unlocked"
+    : readRomanticNotificationCategory(notification.metadata?.notification_category) ?? "unknown";
+  const copy = getRomanticNotificationCopy({
+    category,
+    senderDisplayName: notification.actor?.display_name,
+  });
+
+  return { ...copy, category };
 }
 
-function getNotificationTone(type: NotificationType) {
+function getNotificationIcon(type: NotificationType, category: RomanticNotificationCategory | null) {
+  if (type === "partner_commented") return MessageCircle;
+  if (type === "partner_reacted") return Heart;
+  if (type === "time_capsule_unlocked" || category === "capsule_unlocked") return Unlock;
+
+  switch (category) {
+    case "letter":
+      return Mail;
+    case "photo_single":
+    case "photo_multiple":
+      return ImageIcon;
+    case "voice":
+      return Mic;
+    case "video":
+      return Video;
+    case "promise":
+    case "gratitude":
+      return Heart;
+    case "travel":
+      return Plane;
+    case "wish":
+      return Star;
+    case "capsule_sealed":
+      return Lock;
+    case "capsule_collaborative":
+      return Users;
+    default:
+      return Sparkles;
+  }
+}
+
+function getNotificationTone(type: NotificationType, category: RomanticNotificationCategory | null) {
   if (type === "partner_commented") return "text-sky-300 bg-sky-400/10 border-sky-300/15";
   if (type === "partner_reacted") return "text-rose-300 bg-rose-400/10 border-rose-300/15";
-  if (type === "time_capsule_unlocked") return "text-amber-300 bg-amber-400/10 border-amber-300/15";
+  if (type === "time_capsule_unlocked" || category?.startsWith("capsule_")) {
+    return "text-amber-300 bg-amber-400/10 border-amber-300/15";
+  }
   return "text-emerald-300 bg-emerald-400/10 border-emerald-300/15";
 }
 
@@ -287,7 +348,8 @@ export function NotificationBell() {
                   }}
                 >
                   {notifications.map((notification, i) => {
-                    const Icon = getNotificationIcon(notification.type);
+                    const presentation = getNotificationPresentation(notification);
+                    const Icon = getNotificationIcon(notification.type, presentation.category);
                     const isUnread = !notification.read_at;
                     // Cap animation to first 10 visible items to avoid excessive motion
                     const itemVariants = (shouldReduceMotion || i > 10) ? undefined : {
@@ -308,15 +370,15 @@ export function NotificationBell() {
                         )}
                       >
                         <div className="flex items-start gap-3">
-                          <span className={cn("mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border", getNotificationTone(notification.type))}>
+                          <span className={cn("mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border", getNotificationTone(notification.type, presentation.category))}>
                             <Icon className="h-4 w-4" aria-hidden="true" />
                           </span>
                           <span className="min-w-0 flex-1">
                             <span className="flex items-start gap-2">
-                              <span className="line-clamp-1 flex-1 text-sm font-medium text-zinc-100">{notification.title}</span>
+                              <span className="line-clamp-1 flex-1 text-sm font-medium text-zinc-100">{presentation.title}</span>
                               {isUnread && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-emerald-300" aria-label="Unread" />}
                             </span>
-                            <span className="mt-0.5 line-clamp-2 block text-xs leading-relaxed text-zinc-400">{notification.body}</span>
+                            <span className="mt-0.5 line-clamp-2 block text-xs leading-relaxed text-zinc-400">{presentation.body}</span>
                             <span className="mt-2 flex items-center gap-2 text-[11px] text-zinc-600">
                               <Clock className="h-3 w-3" aria-hidden="true" />
                               {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
