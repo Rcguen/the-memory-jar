@@ -96,7 +96,7 @@ export function PhotoGallery({ attachments }: PhotoGalleryProps) {
             animate={{ opacity: 1, backdropFilter: "blur(14px)" }}
             exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
             transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-0 z-[220] flex items-center justify-center bg-black/90 p-4 md:p-12"
+            className="fixed inset-0 z-[220] flex items-center justify-center bg-[#10100f] p-4 md:p-12"
             onClick={() => setActiveIndex(null)}
           >
             <button

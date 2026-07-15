@@ -163,7 +163,6 @@ export function DynamicMemoryForm({
   return (
     <motion.form 
       onSubmit={form.handleSubmit(onSubmit, onInvalid)}
-      layout
       className="flex w-full max-w-2xl flex-col pb-8 sm:pb-12"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
