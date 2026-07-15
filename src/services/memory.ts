@@ -21,6 +21,13 @@ import { getMonthDayInTimezone, normalizeTimezone, todayDateOnlyInTimezone } fro
 import { getCachedSignedUrl } from "@/lib/media/signed-url-cache";
 
 const ACTIVE_MEMORY_STATUSES = ["sealed", "unlocked", "opening"];
+const isDevelopment = process.env.NODE_ENV === "development";
+let developmentRelationshipLookupCount = 0;
+let developmentRelationshipLookupTotalMs = 0;
+
+function elapsedMs(startedAt: number): number {
+  return Math.round((performance.now() - startedAt) * 10) / 10;
+}
 const REACTION_EMOJIS: ReactionEmoji[] = ["❤️", "🥹", "😂", "😭", "😍", "🔥"];
 type CommentAuthor = Pick<UserProfile, "id" | "display_name" | "username" | "avatar">;
 type CommentRow = Omit<MemoryComment, "author"> & { profiles?: CommentAuthor | null };
@@ -845,7 +852,18 @@ export const memoryService = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Not authenticated");
 
+    const relationshipLookupStartedAt = isDevelopment ? performance.now() : 0;
     const relationshipId = await this.getCurrentRelationshipId();
+    if (isDevelopment) {
+      const relationshipLookupDurationMs = elapsedMs(relationshipLookupStartedAt);
+      developmentRelationshipLookupCount += 1;
+      developmentRelationshipLookupTotalMs += relationshipLookupDurationMs;
+      console.debug("[memory-submit] relationship lookup timing", {
+        relationshipLookups: developmentRelationshipLookupCount,
+        relationshipLookupDurationMs,
+        relationshipLookupTotalMs: Math.round(developmentRelationshipLookupTotalMs * 10) / 10,
+      });
+    }
 
     const memoryPayload: Partial<Memory> & { version: number; created_by: string; relationship_id?: string } = { 
       ...memoryData, 
@@ -1220,22 +1238,23 @@ export const memoryService = {
   },
 
   async uploadAttachment(
-    file: File, 
-    memoryId: string, 
+    file: File,
+    memoryId: string,
     bucket: "memory-images" | "memory-voices" | "memory-videos" | "memory-thumbnails",
-    index: number = 1
+    index: number = 1,
+    trustedRelationshipId?: string,
   ): Promise<string> {
     const supabase = createClient();
-    const relationshipId = await this.getCurrentRelationshipId();
+    const relationshipId = trustedRelationshipId ?? await this.getCurrentRelationshipId();
     if (!relationshipId) throw new Error("No active relationship");
     const fileExt = file.name.split('.').pop();
-    
+
     let prefix = "file";
     if (bucket === "memory-images") prefix = "photo";
     if (bucket === "memory-voices") prefix = "voice";
     if (bucket === "memory-videos") prefix = "video";
     if (bucket === "memory-thumbnails") prefix = "thumbnail";
-    
+
     const fileName = `${relationshipId}/${memoryId}/${prefix}-${index}-${Date.now()}.${fileExt}`;
 
     const { error } = await supabase.storage
@@ -1249,15 +1268,15 @@ export const memoryService = {
 
     return fileName;
   },
-
   async linkAttachmentToMemory(
-    memoryId: string, 
-    fileType: "photo" | "voice" | "video" | "thumbnail", 
-    path: string, 
-    metadata: Record<string, unknown> = {}
+    memoryId: string,
+    fileType: "photo" | "voice" | "video" | "thumbnail",
+    path: string,
+    metadata: Record<string, unknown> = {},
+    trustedRelationshipId?: string,
   ): Promise<void> {
     const supabase = createClient();
-    const relationshipId = await this.getCurrentRelationshipId();
+    const relationshipId = trustedRelationshipId ?? await this.getCurrentRelationshipId();
     if (!relationshipId) throw new Error("No active relationship");
 
     const { error } = await supabase
@@ -1267,12 +1286,11 @@ export const memoryService = {
         relationship_id: relationshipId,
         file_type: fileType,
         url: path,
-        metadata
+        metadata,
       }]);
-      
+
     if (error) throw error;
   },
-
   async getAttachmentUrlAsync(fileType: string, path: string): Promise<string> {
     const bucket = getStorageBucket(fileType);
     return getCachedSignedUrl(bucket, path);

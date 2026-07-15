@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { toast } from "sonner";
 import { useMemoryModal } from "@/providers/memory-modal-provider";
@@ -16,12 +16,20 @@ import { notifyPushEvent } from "@/lib/push/client-events";
 
 type ModalStep = "select_type" | "form" | "saving_animation";
 
+const MAX_PRESENTATION_DELAY_MS = 300;
+const isDevelopment = process.env.NODE_ENV === "development";
+
+function elapsedMs(startedAt: number): number {
+  return Math.round((performance.now() - startedAt) * 10) / 10;
+}
+
 export function MemoryModal() {
   const { isOpen, closeModal } = useMemoryModal();
   const { clearDraft } = useMemoryDraft();
   const { dropMemory } = usePhysics();
   const [step, setStep] = useState<ModalStep>("select_type");
   const [selectedType, setSelectedType] = useState<MemoryType | null>(null);
+  const saveInFlightRef = useRef(false);
   const isPhone = useIsPhone();
   const shouldReduceMotion = useReducedMotion();
 
@@ -49,9 +57,18 @@ export function MemoryModal() {
   };
 
   const handleSave = async (data: MemoryFormData, files: File[]) => {
-    if (!selectedType) return;
-    
+    if (!selectedType || saveInFlightRef.current) return;
+    saveInFlightRef.current = true;
+
+    try {
+    const submissionStartedAt = isDevelopment ? performance.now() : 0;
+    let memorySaveMs = 0;
+    let uploadPipelineMs = 0;
+    let draftClearMs = 0;
+    const submittedFiles = files.length;
+
     // Save to database
+    const memorySaveStartedAt = isDevelopment ? performance.now() : 0;
     const memory = await memoryService.saveMemory({
       type: selectedType,
       title: data.title,
@@ -66,30 +83,82 @@ export function MemoryModal() {
       status: data.is_collaborative ? 'pending_partner' : 'sealed',
       capsule_style: data.unlock_at ? ['vintage_parcel', 'ribbon_box', 'wax_capsule', 'glass_capsule', 'wooden_box', 'silk_envelope'][Math.floor(Math.random() * 6)] as import("@/types/memory").CapsuleStyle : null,
     });
+    if (isDevelopment) {
+      memorySaveMs = elapsedMs(memorySaveStartedAt);
+    }
 
-    await uploadMemoryAttachments(memory.id, files);
-    notifyPushEvent("partner_created_memory", memory.id);
+    const uploadStartedAt = isDevelopment ? performance.now() : 0;
+    await uploadMemoryAttachments(memory.id, files, 0, memory.relationship_id);
+    if (isDevelopment) {
+      uploadPipelineMs = elapsedMs(uploadStartedAt);
+    }
 
+    if (isDevelopment) {
+      const pushStartedAt = performance.now();
+      void notifyPushEvent("partner_created_memory", memory.id).then(
+        () => {
+          console.debug("[memory-submit] push notification timing", {
+            pushNotificationMs: elapsedMs(pushStartedAt),
+          });
+        },
+        () => {
+          console.debug("[memory-submit] push notification timing", {
+            pushNotificationMs: elapsedMs(pushStartedAt),
+          });
+        },
+      );
+    } else {
+      notifyPushEvent("partner_created_memory", memory.id);
+    }
+
+    const draftClearStartedAt = isDevelopment ? performance.now() : 0;
     clearDraft();
-    setStep("saving_animation");
+    if (isDevelopment) {
+      draftClearMs = elapsedMs(draftClearStartedAt);
+    }
 
-    // Wait for the cinematic animation to complete before dropping into physics engine
+    setStep("saving_animation");
+    const presentationStartedAt = isDevelopment ? performance.now() : 0;
+    const presentationDelayMs = shouldReduceMotion ? 0 : MAX_PRESENTATION_DELAY_MS;
+
+    // Keep the existing visual handoff brief, then drop, close, and confirm.
     setTimeout(() => {
-      // Trigger the physical drop if it's not pending partner
+      let physicsDropMs = 0;
       if (memory.status !== 'pending_partner') {
+        const physicsDropStartedAt = isDevelopment ? performance.now() : 0;
         dropMemory(memory.id, selectedType, {
           status: memory.status as import("@/lib/physics/EngineCore").NormalizedVisualState["status"],
           capsuleStyle: memory.capsule_style,
           unlockAt: memory.unlock_at,
           isCollaborative: memory.is_collaborative,
         });
+        if (isDevelopment) {
+          physicsDropMs = elapsedMs(physicsDropStartedAt);
+        }
       }
-      
+
+      const modalCloseStartedAt = isDevelopment ? performance.now() : 0;
       handleCancel();
+      const modalCloseMs = isDevelopment ? elapsedMs(modalCloseStartedAt) : 0;
+      saveInFlightRef.current = false;
+      if (isDevelopment) {
+        console.debug("[memory-submit] completion timing", {
+          totalSubmissionMs: elapsedMs(submissionStartedAt),
+          memorySaveMs,
+          uploadPipelineMs,
+          submittedFiles,
+          draftClearMs,
+          presentationDelayTargetMs: presentationDelayMs,
+          presentationDelayMs: elapsedMs(presentationStartedAt),
+          physicsDropMs,
+          modalCloseMs,
+        });
+      }
+
       toast.success(
-        memory.status === 'pending_partner' 
-          ? "Waiting for your partner at the writing desk." 
-          : "Your memory has found its home.", 
+        memory.status === 'pending_partner'
+          ? "Waiting for your partner at the writing desk."
+          : "Your memory has found its home.",
         {
           className: "font-cormorant text-lg bg-zinc-900 text-white border-zinc-800",
           duration: 3000,
@@ -97,9 +166,12 @@ export function MemoryModal() {
       );
       // Dispatch a custom event to tell the GlassJar to glow
       window.dispatchEvent(new CustomEvent("memory-saved", { detail: { memory } }));
-    }, 1500); // 1.5 seconds to match the snappier animation
+    }, presentationDelayMs);
+    } catch (error) {
+      saveInFlightRef.current = false;
+      throw error;
+    }
   };
-
   return (
     <AnimatePresence mode="wait">
       {isOpen && (

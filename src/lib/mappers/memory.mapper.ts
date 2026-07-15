@@ -7,7 +7,7 @@ const AttachmentSchema = z.object({
   file_type: z.enum(["photo", "voice", "video", "thumbnail"]),
   url: z.string(),
   metadata: z.record(z.string(), z.unknown()).optional().default({}),
-  created_at: z.string()
+  created_at: z.string(),
 }).passthrough();
 
 const DecorationSchema = z.string();
@@ -37,8 +37,52 @@ const MemorySchema = z.object({
   updated_at: z.string(),
   is_pinned: z.boolean().optional().default(false),
   pinned_at: z.string().nullable().optional().default(null),
-  attachments: z.array(AttachmentSchema).default([])
+  attachments: z.array(AttachmentSchema).default([]),
 });
+
+function getUploadIndex(attachment: unknown): number | null {
+  if (typeof attachment !== "object" || attachment === null || Array.isArray(attachment)) return null;
+  const metadata = (attachment as Record<string, unknown>).metadata;
+  if (typeof metadata !== "object" || metadata === null || Array.isArray(metadata)) return null;
+
+  const uploadIndex = (metadata as Record<string, unknown>).upload_index;
+  return typeof uploadIndex === "number" && Number.isFinite(uploadIndex) && uploadIndex >= 0
+    ? uploadIndex
+    : null;
+}
+
+function isThumbnailAttachment(attachment: unknown): boolean {
+  return typeof attachment === "object"
+    && attachment !== null
+    && !Array.isArray(attachment)
+    && (attachment as Record<string, unknown>).file_type === "thumbnail";
+}
+
+function sortMemoryAttachments(attachments: unknown): unknown[] {
+  if (!Array.isArray(attachments)) return [];
+
+  const decorated = attachments.map((attachment, sourceIndex) => ({
+    attachment,
+    sourceIndex,
+    uploadIndex: getUploadIndex(attachment),
+    thumbnailRank: isThumbnailAttachment(attachment) ? 1 : 0,
+  }));
+
+  const legacy = decorated.filter(({ uploadIndex }) => uploadIndex === null);
+  const indexed = decorated
+    .filter(({ uploadIndex }) => uploadIndex !== null)
+    .sort((left, right) => {
+      const uploadIndexDifference = left.uploadIndex! - right.uploadIndex!;
+      if (uploadIndexDifference !== 0) return uploadIndexDifference;
+
+      const attachmentRoleDifference = left.thumbnailRank - right.thumbnailRank;
+      if (attachmentRoleDifference !== 0) return attachmentRoleDifference;
+
+      return left.sourceIndex - right.sourceIndex;
+    });
+
+  return [...legacy, ...indexed].map(({ attachment }) => attachment);
+}
 
 export function mapDatabaseMemory(data: unknown): Memory {
   const raw = typeof data === "object" && data !== null ? data as Record<string, unknown> : {};
@@ -48,7 +92,7 @@ export function mapDatabaseMemory(data: unknown): Memory {
     theme: typeof raw.theme === "string" ? raw.theme : "modern",
     paper_style: typeof raw.paper_style === "string" ? raw.paper_style : "letter",
     decorations: Array.isArray(raw.decorations) ? raw.decorations : [],
-    attachments: Array.isArray(raw.memory_attachments) ? raw.memory_attachments : [],
+    attachments: sortMemoryAttachments(raw.memory_attachments),
   };
 
   const parsed = MemorySchema.safeParse(preProcessed);
@@ -59,8 +103,8 @@ export function mapDatabaseMemory(data: unknown): Memory {
     return {
       ...preProcessed,
       type: preProcessed.type as MemoryType,
-      theme: (preProcessed.theme as MemoryThemeType) || 'modern',
-      paper_style: (preProcessed.paper_style as PaperStyleType) || 'letter',
+      theme: (preProcessed.theme as MemoryThemeType) || "modern",
+      paper_style: (preProcessed.paper_style as PaperStyleType) || "letter",
       decorations: preProcessed.decorations || [],
       attachments: preProcessed.attachments || [],
     } as Memory;
