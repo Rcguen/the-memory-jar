@@ -244,6 +244,22 @@ export interface MemoryListOptions {
   offset?: number;
 }
 
+export interface HomeMemoryPage {
+  memories: Memory[];
+  nextOffset: number | null;
+  hasMore: boolean;
+  totalCount: number;
+  attachmentSummaryCount: number;
+  legacyOriginalFallbackCount: number;
+}
+
+export interface HomeMemoryStats {
+  letters: number;
+  photos: number;
+  voice: number;
+  favorites: number;
+}
+
 /**
  * Full profile including timezone (populated by auto-detection hook).
  * timezone is NULL until the hook writes it after first login.

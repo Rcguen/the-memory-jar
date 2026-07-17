@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRealtimeContext } from "@/providers/realtime-provider";
 import { usePhysics } from "@/providers/physics-provider";
@@ -12,6 +12,20 @@ export function useRealtimeMemory(relationshipId: string | null, options?: { syn
   const { dropMemory, loadMemory, removeMemory, updateMemoryMeta } = usePhysics();
   const { profile } = useAuth();
   const syncPhysics = options?.syncPhysics !== false;
+  const homeInvalidationTimerRef = useRef<number | null>(null);
+  const homeInvalidationCountRef = useRef(0);
+  const scheduleHomeMemoryInvalidation = useCallback(() => {
+    if (homeInvalidationTimerRef.current !== null) return;
+
+    homeInvalidationTimerRef.current = window.setTimeout(() => {
+      homeInvalidationTimerRef.current = null;
+      homeInvalidationCountRef.current += 1;
+      if (process.env.NODE_ENV === "development") {
+        console.debug("[home-memory-realtime] invalidated", { count: homeInvalidationCountRef.current });
+      }
+      queryClient.invalidateQueries({ queryKey: ["home-memories"] });
+    }, 250);
+  }, [queryClient]);
 
   useEffect(() => {
     if (!relationshipId) return;
@@ -29,6 +43,7 @@ export function useRealtimeMemory(relationshipId: string | null, options?: { syn
       if (eventType === 'INSERT' && record?.id) {
         const status = record.status as string;
         queryClient.invalidateQueries({ queryKey: ['memories'] });
+        scheduleHomeMemoryInvalidation();
         queryClient.invalidateQueries({ queryKey: ['on-this-day'] });
         queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
         queryClient.invalidateQueries({ queryKey: ['timeline-memories'] });
@@ -78,6 +93,7 @@ export function useRealtimeMemory(relationshipId: string | null, options?: { syn
           if (syncPhysics) removeMemory(record.id);
           queryClient.removeQueries({ queryKey: ['memory', record.id] });
           queryClient.invalidateQueries({ queryKey: ['memories'] });
+        scheduleHomeMemoryInvalidation();
           queryClient.invalidateQueries({ queryKey: ['on-this-day'] });
           queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
           queryClient.invalidateQueries({ queryKey: ['timeline-memories'] });
@@ -125,6 +141,7 @@ export function useRealtimeMemory(relationshipId: string | null, options?: { syn
 
         // Also update the memories list
         queryClient.invalidateQueries({ queryKey: ['memories'] });
+        scheduleHomeMemoryInvalidation();
         queryClient.invalidateQueries({ queryKey: ['on-this-day'] });
         queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
         queryClient.invalidateQueries({ queryKey: ['timeline-memories'] });
@@ -136,6 +153,7 @@ export function useRealtimeMemory(relationshipId: string | null, options?: { syn
         if (syncPhysics) removeMemory(deletedId);
         queryClient.removeQueries({ queryKey: ['memory', deletedId] });
         queryClient.invalidateQueries({ queryKey: ['memories'] });
+        scheduleHomeMemoryInvalidation();
         queryClient.invalidateQueries({ queryKey: ['on-this-day'] });
         queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
         queryClient.invalidateQueries({ queryKey: ['timeline-memories'] });
@@ -162,6 +180,7 @@ export function useRealtimeMemory(relationshipId: string | null, options?: { syn
       // does not contain signed URLs — we must re-fetch from service
       queryClient.invalidateQueries({ queryKey: ['memory', memoryId] });
       queryClient.invalidateQueries({ queryKey: ['memories'] });
+        scheduleHomeMemoryInvalidation();
       queryClient.invalidateQueries({ queryKey: ['timeline-memories'] });
     };
 
@@ -187,6 +206,7 @@ export function useRealtimeMemory(relationshipId: string | null, options?: { syn
       }
 
       queryClient.invalidateQueries({ queryKey: ['memories'] });
+        scheduleHomeMemoryInvalidation();
       queryClient.invalidateQueries({ queryKey: ['activity-feed'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       queryClient.invalidateQueries({ queryKey: ['timeline-memories'] });
@@ -209,6 +229,10 @@ export function useRealtimeMemory(relationshipId: string | null, options?: { syn
     }
 
     return () => {
+      if (homeInvalidationTimerRef.current !== null) {
+        window.clearTimeout(homeInvalidationTimerRef.current);
+        homeInvalidationTimerRef.current = null;
+      }
       window.removeEventListener(`postgres-${memoriesChannel}`, handleMemoryChange);
       window.removeEventListener(`postgres-${attachmentsChannel}`, handleAttachmentChange);
       unsubscribePostgres(memoriesChannel);
@@ -222,5 +246,5 @@ export function useRealtimeMemory(relationshipId: string | null, options?: { syn
         unsubscribePostgres(notificationsChannel);
       }
     };
-  }, [relationshipId, profile?.id, queryClient, subscribePostgres, unsubscribePostgres, dropMemory, loadMemory, removeMemory, syncPhysics, updateMemoryMeta]);
+  }, [relationshipId, profile?.id, queryClient, subscribePostgres, unsubscribePostgres, dropMemory, loadMemory, removeMemory, syncPhysics, updateMemoryMeta, scheduleHomeMemoryInvalidation]);
 }

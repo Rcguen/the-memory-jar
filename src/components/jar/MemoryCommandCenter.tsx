@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, type InfiniteData, type QueryClient } from "@tanstack/react-query";
 import { format, formatDistanceToNow } from "date-fns";
 import {
   BookOpen,
@@ -26,12 +26,12 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useActivityFeed, useMemories } from "@/hooks/useMemoryData";
+import { useActivityFeed, useHomeMemories } from "@/hooks/useMemoryData";
 import { useAuth } from "@/providers/auth-provider";
 import { useMemoryViewer } from "@/providers/memory-viewer-provider";
 import { usePhysics } from "@/providers/physics-provider";
 import { memoryService } from "@/services/memory";
-import { ActivityLog, Memory, MemoryFilter, MemorySort, ReactionEmoji } from "@/types/memory";
+import { ActivityLog, HomeMemoryPage, Memory, MemoryFilter, MemorySort, ReactionEmoji } from "@/types/memory";
 import { cn } from "@/lib/utils";
 import { EmojiText } from "@/components/ui/EmojiText";
 import { MemoryKeepsake } from "@/components/jar/keepsakes/MemoryKeepsake";
@@ -107,6 +107,20 @@ function activityLabel(activity: ActivityLog) {
   return labels[activity.type];
 }
 
+type HomeMemoryQueryData = InfiniteData<HomeMemoryPage, number>;
+
+function updateHomeMemoryCaches(queryClient: QueryClient, update: (memory: Memory) => Memory) {
+  queryClient.setQueriesData<HomeMemoryQueryData>({ queryKey: ["home-memories"] }, (current) => {
+    if (!current) return current;
+    return {
+      ...current,
+      pages: current.pages.map((page) => ({
+        ...page,
+        memories: page.memories.map(update),
+      })),
+    };
+  });
+}
 function isPendingTimeCapsule(memory: Memory) {
   if (!memory.unlock_at) return false;
 
@@ -133,9 +147,22 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
   const [filter, setFilter] = useState<MemoryFilter>("all");
   const [sort, setSort] = useState<MemorySort>("newest");
   const [pendingDeleted, setPendingDeleted] = useState<Set<string>>(new Set());
+  const initialDisplayLimit = isCompact ? MAX_RENDERED_MOBILE_MEMORIES : MAX_RENDERED_MEMORIES;
+  const [displayState, setDisplayState] = useState({ key: "", limit: initialDisplayLimit });
   const deleteTimers = useRef<Map<string, number>>(new Map());
 
-  const { data: memories = [], isLoading } = useMemories({ search: debouncedSearch, filter, sort });
+  const {
+    data: memories = [],
+    isLoading,
+    isFetchingNextPage,
+    isError,
+    hasNextPage,
+    fetchNextPage,
+    refetch,
+    totalCount,
+  } = useHomeMemories({ search: debouncedSearch, filter, sort });
+  const queryPresentationKey = `${debouncedSearch.trim().toLowerCase()}|${filter}|${sort}`;
+  const displayLimit = displayState.key === queryPresentationKey ? displayState.limit : initialDisplayLimit;
   const isActivityView = activeView === "activity";
   const { data: activities = [], isLoading: isActivityLoading } = useActivityFeed(isActivityView);
 
@@ -147,14 +174,15 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
     };
   }, []);
 
+
   const visibleMemories = useMemo(
     () => memories.filter((memory) => !pendingDeleted.has(memory.id)),
     [memories, pendingDeleted],
   );
   const renderedMemories = useMemo(() => {
     const ordered = [...visibleMemories].sort((a, b) => Number(b.is_pinned) - Number(a.is_pinned));
-    return ordered.slice(0, isCompact ? MAX_RENDERED_MOBILE_MEMORIES : MAX_RENDERED_MEMORIES);
-  }, [isCompact, visibleMemories]);
+    return ordered.slice(0, displayLimit);
+  }, [displayLimit, visibleMemories]);
   const renderedActivities = useMemo(
     () => activities.slice(0, isCompact ? MAX_RENDERED_MOBILE_ACTIVITIES : MAX_RENDERED_ACTIVITIES),
     [activities, isCompact],
@@ -171,19 +199,17 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
     ? "Searching memories"
     : visibleMemories.length === 0
     ? "No memories match this search"
-    : `${visibleMemories.length} memories found`;
+    : `${totalCount} memories found`;
 
   const favoriteMutation = useMutation({
     mutationFn: ({ memory, favorite }: { memory: Memory; favorite: boolean }) => memoryService.setFavorite(memory.id, favorite),
     onMutate: async ({ memory, favorite }) => {
-      await queryClient.cancelQueries({ queryKey: ["memories"] });
-      const previousMemories = queryClient.getQueriesData<Memory[]>({ queryKey: ["memories"] });
-      queryClient.setQueriesData<Memory[]>({ queryKey: ["memories"] }, (old) =>
-        old?.map((item) =>
-          item.id === memory.id
-            ? { ...item, is_favorite: favorite, favorite_count: Math.max(0, (item.favorite_count ?? 0) + (favorite ? 1 : -1)) }
-            : item,
-        ),
+      await queryClient.cancelQueries({ queryKey: ["home-memories"] });
+      const previousMemories = queryClient.getQueriesData<HomeMemoryQueryData>({ queryKey: ["home-memories"] });
+      updateHomeMemoryCaches(queryClient, (item) =>
+        item.id === memory.id
+          ? { ...item, is_favorite: favorite, favorite_count: Math.max(0, (item.favorite_count ?? 0) + (favorite ? 1 : -1)) }
+          : item,
       );
       return { previousMemories };
     },
@@ -194,7 +220,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
       toast.error(`Favorite failed: ${error instanceof Error ? error.message : String(error)}`);
     },
     onSettled: (_, __, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["memories"] });
+      queryClient.invalidateQueries({ queryKey: ["home-memories"] });
       queryClient.invalidateQueries({ queryKey: ["memory", variables.memory.id] });
     },
   });
@@ -202,12 +228,12 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
   const pinMutation = useMutation({
     mutationFn: ({ memory, pinned }: { memory: Memory; pinned: boolean }) => memoryService.setPinned(memory.id, pinned),
     onMutate: async ({ memory, pinned }) => {
-      queryClient.setQueriesData<Memory[]>({ queryKey: ["memories"] }, (old) =>
-        old?.map((item) => item.id === memory.id ? { ...item, is_pinned: pinned, pinned_at: pinned ? new Date().toISOString() : null } : item),
+      updateHomeMemoryCaches(queryClient, (item) =>
+        item.id === memory.id ? { ...item, is_pinned: pinned, pinned_at: pinned ? new Date().toISOString() : null } : item,
       );
     },
     onSettled: (_, __, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["memories"] });
+      queryClient.invalidateQueries({ queryKey: ["home-memories"] });
       queryClient.invalidateQueries({ queryKey: ["memory", variables.memory.id] });
     },
   });
@@ -215,18 +241,16 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
   const reactionMutation = useMutation({
     mutationFn: ({ memory, emoji }: { memory: Memory; emoji: ReactionEmoji }) => memoryService.setReaction(memory.id, emoji),
     onMutate: async ({ memory, emoji }) => {
-      await queryClient.cancelQueries({ queryKey: ["memories"] });
-      const previousMemories = queryClient.getQueriesData<Memory[]>({ queryKey: ["memories"] });
-      queryClient.setQueriesData<Memory[]>({ queryKey: ["memories"] }, (old) =>
-        old?.map((item) => {
-          if (item.id !== memory.id) return item;
-          const previousEmoji = item.my_reaction;
-          const counts = { ...(item.reaction_counts ?? {}) } as Record<ReactionEmoji, number>;
-          if (previousEmoji) counts[previousEmoji] = Math.max(0, (counts[previousEmoji] ?? 0) - 1);
-          counts[emoji] = (counts[emoji] ?? 0) + 1;
-          return { ...item, my_reaction: emoji, reaction_counts: counts };
-        }),
-      );
+      await queryClient.cancelQueries({ queryKey: ["home-memories"] });
+      const previousMemories = queryClient.getQueriesData<HomeMemoryQueryData>({ queryKey: ["home-memories"] });
+      updateHomeMemoryCaches(queryClient, (item) => {
+        if (item.id !== memory.id) return item;
+        const previousEmoji = item.my_reaction;
+        const counts = { ...(item.reaction_counts ?? {}) } as Record<ReactionEmoji, number>;
+        if (previousEmoji) counts[previousEmoji] = Math.max(0, (counts[previousEmoji] ?? 0) - 1);
+        counts[emoji] = (counts[emoji] ?? 0) + 1;
+        return { ...item, my_reaction: emoji, reaction_counts: counts };
+      });
       return { previousMemories };
     },
     onError: (error, _variables, context) => {
@@ -236,12 +260,23 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
       toast.error(`Reaction failed: ${error instanceof Error ? error.message : String(error)}`);
     },
     onSettled: (_, __, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["memories"] });
+      queryClient.invalidateQueries({ queryKey: ["home-memories"] });
       queryClient.invalidateQueries({ queryKey: ["memory", variables.memory.id] });
       queryClient.invalidateQueries({ queryKey: ["activity-feed"] });
     },
   });
 
+  const hasHiddenLoadedMemories = visibleMemories.length > renderedMemories.length;
+  const canLoadMore = hasHiddenLoadedMemories || hasNextPage;
+  const loadMoreMemories = () => {
+    if (hasHiddenLoadedMemories) {
+      setDisplayState({ key: queryPresentationKey, limit: displayLimit + 12 });
+      return;
+    }
+    if (hasNextPage && !isFetchingNextPage) {
+      void fetchNextPage().then(() => setDisplayState({ key: queryPresentationKey, limit: displayLimit + 12 }));
+    }
+  };
   const scheduleDelete = (memory: Memory) => {
     if (deleteTimers.current.has(memory.id)) return;
 
@@ -253,7 +288,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
         await memoryService.deleteMemory(memory.id);
         removeMemory(memory.id);
         queryClient.removeQueries({ queryKey: ["memory", memory.id] });
-        queryClient.invalidateQueries({ queryKey: ["memories"] });
+        queryClient.invalidateQueries({ queryKey: ["home-memories"] });
         queryClient.invalidateQueries({ queryKey: ["activity-feed"] });
       } catch (error) {
         setPendingDeleted((current) => {
@@ -316,7 +351,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
             <div className="relative flex items-center justify-between gap-3 border-b border-white/[0.07] px-4 py-4">
               <div>
                 <p className="font-cormorant text-[1.75rem] leading-none text-zinc-100 sm:text-xl">Memory Shelf</p>
-                <p className="mt-1 text-[11px] tracking-[0.12em] uppercase text-amber-100/55">{visibleMemories.length} keepsakes</p>
+                <p className="mt-1 text-[11px] tracking-[0.12em] uppercase text-amber-100/55">{totalCount} keepsakes</p>
               </div>
               <div className="flex items-center gap-1">
                 <Link
@@ -387,14 +422,14 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" aria-hidden="true" />
                         <input
                           value={search}
-                          onChange={(event) => setSearch(event.target.value)}
+                          onChange={(event) => { setSearch(event.target.value); setDisplayState({ key: "", limit: initialDisplayLimit }); }}
                           placeholder="Search"
                           className="h-11 w-full rounded-full border border-white/[0.1] bg-black/35 pl-9 pr-11 text-sm text-zinc-100 placeholder:text-zinc-400 outline-none transition focus-visible:border-emerald-400/50 focus-visible:ring-2 focus-visible:ring-emerald-400/15"
                         />
                         {search && (
                           <button
                             type="button"
-                            onClick={() => setSearch("")}
+                            onClick={() => { setSearch(""); setDisplayState({ key: "", limit: initialDisplayLimit }); }}
                             aria-label="Clear search"
                             className="absolute right-0.5 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full text-zinc-500 hover:text-zinc-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50"
                           >
@@ -403,7 +438,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                         )}
                       </label>
                       <button
-                        onClick={() => setSort(sort === "newest" ? "oldest" : "newest")}
+                        onClick={() => { setSort(sort === "newest" ? "oldest" : "newest"); setDisplayState({ key: "", limit: initialDisplayLimit }); }}
                         className="h-11 rounded-full border border-white/[0.1] bg-white/[0.08] px-3 text-xs text-zinc-200 transition hover:text-zinc-100"
                       >
                         {sort === "newest" ? "Newest" : "Oldest"}
@@ -416,7 +451,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                         return (
                           <button
                             key={item.id}
-                            onClick={() => setFilter(item.id)}
+                            onClick={() => { setFilter(item.id); setDisplayState({ key: "", limit: initialDisplayLimit }); }}
                             aria-pressed={selected}
                             className={cn(
                               "relative shrink-0 rounded-sm px-2.5 py-1 text-[11px] font-medium tracking-wide transition-colors focus-ring-premium",
@@ -437,7 +472,16 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                       </div>
 
                       {isLoading && <div className="space-y-3 px-1 py-3" aria-label="Loading memories">{[0, 1, 2].map((item) => <div key={item} className="h-24 animate-pulse rounded-[1.15rem] bg-[linear-gradient(110deg,rgba(255,255,255,0.06),rgba(255,255,255,0.13),rgba(255,255,255,0.06))]" />)}</div>}
-                      {!isLoading && visibleMemories.length === 0 && (
+                      {isError && visibleMemories.length === 0 && (
+                        <div className="px-5 py-10 text-center" role="alert">
+                          <p className="font-cormorant text-xl text-zinc-200">The shelf needs a moment.</p>
+                          <p className="mt-1 text-xs leading-5 text-zinc-500">Your jar is still here. Try loading your keepsakes again.</p>
+                          <button type="button" onClick={() => void refetch()} className="mt-4 min-h-10 rounded-full border border-white/[0.12] px-4 text-xs font-medium text-zinc-200 transition-colors hover:bg-white/[0.08]">
+                            Try again
+                          </button>
+                        </div>
+                      )}
+                      {!isLoading && !isError && visibleMemories.length === 0 && (
                         <div className="px-5 py-10 text-center">
                           {search ? (
                             <>
@@ -481,9 +525,20 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                             />
                           );
                         })}                      </AnimatePresence>
-                      {visibleMemories.length > renderedMemories.length && (
-                        <div className="px-2 py-3 text-center text-xs text-zinc-600">
-                          Showing {renderedMemories.length} of {visibleMemories.length}. Search or filter to narrow the shelf.
+                      {(canLoadMore || (isError && visibleMemories.length > 0)) && (
+                        <div className="px-2 pb-2 pt-3 text-center">
+                          {isError && visibleMemories.length > 0 && (
+                            <p className="mb-2 text-xs text-amber-200/75">Could not load more keepsakes.</p>
+                          )}
+                          <button
+                            type="button"
+                            onClick={isError ? () => void fetchNextPage() : loadMoreMemories}
+                            disabled={isFetchingNextPage}
+                            aria-label={isFetchingNextPage ? "Loading more memories" : "Load more memories"}
+                            className="min-h-10 rounded-full border border-white/[0.12] bg-white/[0.05] px-4 text-xs font-medium text-zinc-200 transition-colors hover:bg-white/[0.1] disabled:cursor-wait disabled:opacity-60"
+                          >
+                            {isFetchingNextPage ? "Loading keepsakes..." : hasHiddenLoadedMemories ? "Show more keepsakes" : isError ? "Retry loading more" : "Load more keepsakes"}
+                          </button>
                         </div>
                       )}
                     </div>

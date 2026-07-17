@@ -1,9 +1,9 @@
-import { useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { memoryService } from "@/services/memory";
 import { mapDatabaseMemory } from "@/lib/mappers/memory.mapper";
 import { createClient } from "@/lib/supabase/client";
-import { MemoryFilter, MemoryListOptions } from "@/types/memory";
+import { MemoryFilter, MemoryListOptions, MemorySort } from "@/types/memory";
 import { useRelationshipContext } from "./useRelationshipContext";
 
 export function useMemory(id: string | null) {
@@ -43,6 +43,95 @@ export function useMemories(options: MemoryListOptions = {}) {
   });
 }
 
+const HOME_MEMORY_PAGE_SIZE = 12;
+let developmentHomeObserverCount = 0;
+let developmentHomeFirstPageRequests = 0;
+let developmentHomeNextPageRequests = 0;
+let developmentHomeSearchFilterResets = 0;
+
+export function useHomeMemories(options: { search?: string; filter?: MemoryFilter; sort?: MemorySort } = {}) {
+  const normalizedSearch = options.search?.trim().toLowerCase() ?? "";
+  const filter = options.filter ?? "all";
+  const sort = options.sort ?? "newest";
+  const query = useInfiniteQuery({
+    queryKey: ["home-memories", normalizedSearch, filter, sort, HOME_MEMORY_PAGE_SIZE],
+    queryFn: async ({ pageParam }) => {
+      if (process.env.NODE_ENV === "development") {
+        if (pageParam === 0) developmentHomeFirstPageRequests += 1;
+        else developmentHomeNextPageRequests += 1;
+      }
+      const page = await memoryService.listHomeMemoriesPage({
+        offset: pageParam as number,
+        limit: HOME_MEMORY_PAGE_SIZE,
+        search: normalizedSearch,
+        filter,
+        sort,
+      });
+      if (process.env.NODE_ENV === "development") {
+        console.debug("[home-memories] page", {
+          firstPageRequests: developmentHomeFirstPageRequests,
+          nextPageRequests: developmentHomeNextPageRequests,
+          rows: page.memories.length,
+          summaryAttachments: page.attachmentSummaryCount,
+          legacyOriginalFallbacks: page.legacyOriginalFallbackCount,
+        });
+      }
+      return page;
+    },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) => lastPage.nextOffset,
+    staleTime: 30 * 1000,
+  });
+
+  const queryShapeRef = useRef(`${normalizedSearch}|${filter}|${sort}`);
+
+  useEffect(() => {
+    const queryShape = `${normalizedSearch}|${filter}|${sort}`;
+    if (process.env.NODE_ENV === "development" && queryShapeRef.current !== queryShape) {
+      developmentHomeSearchFilterResets += 1;
+      console.debug("[home-memories] search-filter-reset", { count: developmentHomeSearchFilterResets });
+      queryShapeRef.current = queryShape;
+    }
+  }, [filter, normalizedSearch, sort]);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development") return;
+    developmentHomeObserverCount += 1;
+    console.debug("[home-memories] observer", { count: developmentHomeObserverCount });
+    return () => {
+      developmentHomeObserverCount = Math.max(0, developmentHomeObserverCount - 1);
+    };
+  }, []);
+
+  const flattened = useMemo(() => {
+    const allMemories = (query.data?.pages ?? []).flatMap((page) => page.memories);
+    const memories = [...new Map(allMemories.map((memory) => [memory.id, memory])).values()];
+    const duplicateIdsPrevented = allMemories.length - memories.length;
+    if (process.env.NODE_ENV === "development") {
+      console.debug("[home-memories] rendered", {
+        loadedPages: query.data?.pages.length ?? 0,
+        renderedCards: memories.length,
+        duplicateIdsPrevented,
+      });
+    }
+    return memories;
+  }, [query.data?.pages]);
+
+  return {
+    ...query,
+    data: flattened,
+    totalCount: query.data?.pages[0]?.totalCount ?? 0,
+    loadedPageCount: query.data?.pages.length ?? 0,
+  };
+}
+
+export function useHomeMemoryStats() {
+  return useQuery({
+    queryKey: ["home-memory-stats"],
+    queryFn: () => memoryService.getHomeMemoryStats(),
+    staleTime: 60 * 1000,
+  });
+}
 export function useDeletedMemories() {
   return useQuery({
     queryKey: ['memories', 'trash'],

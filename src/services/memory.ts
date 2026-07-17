@@ -4,6 +4,8 @@ import {
   DashboardMemoryReference,
   ActivityLog,
   Memory,
+  HomeMemoryPage,
+  HomeMemoryStats,
   MemoryComment,
   MemoryFilter,
   MemoryListOptions,
@@ -165,6 +167,38 @@ function applyClientFilter(memory: Memory, filter: MemoryFilter, userId: string 
   return true;
 }
 
+const HOME_MEMORY_SELECT = "id,relationship_id,type,status,capsule_style,version,title,content,theme,decorations,paper_style,mood_id,is_collaborative,memory_date,unlock_at,sealed_at,unlocked_at,opened_at,deleted_at,created_by,created_at,updated_at,is_pinned,pinned_at,memory_attachments(id,memory_id,file_type,url,upload_index:metadata->>upload_index,created_at),memory_tags(tags(id,name))";
+
+function normalizeHomeSearch(value?: string) {
+  return value?.trim().toLowerCase() ?? "";
+}
+
+function escapePostgrestLike(value: string) {
+  return value.replace(/[%,_(),]/g, " ").trim();
+}
+
+function normalizeHomeAttachments(rows: unknown) {
+  if (!Array.isArray(rows)) return [];
+
+  return rows.map((attachment) => {
+    if (typeof attachment !== "object" || attachment === null || Array.isArray(attachment)) return attachment;
+    const raw = attachment as Record<string, unknown>;
+    const uploadIndex = typeof raw.upload_index === "string" ? Number(raw.upload_index) : raw.upload_index;
+    return {
+      ...raw,
+      metadata: Number.isFinite(uploadIndex) && Number(uploadIndex) >= 0
+        ? { upload_index: Number(uploadIndex) }
+        : {},
+    };
+  });
+}
+
+function hasLegacyOriginalFallback(memory: Memory) {
+  if (memory.type !== "photo" && memory.type !== "video") return false;
+  const attachments = memory.attachments ?? [];
+  return attachments.some((attachment) => attachment.file_type === "photo" || attachment.file_type === "video")
+    && !attachments.some((attachment) => attachment.file_type === "thumbnail");
+}
 function toDashboardReference(memory: Pick<Memory, "id" | "title" | "type" | "memory_date" | "created_at">): DashboardMemoryReference {
   return {
     id: memory.id,
@@ -343,6 +377,179 @@ export const memoryService = {
     });
   },
 
+  async listHomeMemoriesPage(options: {
+    offset?: number;
+    limit?: number;
+    search?: string;
+    filter?: MemoryFilter;
+    sort?: "newest" | "oldest";
+  } = {}): Promise<HomeMemoryPage> {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const relationshipId = await this.getCurrentRelationshipId();
+    const limit = Math.max(1, Math.min(options.limit ?? 12, 24));
+    const offset = Math.max(0, options.offset ?? 0);
+    const filter = options.filter ?? "all";
+    const sortAscending = options.sort === "oldest";
+
+    if (!relationshipId) {
+      return { memories: [], nextOffset: null, hasMore: false, totalCount: 0, attachmentSummaryCount: 0, legacyOriginalFallbackCount: 0 };
+    }
+
+    let favoriteIds: string[] | null = null;
+    if (filter === "favorites") {
+      const { data, error } = await supabase
+        .from("memory_favorites")
+        .select("memory_id")
+        .eq("user_id", user?.id ?? "");
+      if (error) throw error;
+      favoriteIds = [...new Set((data ?? []).map((row) => row.memory_id))];
+      if (favoriteIds.length === 0) {
+        return { memories: [], nextOffset: null, hasMore: false, totalCount: 0, attachmentSummaryCount: 0, legacyOriginalFallbackCount: 0 };
+      }
+    }
+
+    let query = supabase
+      .from("memories")
+      .select(HOME_MEMORY_SELECT, { count: "exact" })
+      .eq("relationship_id", relationshipId)
+      .is("deleted_at", null)
+      .in("status", ACTIVE_MEMORY_STATUSES);
+
+    if (filter === "photos") query = query.eq("type", "photo");
+    if (filter === "videos") query = query.eq("type", "video");
+    if (filter === "letters") query = query.eq("type", "letter");
+    if (filter === "time_capsules") query = query.not("unlock_at", "is", null);
+    if (filter === "mine" && user?.id) query = query.eq("created_by", user.id);
+    if (filter === "partner" && user?.id) query = query.neq("created_by", user.id);
+    if (filter === "pinned") query = query.eq("is_pinned", true);
+    if (favoriteIds) query = query.in("id", favoriteIds);
+
+    const nowIso = new Date().toISOString();
+    if (filter === "locked") query = query.or(`status.eq.sealed,unlock_at.gt.${nowIso}`);
+    if (filter === "unlocked") query = query.neq("status", "sealed").or(`unlock_at.is.null,unlock_at.lte.${nowIso}`);
+
+    const normalizedSearch = normalizeHomeSearch(options.search);
+    if (normalizedSearch) {
+      const searchValue = escapePostgrestLike(normalizedSearch);
+      if (!searchValue) {
+        return { memories: [], nextOffset: null, hasMore: false, totalCount: 0, attachmentSummaryCount: 0, legacyOriginalFallbackCount: 0 };
+      }
+
+      const [{ data: profiles, error: profileError }, { data: tags, error: tagError }] = await Promise.all([
+        supabase.from("profiles").select("id").or(`display_name.ilike.%${searchValue}%,username.ilike.%${searchValue}%`),
+        supabase.from("tags").select("id").ilike("name", `%${searchValue}%`),
+      ]);
+      if (profileError) throw profileError;
+      if (tagError) throw tagError;
+
+      const tagIds = (tags ?? []).map((tag) => tag.id);
+      let taggedMemoryIds: string[] = [];
+      if (tagIds.length > 0) {
+        const { data: links, error: linkError } = await supabase
+          .from("memory_tags")
+          .select("memory_id")
+          .in("tag_id", tagIds);
+        if (linkError) throw linkError;
+        taggedMemoryIds = [...new Set((links ?? []).map((link) => link.memory_id))];
+      }
+
+      const searchClauses = [
+        `title.ilike.%${searchValue}%`,
+        `content.ilike.%${searchValue}%`,
+        `type.ilike.%${searchValue}%`,
+      ];
+      const creatorIds = (profiles ?? []).map((profile) => profile.id);
+      if (creatorIds.length > 0) searchClauses.push(`created_by.in.(${creatorIds.join(",")})`);
+      if (taggedMemoryIds.length > 0) searchClauses.push(`id.in.(${taggedMemoryIds.join(",")})`);
+      query = query.or(searchClauses.join(","));
+    }
+
+    const { data, error, count } = await query
+      .order("is_pinned", { ascending: false })
+      .order("created_at", { ascending: sortAscending })
+      .order("id", { ascending: sortAscending })
+      .range(offset, offset + limit);
+    if (error) throw error;
+
+    const pageRows = (data ?? []).slice(0, limit).map((row) => ({
+      ...row,
+      memory_attachments: normalizeHomeAttachments(row.memory_attachments),
+    }));
+    const memoryIds = pageRows.map((memory) => memory.id);
+    if (memoryIds.length === 0) {
+      return { memories: [], nextOffset: null, hasMore: false, totalCount: count ?? 0, attachmentSummaryCount: 0, legacyOriginalFallbackCount: 0 };
+    }
+
+    const [{ data: favorites }, { data: reactions }, { data: comments }, { data: creators }] = await Promise.all([
+      supabase.from("memory_favorites").select("memory_id,user_id").in("memory_id", memoryIds),
+      supabase.from("memory_reactions").select("memory_id,user_id,emoji,created_at").in("memory_id", memoryIds),
+      supabase.from("memory_comments").select("memory_id").in("memory_id", memoryIds),
+      supabase.from("profiles").select("id,display_name,username,avatar").in("id", [...new Set(pageRows.map((memory) => memory.created_by))]),
+    ]);
+    const creatorMap = new Map((creators ?? []).map((creator) => [creator.id, creator]));
+    const memories = hydrateMemoryMeta(
+      pageRows.map((row) => {
+        const tags = (row.memory_tags ?? []).flatMap((tagLink: { tags?: { id: string; name: string } | { id: string; name: string }[] | null }) => {
+          if (Array.isArray(tagLink.tags)) return tagLink.tags;
+          return tagLink.tags ? [tagLink.tags] : [];
+        });
+        return { ...mapDatabaseMemory(row), tags, creator: creatorMap.get(row.created_by) ?? null } as Memory;
+      }),
+      user?.id ?? null,
+      favorites ?? [],
+      (reactions ?? []) as MemoryReaction[],
+      comments ?? [],
+    );
+
+    return {
+      memories,
+      nextOffset: data && data.length > limit ? offset + limit : null,
+      hasMore: Boolean(data && data.length > limit),
+      totalCount: count ?? memories.length,
+      attachmentSummaryCount: pageRows.reduce((total, row) => total + (row.memory_attachments?.length ?? 0), 0),
+      legacyOriginalFallbackCount: memories.filter(hasLegacyOriginalFallback).length,
+    };
+  },
+
+  async getHomeMemoryStats(): Promise<HomeMemoryStats> {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const relationshipId = await this.getCurrentRelationshipId();
+    if (!relationshipId) return { letters: 0, photos: 0, voice: 0, favorites: 0 };
+
+    const countByType = (type: "letter" | "photo" | "voice") => supabase
+      .from("memories")
+      .select("id", { count: "exact", head: true })
+      .eq("relationship_id", relationshipId)
+      .is("deleted_at", null)
+      .in("status", ACTIVE_MEMORY_STATUSES)
+      .eq("type", type);
+    const [letters, photos, voice, favoriteRows] = await Promise.all([
+      countByType("letter"),
+      countByType("photo"),
+      countByType("voice"),
+      supabase.from("memory_favorites").select("memory_id").eq("user_id", user?.id ?? ""),
+    ]);
+    if (letters.error) throw letters.error;
+    if (photos.error) throw photos.error;
+    if (voice.error) throw voice.error;
+    if (favoriteRows.error) throw favoriteRows.error;
+
+    const favoriteIds = [...new Set((favoriteRows.data ?? []).map((row) => row.memory_id))];
+    if (favoriteIds.length === 0) {
+      return { letters: letters.count ?? 0, photos: photos.count ?? 0, voice: voice.count ?? 0, favorites: 0 };
+    }
+    const { count: favorites, error } = await supabase
+      .from("memories")
+      .select("id", { count: "exact", head: true })
+      .eq("relationship_id", relationshipId)
+      .is("deleted_at", null)
+      .in("status", ACTIVE_MEMORY_STATUSES)
+      .in("id", favoriteIds);
+    if (error) throw error;
+    return { letters: letters.count ?? 0, photos: photos.count ?? 0, voice: voice.count ?? 0, favorites: favorites ?? 0 };
+  },
   async listStorybookMemoriesPage(options: { offset?: number; limit?: number } = {}): Promise<Memory[]> {
     const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
