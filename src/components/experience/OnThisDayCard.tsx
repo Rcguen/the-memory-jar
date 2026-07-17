@@ -29,7 +29,7 @@ export function OnThisDayCard({ className }: { className?: string }) {
       : `${memories.length} memories from this day`;
 
   return (
-    <Link href="/on-this-day" className={cn("block w-full max-w-2xl", className)}>
+    <Link href="/on-this-day" prefetch={false} className={cn("block w-full max-w-2xl", className)}>
       <motion.article
         whileHover={{ y: -2, scale: 1.01 }}
         whileTap={{ scale: 0.99 }}

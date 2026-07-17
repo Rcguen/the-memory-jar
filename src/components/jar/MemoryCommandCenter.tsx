@@ -136,7 +136,8 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
   const deleteTimers = useRef<Map<string, number>>(new Map());
 
   const { data: memories = [], isLoading } = useMemories({ search: debouncedSearch, filter, sort });
-  const { data: activities = [] } = useActivityFeed();
+  const isActivityView = activeView === "activity";
+  const { data: activities = [], isLoading: isActivityLoading } = useActivityFeed(isActivityView);
 
   useEffect(() => {
     const timers = deleteTimers.current;
@@ -320,6 +321,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
               <div className="flex items-center gap-1">
                 <Link
                   href="/trash"
+                  prefetch={false}
                   className="inline-flex h-9 items-center gap-1.5 rounded-full border border-white/[0.07] bg-white/[0.04] px-3 text-xs text-zinc-400 transition-colors hover:text-zinc-100"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -495,6 +497,13 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                     transition={{ duration: useSimpleMotion ? 0.15 : 0.24, ease: [0.22, 1, 0.36, 1] }}
                     className="mt-3 max-h-[58vh] space-y-2 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.18)_transparent] sm:mt-4"
                   >
+                    {isActivityLoading && activities.length === 0 && (
+                      <div className="space-y-2 px-1 py-2" aria-label="Loading activity">
+                        {[0, 1, 2].map((item) => (
+                          <div key={item} className="h-[4.75rem] animate-pulse rounded-2xl bg-white/[0.045] motion-reduce:animate-none" />
+                        ))}
+                      </div>
+                    )}
                     {renderedActivities.map((activity) => (
                       <motion.div
                         key={activity.id}
@@ -518,7 +527,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                         Showing latest {renderedActivities.length} activity items.
                       </div>
                     )}
-                    {renderedActivities.length === 0 && (
+                    {!isActivityLoading && renderedActivities.length === 0 && (
                       <div className="rounded-2xl border border-white/[0.07] bg-white/[0.035] px-4 py-8 text-center text-sm text-zinc-500">
                         No activity yet.
                       </div>

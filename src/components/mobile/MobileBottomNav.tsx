@@ -10,6 +10,7 @@ const MotionLink = motion.create(Link);
 import { useMemoryModal } from "@/providers/memory-modal-provider";
 import { useHaptics } from "@/hooks/useHaptics";
 import { useIsPhone } from "@/hooks/useIsPhone";
+import { useIntentRoutePrefetch } from "@/hooks/useRoutePrefetch";
 
 const ITEMS = [
   { href: "/", label: "Jar", icon: Heart, accent: "text-rose-300" },
@@ -24,6 +25,7 @@ export function MobileBottomNav() {
   const { openModal } = useMemoryModal();
   const { trigger } = useHaptics();
   const isPhone = useIsPhone();
+  const prefetchRoute = useIntentRoutePrefetch();
 
   if (!isPhone) return null;
 
@@ -62,8 +64,15 @@ export function MobileBottomNav() {
               <MotionLink
                 key={item.href}
                 href={item.href}
+                prefetch={false}
                 whileTap={{ scale: 0.96 }}
                 transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+                onPointerDown={() => {
+                  if (!active) prefetchRoute(item.href);
+                }}
+                onFocus={() => {
+                  if (!active) prefetchRoute(item.href);
+                }}
                 onClick={() => trigger("light")}
                 className={cn(
                   "flex min-h-[52px] flex-col items-center justify-center rounded-[1.1rem] px-1 py-2 text-center transition-colors focus-ring-premium",

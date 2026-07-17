@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { memoryService } from "@/services/memory";
 import { mapDatabaseMemory } from "@/lib/mappers/memory.mapper";
@@ -59,10 +60,19 @@ export function useMemoryComments(memoryId: string | null) {
   });
 }
 
-export function useActivityFeed() {
+export function useActivityFeed(enabled = true) {
+  const requestCountRef = useRef(0);
+
   return useQuery({
     queryKey: ['activity-feed'],
-    queryFn: () => memoryService.getActivityFeed(30),
+    queryFn: () => {
+      if (process.env.NODE_ENV === "development") {
+        requestCountRef.current += 1;
+        console.debug("[activity-feed] request", { count: requestCountRef.current });
+      }
+      return memoryService.getActivityFeed(30);
+    },
+    enabled,
     staleTime: 30 * 1000,
   });
 }
@@ -76,9 +86,17 @@ export function useNotifications() {
 }
 
 export function useUnreadNotificationCount() {
+  const requestCountRef = useRef(0);
+
   return useQuery({
     queryKey: ['unread-notification-count'],
-    queryFn: () => memoryService.getUnreadNotificationCount(),
+    queryFn: () => {
+      if (process.env.NODE_ENV === "development") {
+        requestCountRef.current += 1;
+        console.debug("[notification-unread-count] request", { count: requestCountRef.current });
+      }
+      return memoryService.getUnreadNotificationCount();
+    },
     staleTime: 15 * 1000,
   });
 }

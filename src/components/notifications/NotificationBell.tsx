@@ -130,21 +130,29 @@ export function NotificationBell() {
   const panelRef = useRef<HTMLDivElement>(null);
   const bellRef = useRef<HTMLButtonElement>(null);
   const wasOpenRef = useRef(false);
+  const fullListRequestCountRef = useRef(0);
   const shouldReduceMotion = useReducedMotion();
   const queryClient = useQueryClient();
   const router = useRouter();
   const { profile } = useAuth();
   const { openViewer } = useMemoryViewer();
 
+  const isNotificationListEnabled = Boolean(profile?.id) && isOpen;
   const notificationsQuery = useInfiniteQuery({
     queryKey: ["notifications", "pages"],
-    queryFn: ({ pageParam }) => memoryService.listNotifications(PAGE_SIZE, pageParam),
+    queryFn: ({ pageParam }) => {
+      if (process.env.NODE_ENV === "development") {
+        fullListRequestCountRef.current += 1;
+        console.debug("[notification-list] request", { count: fullListRequestCountRef.current });
+      }
+      return memoryService.listNotifications(PAGE_SIZE, pageParam);
+    },
     initialPageParam: 0,
     getNextPageParam: (lastPage, pages) => {
       if (lastPage.length < PAGE_SIZE) return undefined;
       return pages.reduce((total, page) => total + page.length, 0);
     },
-    enabled: Boolean(profile?.id),
+    enabled: isNotificationListEnabled,
     staleTime: 15 * 1000,
   });
 
@@ -157,6 +165,19 @@ export function NotificationBell() {
 
   const visibleUnreadCount = unreadCount;
   const badgeLabel = visibleUnreadCount > 9 ? "9+" : String(visibleUnreadCount);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === "development") {
+      console.debug("[notification-list] state", {
+        bell: isOpen ? "open" : "closed",
+        enabled: isNotificationListEnabled,
+      });
+    }
+
+    if (!isOpen) {
+      void queryClient.cancelQueries({ queryKey: ["notifications", "pages"], exact: true });
+    }
+  }, [isNotificationListEnabled, isOpen, queryClient]);
 
   const setUnreadCount = (next: number) => {
     queryClient.setQueryData(["unread-notification-count"], Math.max(0, next));

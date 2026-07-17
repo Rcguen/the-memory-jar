@@ -6,7 +6,6 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { useQueryClient } from "@tanstack/react-query";
 import { Compass, LayoutDashboard, LogOut, User, BookOpen, Loader2, RefreshCw } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { logoutAction } from "@/app/actions/auth";
@@ -39,7 +38,7 @@ import { createClient } from "@/lib/supabase/client";
 import { MemoryType } from "@/types/memory";
 import { useRelationshipContext } from "@/hooks/useRelationshipContext";
 import { useAvatarUrl } from "@/hooks/useAvatarUrl";
-import { useRoutePrefetch } from "@/hooks/useRoutePrefetch";
+import { useIntentRoutePrefetch } from "@/hooks/useRoutePrefetch";
 import { useHomeAmbientMotion } from "@/hooks/useHomeAmbientMotion";
 import { RelationshipAmbientBackdrop } from "@/components/experience/RelationshipAmbientBackdrop";
 import { OnThisDayCard } from "@/components/experience/OnThisDayCard";
@@ -166,15 +165,13 @@ export default function Home() {
   const { loadMemory } = usePhysics();
   const { isOpen: isMemoryModalOpen } = useMemoryModal();
   const { viewingMemoryId } = useMemoryViewer();
-  const queryClient = useQueryClient();
   const router = useRouter();
+  const prefetchRoute = useIntentRoutePrefetch();
   const [memoryCount, setMemoryCount] = useState<number | null>(null);
   const [jarLoadState, setJarLoadState] = useState<JarLoadState>("pending");
   const [jarLoadAttempt, setJarLoadAttempt] = useState(0);
   const [isPending, startTransition] = useTransition();
   const ambientMotion = useHomeAmbientMotion();
-
-  useRoutePrefetch(["/timeline", "/dashboard", "/on-this-day", "/trash", "/profile"]);
 
   useEffect(() => {
     let isCurrentAttempt = true;
@@ -277,33 +274,9 @@ export default function Home() {
     // This query owns a deliberate one-shot physics hydration per retry attempt.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jarLoadAttempt]);
-
-  useEffect(() => {
-    if (!relationship?.relationshipTimezone) return;
-
-    queryClient.prefetchInfiniteQuery({
-      queryKey: ["timeline-memories", "all"],
-      queryFn: ({ pageParam }) => memoryService.listTimelineMemories({ filter: "all", offset: pageParam as number }),
-      initialPageParam: 0,
-      staleTime: 1000 * 30,
-    });
-
-    queryClient.prefetchQuery({
-      queryKey: ["dashboard-stats", relationship.relationshipTimezone],
-      queryFn: () => memoryService.getCoupleDashboardStats(relationship.relationshipTimezone),
-      staleTime: 1000 * 60,
-    });
-
-    queryClient.prefetchQuery({
-      queryKey: ["on-this-day", relationship.relationshipTimezone],
-      queryFn: () => memoryService.getOnThisDayMemories(relationship.relationshipTimezone),
-      staleTime: 1000 * 60 * 10,
-    });
-  }, [queryClient, relationship?.relationshipTimezone]);
-
-  const prefetchTimeline = () => router.prefetch("/timeline");
-  const prefetchDashboard = () => router.prefetch("/dashboard");
-  const prefetchBook = () => router.prefetch("/memory-book");
+  const prefetchTimeline = () => prefetchRoute("/timeline");
+  const prefetchDashboard = () => prefetchRoute("/dashboard");
+  const prefetchBook = () => prefetchRoute("/memory-book");
 
   if (profile && !profile.active_relationship_id) {
     return <RelationshipOnboarding />;
@@ -336,8 +309,9 @@ export default function Home() {
         <div className="pointer-events-auto hidden items-center gap-2 md:flex">
             <MotionLink
               href="/timeline"
+              prefetch={false}
               onMouseEnter={prefetchTimeline}
-              onTouchStart={prefetchTimeline}
+              onPointerDown={prefetchTimeline}
               onFocus={prefetchTimeline}
               whileTap={{ scale: 0.96 }}
               transition={{ type: "spring", bounce: 0, duration: 0.4 }}
@@ -348,8 +322,9 @@ export default function Home() {
           </MotionLink>
             <MotionLink
               href="/dashboard"
+              prefetch={false}
               onMouseEnter={prefetchDashboard}
-              onTouchStart={prefetchDashboard}
+              onPointerDown={prefetchDashboard}
               onFocus={prefetchDashboard}
               whileTap={{ scale: 0.96 }}
               transition={{ type: "spring", bounce: 0, duration: 0.4 }}
@@ -360,8 +335,9 @@ export default function Home() {
           </MotionLink>
             <MotionLink
               href="/memory-book"
+              prefetch={false}
               onMouseEnter={prefetchBook}
-              onTouchStart={prefetchBook}
+              onPointerDown={prefetchBook}
               onFocus={prefetchBook}
               whileTap={{ scale: 0.96 }}
               transition={{ type: "spring", bounce: 0, duration: 0.4 }}
