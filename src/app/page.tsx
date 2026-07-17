@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState, useRef, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useQueryClient } from "@tanstack/react-query";
-import { Compass, LayoutDashboard, LogOut, User, BookOpen, Loader2 } from "lucide-react";
+import { Compass, LayoutDashboard, LogOut, User, BookOpen, Loader2, RefreshCw } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { logoutAction } from "@/app/actions/auth";
 import { clearPrivateClientData } from "@/lib/cache-cleanup";
@@ -32,6 +32,8 @@ import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { PwaInstallMenuItem } from "@/components/ui/PwaInstallMenuItem";
 import { usePhysics } from "@/providers/physics-provider";
+import { useMemoryModal } from "@/providers/memory-modal-provider";
+import { useMemoryViewer } from "@/providers/memory-viewer-provider";
 import { memoryService } from "@/services/memory";
 import { createClient } from "@/lib/supabase/client";
 import { MemoryType } from "@/types/memory";
@@ -66,34 +68,120 @@ const MemoryCommandCenter = dynamic(
   { ssr: false },
 );
 
+function OverlayChunkFallback({ label }: { label: string }) {
+  return (
+    <div
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-[color-mix(in_srgb,var(--surface-dialog)_78%,transparent)] p-6"
+      role="status"
+      aria-live="polite"
+    >
+      <div className="surface-paper flex items-center gap-3 px-5 py-4 text-sm text-[var(--text-secondary)] shadow-[var(--shadow-3)]">
+        <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none text-[var(--accent-primary)]" aria-hidden="true" />
+        <span>{label}</span>
+      </div>
+    </div>
+  );
+}
+
 const MemoryModal = dynamic(
-  () => import("@/components/jar/MemoryModal").then((mod) => mod.MemoryModal),
-  { ssr: false },
+  () => {
+    const startedAt = process.env.NODE_ENV === "development" ? performance.now() : 0;
+    if (process.env.NODE_ENV === "development") {
+      console.debug("[home-overlay-chunk]", { overlay: "memory-modal", state: "start" });
+    }
+
+    return import("@/components/jar/MemoryModal").then((mod) => {
+      if (process.env.NODE_ENV === "development") {
+        console.debug("[home-overlay-chunk]", {
+          overlay: "memory-modal",
+          state: "ready",
+          durationMs: Math.round(performance.now() - startedAt),
+        });
+      }
+      return mod.MemoryModal;
+    });
+  },
+  { ssr: false, loading: () => <OverlayChunkFallback label="Opening your keepsake..." /> },
 );
 
 const MemoryViewer = dynamic(
-  () => import("@/components/viewer/MemoryViewer").then((mod) => mod.MemoryViewer),
-  { ssr: false },
+  () => {
+    const startedAt = process.env.NODE_ENV === "development" ? performance.now() : 0;
+    if (process.env.NODE_ENV === "development") {
+      console.debug("[home-overlay-chunk]", { overlay: "memory-viewer", state: "start" });
+    }
+
+    return import("@/components/viewer/MemoryViewer").then((mod) => {
+      if (process.env.NODE_ENV === "development") {
+        console.debug("[home-overlay-chunk]", {
+          overlay: "memory-viewer",
+          state: "ready",
+          durationMs: Math.round(performance.now() - startedAt),
+        });
+      }
+      return mod.MemoryViewer;
+    });
+  },
+  { ssr: false, loading: () => <OverlayChunkFallback label="Opening your memory..." /> },
 );
+
+type JarLoadState = "pending" | "success" | "error";
+
+function JarLoadFallback({ state, onRetry }: { state: JarLoadState; onRetry: () => void }) {
+  const isError = state === "error";
+
+  return (
+    <div
+      className="flex h-[21rem] w-[15.5rem] flex-col items-center justify-center gap-3 rounded-[2.5rem] border border-[var(--divider)] bg-[var(--surface-glass)]/50 px-5 text-center shadow-[var(--shadow-2)] sm:h-[25rem] sm:w-[20rem]"
+      role={isError ? "alert" : "status"}
+      aria-live="polite"
+    >
+      {isError ? (
+        <>
+          <p className="font-cormorant text-xl text-[var(--text-primary)]">The jar needs a moment.</p>
+          <p className="text-sm text-[var(--text-secondary)]">Your shelf is still here. Try loading the jar again.</p>
+          <button
+            type="button"
+            onClick={onRetry}
+            className="focus-ring-premium inline-flex min-h-10 items-center gap-2 rounded-full border border-[var(--divider)] bg-[var(--surface-paper)] px-4 py-2 text-sm font-medium text-[var(--text-primary)] transition-[transform,background-color] duration-200 hover:bg-[var(--surface-raised)] active:scale-[0.97]"
+          >
+            <RefreshCw className="h-4 w-4" aria-hidden="true" />
+            Try again
+          </button>
+        </>
+      ) : (
+        <>
+          <Loader2 className="h-6 w-6 animate-spin motion-reduce:animate-none text-[var(--accent-primary)]" aria-hidden="true" />
+          <p className="text-sm text-[var(--text-secondary)]">Settling your keepsakes into the jar.</p>
+        </>
+      )}
+    </div>
+  );
+}
 
 export default function Home() {
   const { profile } = useAuth();
   const { data: relationship } = useRelationshipContext();
   const { data: avatarUrl } = useAvatarUrl(profile?.avatar);
   const { loadMemory } = usePhysics();
+  const { isOpen: isMemoryModalOpen } = useMemoryModal();
+  const { viewingMemoryId } = useMemoryViewer();
   const queryClient = useQueryClient();
   const router = useRouter();
   const [memoryCount, setMemoryCount] = useState<number | null>(null);
+  const [jarLoadState, setJarLoadState] = useState<JarLoadState>("pending");
+  const [jarLoadAttempt, setJarLoadAttempt] = useState(0);
   const [isPending, startTransition] = useTransition();
   const ambientMotion = useHomeAmbientMotion();
-
-  const hasLoadedJar = useRef(false);
 
   useRoutePrefetch(["/timeline", "/dashboard", "/on-this-day", "/trash", "/profile"]);
 
   useEffect(() => {
-    if (hasLoadedJar.current) return;
-    hasLoadedJar.current = true;
+    let isCurrentAttempt = true;
+    const startedAt = performance.now();
+    if (process.env.NODE_ENV === "development") {
+      console.debug("[home-jar-load]", { state: "pending" });
+    }
 
     async function loadJar() {
       const supabase = createClient();
@@ -104,61 +192,91 @@ export default function Home() {
         .select("id, type, status, unlock_at, capsule_style, is_collaborative, memory_visual_state(position_x, position_y, rotation, scale, velocity_x, velocity_y, is_sleeping)")
         .in("status", ["sealed", "unlocked", "opening"])
         .is("deleted_at", null);
-        
-      if (!error && memories) {
-        setMemoryCount(memories.length);
-        
-        memories.forEach(mem => {
-          const vs = mem.memory_visual_state as unknown as import("@/types/memory").MemoryVisualState | import("@/types/memory").MemoryVisualState[]; 
-          const stateData = Array.isArray(vs) ? vs[0] : vs;
-          
-          if (process.env.NODE_ENV === "development" && false) {
-            console.log(`Loading memory ${mem.id}: stateData=`, stateData);
-          }
-          
-          if (stateData) {
-            loadMemory(mem.id, mem.type as MemoryType, {
-              id: mem.id,
-              type: mem.type as MemoryType,
-              status: mem.status as import("@/lib/physics/EngineCore").NormalizedVisualState["status"],
-              capsuleStyle: mem.capsule_style as import("@/lib/physics/EngineCore").NormalizedVisualState["capsuleStyle"],
-              unlockAt: mem.unlock_at,
-              isCollaborative: mem.is_collaborative,
-              x: stateData.position_x,
-              y: stateData.position_y,
-              rotation: stateData.rotation,
-              scale: stateData.scale,
-              vx: stateData.velocity_x,
-              vy: stateData.velocity_y,
-              isSleeping: stateData.is_sleeping
-            });
-          } else {
-            loadMemory(mem.id, mem.type as MemoryType, {
-              id: mem.id,
-              type: mem.type as MemoryType,
-              status: mem.status as import("@/lib/physics/EngineCore").NormalizedVisualState["status"],
-              capsuleStyle: mem.capsule_style as import("@/lib/physics/EngineCore").NormalizedVisualState["capsuleStyle"],
-              unlockAt: mem.unlock_at,
-              isCollaborative: mem.is_collaborative,
-              x: 0.5,
-              y: 0,
-              rotation: 0,
-              scale: 1,
-              vx: 0,
-              vy: 0,
-              isSleeping: false
-            });
-            // Asynchronously initialize missing visual state to ensure persistence
-            memoryService.initializeVisualState(mem.id);
-          }
+
+      if (error) {
+        if (!isCurrentAttempt) return;
+        setJarLoadState("error");
+        if (process.env.NODE_ENV === "development") {
+          console.debug("[home-jar-load]", {
+            state: "error",
+            durationMs: Math.round(performance.now() - startedAt),
+          });
+        }
+        return;
+      }
+
+      const jarMemories = memories ?? [];
+      if (!isCurrentAttempt) return;
+      setMemoryCount(jarMemories.length);
+
+      jarMemories.forEach((mem) => {
+        const vs = mem.memory_visual_state as unknown as import("@/types/memory").MemoryVisualState | import("@/types/memory").MemoryVisualState[];
+        const stateData = Array.isArray(vs) ? vs[0] : vs;
+
+        if (stateData) {
+          loadMemory(mem.id, mem.type as MemoryType, {
+            id: mem.id,
+            type: mem.type as MemoryType,
+            status: mem.status as import("@/lib/physics/EngineCore").NormalizedVisualState["status"],
+            capsuleStyle: mem.capsule_style as import("@/lib/physics/EngineCore").NormalizedVisualState["capsuleStyle"],
+            unlockAt: mem.unlock_at,
+            isCollaborative: mem.is_collaborative,
+            x: stateData.position_x,
+            y: stateData.position_y,
+            rotation: stateData.rotation,
+            scale: stateData.scale,
+            vx: stateData.velocity_x,
+            vy: stateData.velocity_y,
+            isSleeping: stateData.is_sleeping,
+          });
+        } else {
+          loadMemory(mem.id, mem.type as MemoryType, {
+            id: mem.id,
+            type: mem.type as MemoryType,
+            status: mem.status as import("@/lib/physics/EngineCore").NormalizedVisualState["status"],
+            capsuleStyle: mem.capsule_style as import("@/lib/physics/EngineCore").NormalizedVisualState["capsuleStyle"],
+            unlockAt: mem.unlock_at,
+            isCollaborative: mem.is_collaborative,
+            x: 0.5,
+            y: 0,
+            rotation: 0,
+            scale: 1,
+            vx: 0,
+            vy: 0,
+            isSleeping: false,
+          });
+          // Asynchronously initialize missing visual state to ensure persistence
+          memoryService.initializeVisualState(mem.id);
+        }
+      });
+
+      setJarLoadState("success");
+      if (process.env.NODE_ENV === "development") {
+        console.debug("[home-jar-load]", {
+          state: "success",
+          durationMs: Math.round(performance.now() - startedAt),
+          memoryCount: jarMemories.length,
         });
       }
     }
-    loadJar();
-    // Explicitly disabling exhaustive-deps because this effect is intentionally designed
-    // to execute exactly once using a ref guard to prevent physics duplication loops.
+
+    void loadJar().catch(() => {
+      if (!isCurrentAttempt) return;
+      setJarLoadState("error");
+      if (process.env.NODE_ENV === "development") {
+        console.debug("[home-jar-load]", {
+          state: "error",
+          durationMs: Math.round(performance.now() - startedAt),
+        });
+      }
+    });
+
+    return () => {
+      isCurrentAttempt = false;
+    };
+    // This query owns a deliberate one-shot physics hydration per retry attempt.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [jarLoadAttempt]);
 
   useEffect(() => {
     if (!relationship?.relationshipTimezone) return;
@@ -193,38 +311,6 @@ export default function Home() {
 
   return (
     <main className="relative min-h-screen xl:h-[100dvh] xl:overflow-hidden flex flex-col items-center justify-start home-room transition-colors duration-700 xl:justify-center w-full pb-36 sm:pb-8 xl:pb-0">
-      
-      <AnimatePresence>
-        {memoryCount === null && (
-          <motion.div
-            initial={{ opacity: 1 }}
-            exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
-            transition={{ duration: 1, ease: "easeInOut" }}
-            className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-emerald-50/95 dark:bg-emerald-950/95 backdrop-blur-xl"
-          >
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-200/30 via-transparent to-transparent dark:from-emerald-800/20 pointer-events-none" />
-            <div className="relative flex flex-col items-center justify-center p-8 z-10">
-              <div className="relative flex w-16 h-16 items-center justify-center mb-8">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full border border-emerald-300/30 dark:border-emerald-700/30 animate-[ping_3s_cubic-bezier(0,0,0.2,1)_infinite]" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 rounded-full border border-emerald-400/20 dark:border-emerald-600/20 animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite_0.5s]" />
-                <div className="relative z-10 flex w-full h-full items-center justify-center bg-white/40 dark:bg-zinc-900/40 rounded-full border border-white/50 dark:border-zinc-800/50 shadow-2xl backdrop-blur-md">
-                  <Loader2 className="w-7 h-7 animate-spin text-emerald-600/80 dark:text-emerald-400/80" />
-                </div>
-              </div>
-              <h2 className="font-cormorant text-3xl md:text-4xl tracking-[0.2em] text-zinc-800 dark:text-zinc-200 mb-3 opacity-90">
-                The Memory Jar
-              </h2>
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-[1px] bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent" />
-                <span className="text-[10px] tracking-[0.3em] uppercase text-emerald-700/60 dark:text-emerald-400/60 font-medium">
-                  Gathering Memories
-                </span>
-                <div className="w-12 h-[1px] bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent" />
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* 1. Ambient Background Gradients & Vignette */}
       {relationship?.relationshipTimezone && (
@@ -357,7 +443,7 @@ export default function Home() {
         <CouplePresenceAvatars motionActive={ambientMotion.isActive} />
 
         {/* The Physical Glass Jar */}
-        {memoryCount !== null && (
+        {jarLoadState === "success" && memoryCount !== null ? (
           <div className="relative">
             <ErrorBoundary fallbackMessage="The Jar engine crashed. Physics might be temporarily disabled.">
               <GlassJar
@@ -367,7 +453,7 @@ export default function Home() {
               />
             </ErrorBoundary>
           </div>
-        )}
+        ) : <JarLoadFallback state={jarLoadState} onRetry={() => { setJarLoadState("pending"); setJarLoadAttempt((attempt) => attempt + 1); }} />}
 
         {/* Relationship Time Elapsed */}
         {relationship?.startDate && (
@@ -432,12 +518,17 @@ export default function Home() {
 
       <MobileBottomNav />
 
-      {/* Global Modals & Portals for this route */}      <ErrorBoundary fallbackMessage="Memory Creation failed to load.">
-        <MemoryModal />
-      </ErrorBoundary>
-      <ErrorBoundary fallbackMessage="Memory Viewer crashed. Try opening a different memory.">
-        <MemoryViewer />
-      </ErrorBoundary>
+      {/* Global overlays stay unmounted until their lightweight providers signal an open state. */}
+      {isMemoryModalOpen && (
+        <ErrorBoundary fallbackMessage="Memory Creation failed to load.">
+          <MemoryModal />
+        </ErrorBoundary>
+      )}
+      {viewingMemoryId && (
+        <ErrorBoundary fallbackMessage="Memory Viewer crashed. Try opening a different memory.">
+          <MemoryViewer />
+        </ErrorBoundary>
+      )}
     </main>
   );
 }

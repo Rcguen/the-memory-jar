@@ -1,9 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
 
-const MIN_VISIBLE_MS = 900;
+const MIN_VISIBLE_MS = 320;
 const NORMAL_READY_TIMEOUT_MS = 2200;
 const EMERGENCY_TIMEOUT_MS = 4000;
 const COMPLETE_DURATION_MS = 260;
@@ -23,29 +22,17 @@ function waitForFonts() {
   return document.fonts.ready.catch(() => undefined);
 }
 
-function waitForJarImage() {
-  return new Promise<void>((resolve) => {
-    const image = new Image();
-    image.onload = () => resolve();
-    image.onerror = () => resolve();
-    image.src = "/Jar-Background-PNG.png";
-
-    if (image.complete) resolve();
-  });
-}
-
 /**
  * Launch-only visual transition. It never waits for private application data,
  * keeping auth, realtime, and route navigation independent from the overlay.
  */
 export function AppBootLoader() {
-  const pathname = usePathname();
   const [progress, setProgress] = useState(0);
   const [isExiting, setIsExiting] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [reduceMotion, setReduceMotion] = useState(false);
-  const initialPathnameRef = useRef(pathname);
   const reduceMotionRef = useRef(false);
+  const startedAtRef = useRef<number | null>(null);
   const readyAtRef = useRef<number | null>(null);
   const progressRef = useRef(0);
   const progressAtReadyRef = useRef(0);
@@ -99,6 +86,7 @@ export function AppBootLoader() {
   useEffect(() => {
     let cancelled = false;
     const startedAt = performance.now();
+    startedAtRef.current = startedAt;
 
     const markReady = () => {
       if (cancelled || readyAtRef.current !== null) return;
@@ -114,10 +102,7 @@ export function AppBootLoader() {
       setIsExiting(true);
     }, EMERGENCY_TIMEOUT_MS);
 
-    const readiness = [waitForFrames(), waitForFonts()];
-    if (initialPathnameRef.current === "/") readiness.push(waitForJarImage());
-
-    Promise.all(readiness).then(() => {
+    Promise.all([waitForFrames(), waitForFonts()]).then(() => {
       window.clearTimeout(normalReadyTimer);
       markReady();
     });
@@ -145,7 +130,8 @@ export function AppBootLoader() {
           emergencyTimerRef.current = null;
         }
         if (finishTimerRef.current === null) {
-          const remainingMinimum = Math.max(0, MIN_VISIBLE_MS - elapsed);
+          const minVisibleMs = reduceMotionRef.current ? 0 : MIN_VISIBLE_MS;
+          const remainingMinimum = Math.max(0, minVisibleMs - elapsed);
           finishTimerRef.current = window.setTimeout(
             () => !cancelled && setIsExiting(true),
             remainingMinimum + (reduceMotionRef.current ? 0 : COMPLETE_HOLD_MS),
@@ -181,6 +167,12 @@ export function AppBootLoader() {
       onTransitionEnd={(event) => {
         if (!isExiting || event.target !== event.currentTarget || event.propertyName !== "opacity") return;
         restoreBodyRef.current?.();
+        if (process.env.NODE_ENV === "development" && startedAtRef.current !== null) {
+          console.debug("[boot-loader] visible", {
+            durationMs: Math.round(performance.now() - startedAtRef.current),
+            reducedMotion: reduceMotionRef.current,
+          });
+        }
         setIsVisible(false);
       }}
     >
