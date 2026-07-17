@@ -212,9 +212,6 @@ export function GlassJar({
         </motion.div>
       )}
 
-      {isZoomed && (
-        <div className="fixed inset-0 bg-black/60 -z-10 transition-opacity duration-700" />
-      )}
 
       <motion.div
         className="absolute inset-0 z-[-1] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(52,211,153,0.25)_0%,transparent_70%)] pointer-events-none"
