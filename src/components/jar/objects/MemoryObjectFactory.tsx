@@ -55,32 +55,7 @@ export function MemoryObjectFactory({ state, onClick }: MemoryObjectFactoryProps
     prefetchTimerRef.current = window.setTimeout(() => {
       queryClient.prefetchQuery({
         queryKey: ['memory', state.id],
-        queryFn: async () => {
-          const memory = await memoryService.getMemoryById(state.id);
-          if (memory && memory.attachments) {
-            memory.attachments.forEach(async (att) => {
-              try {
-                const url = await queryClient.fetchQuery({
-                  queryKey: ['signedAttachmentUrl', att.id, att.url],
-                  queryFn: () => memoryService.getAttachmentUrlAsync(att.file_type, att.url),
-                  staleTime: 1000 * 60 * 30
-                });
-                
-                if (att.file_type === 'photo') {
-                  const img = new window.Image();
-                  img.src = url;
-                } else if (att.file_type === 'voice' || att.file_type === 'video') {
-                  const media = new window.Audio();
-                  media.preload = 'metadata';
-                  media.src = url;
-                }
-              } catch (e) {
-                console.warn("Failed to prefetch media", e);
-              }
-            });
-          }
-          return memory;
-        }
+        queryFn: () => memoryService.getMemoryById(state.id),
       });
     }, 240);
   };
