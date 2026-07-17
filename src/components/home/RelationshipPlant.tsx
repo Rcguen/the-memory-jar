@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemories } from "@/hooks/useMemoryData";
+import { useHomeMemories } from "@/hooks/useMemoryData";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMemo } from "react";
 
@@ -19,17 +19,17 @@ function PlantSVG({ stage }: { stage: PlantStage }) {
 }
 
 export function RelationshipPlant() {
-  const { data: memories = [] } = useMemories({});
+  const { totalCount } = useHomeMemories();
 
   const stage = useMemo(() => {
-    const count = memories.length;
+    const count = totalCount;
     if (count >= 300) return "largeTree";
     if (count >= 100) return "smallTree";
     if (count >= 50) return "flower";
     if (count >= 25) return "leaves";
     if (count >= 5) return "sprout";
     return "seed";
-  }, [memories.length]);
+  }, [totalCount]);
 
   return (
     <div className="flex items-center gap-2 mt-2 pb-4 text-zinc-500 opacity-60 hover:opacity-100 transition-opacity">

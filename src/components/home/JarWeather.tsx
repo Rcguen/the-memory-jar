@@ -1,11 +1,11 @@
 "use client";
 
 import { useMemo } from "react";
-import { useMemories } from "@/hooks/useMemoryData";
+import { useHomeMemories } from "@/hooks/useMemoryData";
 import { determineJarWeather, getWeatherIcon } from "@/lib/jar-weather";
 
 export function JarWeather({ className }: { className?: string }) {
-  const { data: memories = [] } = useMemories({});
+  const { data: memories = [] } = useHomeMemories();
 
   const weather = useMemo(() => {
     return determineJarWeather(memories);

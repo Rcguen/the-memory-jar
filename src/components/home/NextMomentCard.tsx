@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useMemories } from "@/hooks/useMemoryData";
+import { useHomeMemories } from "@/hooks/useMemoryData";
 import { useRelationshipContext } from "@/hooks/useRelationshipContext";
 import { differenceInDays, addMonths, addYears, isAfter } from "date-fns";
 import { motion } from "framer-motion";
@@ -9,7 +9,7 @@ import { Calendar, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function NextMomentCard({ className }: { className?: string }) {
-  const { data: memories = [] } = useMemories({});
+  const { data: memories = [] } = useHomeMemories();
   const { data: relationshipContext } = useRelationshipContext();
 
   const nextMoment = useMemo(() => {

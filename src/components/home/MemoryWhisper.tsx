@@ -1,13 +1,13 @@
 "use client";
 
 import { useMemo, useEffect, useState } from "react";
-import { useMemories } from "@/hooks/useMemoryData";
+import { useHomeMemories } from "@/hooks/useMemoryData";
 import { useRelationshipContext } from "@/hooks/useRelationshipContext";
 import { getMemoryOfTheDay } from "@/lib/memory-score";
 import { differenceInDays } from "date-fns";
 
 export function MemoryWhisper() {
-  const { data: memories = [] } = useMemories({});
+  const { data: memories = [] } = useHomeMemories();
   const { data: relationshipContext } = useRelationshipContext();
   const [lastOpenedId, setLastOpenedId] = useState<string | null>(null);
 

@@ -2,14 +2,14 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { useRelationshipContext } from "@/hooks/useRelationshipContext";
-import { useMemories } from "@/hooks/useMemoryData";
+import { useHomeMemories } from "@/hooks/useMemoryData";
 import { formatDistanceToNow, differenceInDays } from "date-fns";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 export function TodayCard({ className }: { className?: string }) {
   const { data: relationshipContext } = useRelationshipContext();
-  const { data: memories = [] } = useMemories({});
+  const { data: memories = [] } = useHomeMemories();
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {

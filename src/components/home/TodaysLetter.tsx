@@ -1,7 +1,7 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState } from "react";
-import { useMemories } from "@/hooks/useMemoryData";
+import { useHomeMemories } from "@/hooks/useMemoryData";
 import { useRelationshipContext } from "@/hooks/useRelationshipContext";
 import { useMemoryViewer } from "@/providers/memory-viewer-provider";
 import { motion } from "framer-motion";
@@ -15,7 +15,7 @@ function seededRandom(seed: number) {
 }
 
 export function TodaysLetter({ className }: { className?: string }) {
-  const { data: memories = [] } = useMemories({});
+  const { data: memories = [] } = useHomeMemories();
   const { data: relationshipContext } = useRelationshipContext();
   const { openViewer } = useMemoryViewer();
   const [nowTimestamp] = useState(() => Date.now());
