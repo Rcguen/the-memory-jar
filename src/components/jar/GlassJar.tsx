@@ -21,7 +21,6 @@ export function GlassJar({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const frameRef = useRef<number | null>(null);
   const lastPointerRef = useRef<{ x: number; y: number } | null>(null);
-  const tapStartRef = useRef<{ x: number; y: number; pointerId: number; pointerType: string } | null>(null);
   const { states, setContainerRef } = usePhysics();
   const { viewingMemoryId, openViewer } = useMemoryViewer();
   const reduceMotion = useReducedMotion();
@@ -91,86 +90,6 @@ export function GlassJar({
     openViewer(id);
     setIsZoomed(true);
     setTimeout(() => setIsZoomed(false), 2000);
-  };
-
-  const findMemoryNearPoint = (
-    target: HTMLDivElement,
-    clientX: number,
-    clientY: number,
-    pointerType: string
-  ) => {
-    const rect = target.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) return null;
-
-    const pointerX = clientX - rect.left;
-    const pointerY = clientY - rect.top;
-    const isTouch = pointerType === "touch";
-    const radius = isTouch ? 128 : 76;
-    const fallbackRadius = isTouch ? 178 : radius;
-    const lowerJarTap = pointerY > rect.height * 0.44;
-
-    const closest = states.reduce<{ id: string; distance: number; score: number } | null>((nearest, state) => {
-      const centerX = state.x * rect.width;
-      const centerY = state.y * rect.height;
-      const dx = pointerX - centerX;
-      const dy = pointerY - centerY;
-      const distance = Math.hypot(dx, dy);
-      const inPrimaryHit = distance <= radius;
-      const inTouchFallback = isTouch && lowerJarTap && distance <= fallbackRadius;
-
-      if (!inPrimaryHit && !inTouchFallback) return nearest;
-
-      const score = distance - (isTouch ? state.y * 18 : 0);
-      if (!nearest || score < nearest.score) {
-        return { id: state.id, distance, score };
-      }
-
-      return nearest;
-    }, null);
-
-    return closest?.id ?? null;
-  };
-
-  const releasePointer = (target: HTMLDivElement, pointerId: number) => {
-    if (target.hasPointerCapture?.(pointerId)) {
-      target.releasePointerCapture(pointerId);
-    }
-  };
-
-  const handleContentsPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (states.length === 0 || viewingMemoryId) return;
-
-    tapStartRef.current = {
-      x: event.clientX,
-      y: event.clientY,
-      pointerId: event.pointerId,
-      pointerType: event.pointerType,
-    };
-    event.currentTarget.setPointerCapture?.(event.pointerId);
-  };
-
-  const handleContentsPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (states.length === 0 || viewingMemoryId) return;
-
-    const start = tapStartRef.current;
-    tapStartRef.current = null;
-    releasePointer(event.currentTarget, event.pointerId);
-
-    const pointerType = event.pointerType || start?.pointerType || "mouse";
-    const movement = start ? Math.hypot(event.clientX - start.x, event.clientY - start.y) : 0;
-    const movementLimit = pointerType === "touch" ? 32 : 12;
-    if (movement > movementLimit) return;
-
-    const closest = findMemoryNearPoint(event.currentTarget, event.clientX, event.clientY, pointerType);
-
-    if (closest) {
-      handleOpenMemory(closest);
-    }
-  };
-
-  const handleContentsPointerCancel = (event: React.PointerEvent<HTMLDivElement>) => {
-    tapStartRef.current = null;
-    releasePointer(event.currentTarget, event.pointerId);
   };
 
   const [jarClicks, setJarClicks] = useState(0);
@@ -303,9 +222,6 @@ export function GlassJar({
               <div
                 className="relative h-full w-full translate-y-[2%] pointer-events-auto select-none sm:translate-y-0"
                 style={{ touchAction: "manipulation" }}
-                onPointerDown={handleContentsPointerDown}
-                onPointerUp={handleContentsPointerUp}
-                onPointerCancel={handleContentsPointerCancel}
               >
                 {states.map((state) => (
                   <MemoryObjectFactory key={state.id} state={state} onClick={handleOpenMemory} />

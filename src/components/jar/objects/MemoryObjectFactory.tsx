@@ -120,7 +120,7 @@ export function MemoryObjectFactory({ state, onClick }: MemoryObjectFactoryProps
 
   // We apply x, y as percentages (top/left) and then translate -50% -50% so the center matches.
   const sizeConfig = MEMORY_SIZES[state.type] || MEMORY_SIZES.random_thought;
-  const hitTargetPx = 76;
+  const hitTargetPx = 48;
   
   const style: MotionStyle = {
     position: "absolute",
