@@ -59,8 +59,12 @@ import { MemoryOfTheDay } from "@/components/home/MemoryOfTheDay";
 import { TodaysLetter } from "@/components/home/TodaysLetter";
 import { LivingMemoryShelf } from "@/components/home/LivingMemoryShelf";
 import { RelationshipOnboarding } from "@/components/onboarding/RelationshipOnboarding";
+import { MusicLauncher } from "@/components/music/MusicLauncher";
 
 const MotionLink = motion.create(Link);
+
+const loadMusicExperience = () => import("@/components/music/MusicExperience").then((mod) => mod.MusicExperience);
+const MusicExperience = dynamic(loadMusicExperience, { ssr: false });
 
 const MemoryCommandCenter = dynamic(
   () => import("@/components/jar/MemoryCommandCenter").then((mod) => mod.MemoryCommandCenter),
@@ -170,6 +174,7 @@ export function HomeClientExperience() {
   const [memoryCount, setMemoryCount] = useState<number | null>(null);
   const [jarLoadState, setJarLoadState] = useState<JarLoadState>("pending");
   const [jarLoadAttempt, setJarLoadAttempt] = useState(0);
+  const [isMusicOpen, setIsMusicOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const ambientMotion = useHomeAmbientMotion();
 
@@ -413,14 +418,18 @@ export function HomeClientExperience() {
 
         {/* The Physical Glass Jar */}
         {jarLoadState === "success" && memoryCount !== null ? (
-          <div className="relative">
-            <ErrorBoundary fallbackMessage="The Jar engine crashed. Physics might be temporarily disabled.">
-              <GlassJar
-                memoryCount={memoryCount}
-                ambientMotionActive={ambientMotion.isActive}
-                isPhone={ambientMotion.isPhone}
-              />
-            </ErrorBoundary>
+          <div className="home-jar-stage">
+            {isMusicOpen && <MusicExperience paused={!ambientMotion.isActive} onClose={() => setIsMusicOpen(false)} />}
+            <div className="relative z-20">
+              <ErrorBoundary fallbackMessage="The Jar engine crashed. Physics might be temporarily disabled.">
+                <GlassJar
+                  memoryCount={memoryCount}
+                  ambientMotionActive={ambientMotion.isActive}
+                  isPhone={ambientMotion.isPhone}
+                />
+              </ErrorBoundary>
+            </div>
+            <MusicLauncher onOpen={() => setIsMusicOpen(true)} onIntentPrefetch={() => { void loadMusicExperience(); }} />
           </div>
         ) : <JarLoadFallback state={jarLoadState} onRetry={() => { setJarLoadState("pending"); setJarLoadAttempt((attempt) => attempt + 1); }} />}
 
