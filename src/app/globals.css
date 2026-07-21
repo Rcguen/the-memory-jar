@@ -918,7 +918,7 @@
   .music-launcher-slot { margin: 0.15rem 0 0.4rem; }
   .music-launcher { min-width: 2.75rem; padding: 0.55rem 0.75rem; }
 
-  .music-orbit { top: 50%; }
+  .music-orbit { top: calc(50% + 4.5rem); }
   .track-orbit-item { width: 3.25rem; min-height: 3.25rem; margin: -1.625rem 0 0 -1.625rem; }
 
   .vinyl-record:not([data-compact="true"]) { width: 3.25rem; }
