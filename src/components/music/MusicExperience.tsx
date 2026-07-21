@@ -1,6 +1,5 @@
 "use client";
 
-import { Music2, X } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { parseYouTubeUrl } from "@/lib/music/youtube-url";
 import type { MusicPlayerController, MusicPlayerSnapshot, MusicSource, MusicTrack } from "@/types/music";
@@ -28,6 +27,7 @@ export function MusicExperience({ paused, onClose }: { paused: boolean; onClose:
   const [activeSource, setActiveSource] = useState<MusicSource | null>(null);
   const [snapshot, setSnapshot] = useState<MusicPlayerSnapshot>(EMPTY_SNAPSHOT);
   const [controller, setController] = useState<MusicPlayerController | null>(null);
+  const [isPlayerExpanded, setPlayerExpanded] = useState(true);
 
   const selectedTrack = tracks[selectedIndex] ?? null;
   const submitSource = (event: React.FormEvent<HTMLFormElement>) => {
@@ -43,6 +43,7 @@ export function MusicExperience({ paused, onClose }: { paused: boolean; onClose:
     setActiveSource(nextTracks[0].source);
     setSnapshot(EMPTY_SNAPSHOT);
     setInputError(null);
+    setPlayerExpanded(false);
   };
   const selectTrack = useCallback((index: number) => {
     setSelectedIndex(index);
@@ -54,21 +55,22 @@ export function MusicExperience({ paused, onClose }: { paused: boolean; onClose:
 
   return (
     <>
-      <section className="music-source-panel surface-paper" aria-label="Our Little Radio">
-        <div className="music-source-panel__heading"><Music2 className="h-4 w-4" aria-hidden="true" /><span>Our Little Radio</span></div>
-        <button type="button" className="music-source-panel__close focus-ring-premium" onClick={onClose} aria-label="Close music"><X className="h-4 w-4" /></button>
-        <form onSubmit={submitSource} className="music-source-panel__form">
-          <label className="sr-only" htmlFor="music-youtube-url">YouTube video or playlist link</label>
-          <input id="music-youtube-url" value={input} onChange={(event) => setInput(event.target.value)} placeholder="Paste a YouTube link" inputMode="url" autoComplete="url" />
-          <button type="submit" className="focus-ring-premium">Set the mood</button>
-        </form>
-        {inputError && <p className="music-source-panel__error" role="status">{inputError}</p>}
-      </section>
       {carouselTracks.length > 0 && (
         <OrbitingTrackCarousel tracks={carouselTracks} selectedIndex={selectedIndex} onSelectedIndexChange={selectTrack} paused={paused} />
       )}
       {activeSource && <YouTubeMusicPlayer source={activeSource} onSnapshot={receiveSnapshot} onController={receiveController} />}
-      {selectedTrack && <PersistentMusicPlayer track={selectedTrack} snapshot={snapshot} controller={controller} onClose={onClose} />}
+      <PersistentMusicPlayer
+        track={selectedTrack}
+        snapshot={snapshot}
+        controller={controller}
+        sourceInput={input}
+        expanded={isPlayerExpanded}
+        onExpandedChange={setPlayerExpanded}
+        sourceError={inputError}
+        onSourceInputChange={setInput}
+        onSourceSubmit={submitSource}
+        onClose={onClose}
+      />
     </>
   );
 }

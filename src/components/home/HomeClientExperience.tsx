@@ -396,7 +396,7 @@ export function HomeClientExperience() {
       </header>
 
       {/* 4. Main Content Area */}
-      <div className="relative z-10 flex w-full max-w-[23rem] flex-col items-center px-3 pb-8 pt-20 sm:max-w-2xl sm:px-4 sm:pb-10 sm:pt-24 lg:pt-12 xl:pt-8">
+      <div className={`home-center-column relative z-10 flex w-full max-w-[23rem] flex-col items-center px-3 pb-8 pt-20 sm:max-w-2xl sm:px-4 sm:pb-10 sm:pt-24 lg:pt-12 xl:pt-8 ${isMusicOpen ? "home-center-column--music-open" : ""}`}>
         
         {/* Title / Mood Text */}
         <motion.div
@@ -416,6 +416,14 @@ export function HomeClientExperience() {
         {/* Couple Presence Avatars */}
         <CouplePresenceAvatars motionActive={ambientMotion.isActive} />
 
+        <div className="music-launcher-slot">
+          <MusicLauncher
+            isOpen={isMusicOpen}
+            onOpen={() => setIsMusicOpen(true)}
+            onIntentPrefetch={() => { void loadMusicExperience(); }}
+          />
+        </div>
+
         {/* The Physical Glass Jar */}
         {jarLoadState === "success" && memoryCount !== null ? (
           <div className="home-jar-stage">
@@ -429,7 +437,6 @@ export function HomeClientExperience() {
                 />
               </ErrorBoundary>
             </div>
-            <MusicLauncher onOpen={() => setIsMusicOpen(true)} onIntentPrefetch={() => { void loadMusicExperience(); }} />
           </div>
         ) : <JarLoadFallback state={jarLoadState} onRetry={() => { setJarLoadState("pending"); setJarLoadAttempt((attempt) => attempt + 1); }} />}
 

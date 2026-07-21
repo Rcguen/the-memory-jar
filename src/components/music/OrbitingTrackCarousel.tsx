@@ -23,7 +23,7 @@ export function OrbitingTrackCarousel({ tracks, selectedIndex, onSelectedIndexCh
   const reducedMotion = useReducedMotion();
   const isPhone = useIsPhone();
   const [orbitNode, setOrbitNode] = useState<HTMLDivElement | null>(null);
-  const radius = isPhone ? "148px" : "292px";
+  const radius = isPhone ? "clamp(140px, 36vw, 150px)" : "var(--music-orbit-radius, 210px)";
   const style = { "--itemCount": tracks.length, "--radius": radius } as CSSProperties;
   const selectStep = (offset: number) => { if (tracks.length > 1) onSelectedIndexChange((selectedIndex + offset + tracks.length) % tracks.length); };
   return (
