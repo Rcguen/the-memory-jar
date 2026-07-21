@@ -627,6 +627,7 @@
   position: absolute;
   inset: 0;
   z-index: 10;
+  overflow: clip;
   pointer-events: none;
 }
 
@@ -932,7 +933,15 @@
   .track-metadata__title { font-size: 0.72rem; }
   .track-metadata__artist { display: none; }
   .music-orbit-controls { right: -0.25rem; }
-  .persistent-music-player { max-height: min(64dvh, 34rem); }
+  .persistent-music-player {
+    left: max(0.75rem, env(safe-area-inset-left));
+    right: max(0.75rem, env(safe-area-inset-right));
+    width: auto;
+    max-width: none;
+    max-height: min(64dvh, 34rem);
+    box-sizing: border-box;
+    transform: none;
+  }
   .persistent-music-player__dock { grid-template-columns: auto minmax(3.6rem, 1fr) auto auto auto; min-height: var(--music-player-collapsed-height); gap: 0.2rem; padding: 0.45rem 0.45rem 0.4rem; }
   .persistent-music-player__vinyl,
   .vinyl-record[data-compact="true"] { width: 2.25rem; }
@@ -947,13 +956,22 @@
   .music-player-change span { display: none; }
   .music-player-play { width: 2.5rem; height: 2.5rem; }
   .persistent-music-player__progress { gap: 0.3rem; }
-  .music-player-source-editor { max-height: calc(min(64dvh, 34rem) - var(--music-player-collapsed-height)); padding: 0.75rem 0.6rem 0.6rem; }
+  .music-player-source-editor {
+    min-width: 0;
+    max-width: 100%;
+    max-height: calc(min(64dvh, 34rem) - var(--music-player-collapsed-height));
+    overflow-x: clip;
+    padding: 0.75rem 0.6rem 0.6rem;
+  }
   .music-player-source-editor__header { grid-template-columns: 1fr auto; }
   .music-player-source-editor__handle { position: absolute; top: 0.35rem; left: 50%; display: block; width: 2.5rem; height: 0.22rem; border-radius: 999px; background: color-mix(in srgb, var(--jar-paper) 24%, transparent); transform: translateX(-50%); }
-  .music-player-source-form { grid-template-columns: 1fr; }
-  .music-player-source-form__actions { grid-template-columns: 1fr 1fr; grid-template-rows: auto; }
+  .music-player-source-form { min-width: 0; max-width: 100%; grid-template-columns: minmax(0, 1fr); }
+  .music-player-source-form__actions { min-width: 0; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto; }
   .music-player-source-form button { width: 100%; padding-inline: 0.45rem; }
-  .music-queue-list { max-height: 10.5rem; }
+  .music-queue,
+  .music-queue-list,
+  .music-queue-row { min-width: 0; max-width: 100%; }
+  .music-queue-list { max-height: 10.5rem; overflow-x: clip; }
 }
 
 @media (max-width: 390px) {
