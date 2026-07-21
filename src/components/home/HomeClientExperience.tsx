@@ -459,11 +459,11 @@ export function HomeClientExperience() {
       </div>
 
       {/* RIGHT PANEL: Storytelling & Ambient Cards */}
-      <div className="relative z-10 mt-4 w-full max-w-[23rem] px-3 pb-32 sm:max-w-3xl sm:px-4 xl:absolute xl:bottom-6 xl:right-6 xl:top-24 xl:mt-0 xl:w-[24rem] xl:max-w-none xl:px-0 xl:pb-0 2xl:w-[32rem] xl:overflow-y-auto xl:[scrollbar-width:none] xl:[&::-webkit-scrollbar]:hidden">
+      <div className="relative z-10 mt-4 w-full max-w-[23rem] overflow-x-clip px-3 pb-32 sm:max-w-3xl sm:px-4 xl:absolute xl:bottom-6 xl:right-6 xl:top-24 xl:mt-0 xl:w-[24rem] xl:max-w-none xl:px-0 xl:pb-0 2xl:w-[32rem] xl:overflow-y-auto xl:[scrollbar-width:none] xl:[&::-webkit-scrollbar]:hidden">
         <CozyDetails motionActive={ambientMotion.isActive} isPhone={ambientMotion.isPhone} />
         <AmbientManager />
         
-        <div className="home-desk grid grid-cols-1 gap-3 sm:gap-4 relative z-10 xl:grid-cols-2 xl:pl-3 xl:pr-2 xl:pb-12 min-h-full">
+        <div className="home-desk relative z-10 grid min-w-0 grid-cols-1 gap-3 sm:gap-4 xl:min-h-full xl:grid-cols-2 xl:pl-3 xl:pr-2 xl:pb-12">
           
           <div className="flex justify-between items-end mb-1">
             <JarWeather />
@@ -478,7 +478,7 @@ export function HomeClientExperience() {
           <div className="hidden xl:block xl:col-span-2"><TodaysLetter /></div>
           <div className="hidden xl:block xl:col-span-2"><DailyReflection /></div>
           <div className="xl:col-span-2"><MemoryReel /></div>
-          <div className="grid gap-2.5 sm:grid-cols-[1fr_auto] xl:col-span-2">
+          <div className="grid min-w-0 grid-cols-1 gap-2.5 xl:col-span-2 xl:grid-cols-[minmax(0,1fr)_auto]">
             <LittleMoments />
             <RelationshipPlant />
           </div>

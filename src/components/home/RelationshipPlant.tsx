@@ -32,7 +32,7 @@ export function RelationshipPlant() {
   }, [totalCount]);
 
   return (
-    <div className="flex items-center gap-2 mt-2 pb-4 text-zinc-500 opacity-60 hover:opacity-100 transition-opacity">
+    <div className="mt-2 flex min-w-0 items-center gap-2 pb-4 text-zinc-500 opacity-60 transition-opacity hover:opacity-100 xl:justify-self-end">
       <AnimatePresence mode="wait">
         <motion.div
           key={stage}
@@ -45,7 +45,7 @@ export function RelationshipPlant() {
           <PlantSVG stage={stage} />
         </motion.div>
       </AnimatePresence>
-      <span className="text-[10px] font-cormorant tracking-widest uppercase">Growing together</span>
+      <span className="min-w-0 text-[10px] font-cormorant uppercase leading-snug tracking-widest">Growing together</span>
     </div>
   );
 }

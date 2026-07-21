@@ -12,7 +12,7 @@ function ReelThumbnail({ memory, onClick }: { memory: Memory; onClick: () => voi
   const { containerRef, url, retryImage } = usePrivateThumbnail(previewSource);
 
   return (
-    <div ref={containerRef} className="h-16 w-16 shrink-0 sm:h-20 sm:w-20">
+    <div ref={containerRef} className="h-16 w-16 shrink-0 snap-start sm:h-20 sm:w-20">
       <motion.button
         whileHover={{ y: -4, scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
@@ -36,9 +36,9 @@ export function MemoryReel() {
   if (photos.length === 0) return null;
 
   return (
-    <div className="mt-4 border-t border-white/[0.05] pt-4">
+    <div className="mt-4 min-w-0 max-w-full overflow-hidden border-t border-white/[0.05] pt-4">
       <p className="mb-3 px-1 text-[10px] font-semibold uppercase tracking-widest text-zinc-500">Memory Reel</p>
-      <div className="flex gap-3 overflow-x-auto px-1 pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="flex max-w-full snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-1 pb-4 pr-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {photos.map((memory) => <ReelThumbnail key={memory.id} memory={memory} onClick={() => openViewer(memory.id)} />)}
       </div>
     </div>
