@@ -917,9 +917,11 @@
   .home-center-column--music-open { padding-bottom: calc(var(--music-player-collapsed-height) + var(--mobile-bottom-nav-height) + var(--mobile-memory-fab-clearance) + env(safe-area-inset-bottom) + 1.5rem); }
   .music-launcher-slot { margin: 0.15rem 0 0.4rem; }
   .music-launcher { min-width: 2.75rem; padding: 0.55rem 0.75rem; }
-  .music-orbit { top: calc(50% + clamp(4rem, 18vw, 5.25rem)); }
-  .track-orbit-item { width: 4.35rem; min-height: 5.9rem; margin: -2.175rem 0 0 -2.175rem; }
-  .vinyl-record:not([data-compact="true"]) { width: clamp(3.75rem, 16vw, 4.35rem); }
+
+  .music-orbit { top: 1.75rem; }
+  .track-orbit-item { width: 3.5rem; min-height: 3.5rem; margin: -1.75rem 0 0 -1.75rem; }
+  .track-orbit-card { opacity: 0.88; filter: none; transform: scale(0.9); }
+  .vinyl-record:not([data-compact="true"]) { width: 3.5rem; }
   .track-metadata { display: none; }
   .track-metadata__state { font-size: 0.45rem; }
   .track-metadata__title { font-size: 0.72rem; }
