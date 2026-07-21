@@ -42,3 +42,31 @@ export function parseYouTubeUrl(value: string): ParsedYouTubeUrl {
     return { kind: "invalid" };
   }
 }
+
+export function parseYouTubeLinks(value: string) {
+  const links = value
+    .split(/[,\n]+/)
+    .map((link) => link.trim())
+    .filter(Boolean);
+
+  const parsed: Exclude<ParsedYouTubeUrl, { kind: "invalid" }>[] = [];
+  let invalidCount = 0;
+
+  for (const link of links) {
+    const result = parseYouTubeUrl(link);
+    if (result.kind === "invalid") invalidCount += 1;
+    else parsed.push(result);
+  }
+
+  return { parsed, invalidCount };
+}
+
+export function youtubeArtworkCandidates(videoId?: string): string[] {
+  if (!videoId) return [];
+  const base = `https://i.ytimg.com/vi/${videoId}`;
+  return [
+    `${base}/hqdefault.jpg`,
+    `${base}/mqdefault.jpg`,
+    `${base}/default.jpg`,
+  ];
+}

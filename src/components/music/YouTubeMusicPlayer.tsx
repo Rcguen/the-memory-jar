@@ -18,5 +18,11 @@ export function YouTubeMusicPlayer({
   useEffect(() => onSnapshot(snapshot), [onSnapshot, snapshot]);
   useEffect(() => onController(controller), [controller, onController]);
 
-  return <div ref={hostRef} className="pointer-events-none absolute -left-[9999px] -top-[9999px] h-[200px] w-[200px] opacity-0" aria-hidden="true" />;
+  return (
+    <div
+      ref={hostRef}
+      className="pointer-events-none absolute -left-[9999px] -top-[9999px] h-px w-px opacity-0"
+      aria-hidden="true"
+    />
+  );
 }

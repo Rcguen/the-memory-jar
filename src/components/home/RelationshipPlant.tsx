@@ -32,7 +32,7 @@ export function RelationshipPlant() {
   }, [totalCount]);
 
   return (
-    <div className="mt-2 flex min-w-0 items-center gap-2 pb-4 text-zinc-500 opacity-60 transition-opacity hover:opacity-100 xl:justify-self-end">
+    <div className="flex min-w-0 items-center gap-2 text-zinc-500 opacity-60 transition-opacity hover:opacity-100 xl:justify-self-end">
       <AnimatePresence mode="wait">
         <motion.div
           key={stage}

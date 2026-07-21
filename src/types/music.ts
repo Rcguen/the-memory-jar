@@ -14,9 +14,14 @@ export type MusicSource = YouTubeVideoSource | YouTubePlaylistSource;
 
 export type MusicTrack = {
   id: string;
+  videoId?: string;
+  playlistId?: string;
+  playlistIndex?: number;
   title: string;
   artist?: string;
-  artworkUrl?: string;
+  artworkUrl: string;
+  metadataStatus: "placeholder" | "current-player-data" | "provided";
+  unavailable?: boolean;
   source: MusicSource;
 };
 
@@ -32,12 +37,18 @@ export type MusicPlayerSnapshot = {
   currentTime: number;
   duration: number;
   error?: string;
+  sourceKey?: string;
+  videoData?: {
+    videoId?: string;
+    title?: string;
+    author?: string;
+  };
+  playlistVideoIds?: string[];
+  playlistIndex?: number;
 };
 
 export type MusicPlayerController = {
   play: () => Promise<void>;
   pause: () => void;
   seek: (seconds: number) => void;
-  previous: () => void;
-  next: () => void;
 };
