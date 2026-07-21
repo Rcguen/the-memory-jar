@@ -918,10 +918,15 @@
   .music-launcher-slot { margin: 0.15rem 0 0.4rem; }
   .music-launcher { min-width: 2.75rem; padding: 0.55rem 0.75rem; }
 
-  .music-orbit { top: calc(50% + 4.5rem); }
-  .track-orbit-item { width: 3.25rem; min-height: 3.25rem; margin: -1.625rem 0 0 -1.625rem; }
+  .music-orbit { top: 50%; }
+  .track-orbit-item { width: 4rem; min-height: 4rem; margin: -2rem 0 0 -2rem; }
 
-  .vinyl-record:not([data-compact="true"]) { width: 3.25rem; }
+  .track-orbit-card {
+    opacity: max(var(--itemOpacity, 0.45), 0.45);
+    filter: blur(min(var(--itemBlur, 2px), 2px));
+    transform: rotate(var(--counterRotation, 0deg)) scale(clamp(0.86, var(--itemScale, 0.9), 1.06));
+  }
+  .vinyl-record:not([data-compact="true"]) { width: 4rem; }
   .track-metadata { display: none; }
   .track-metadata__state { font-size: 0.45rem; }
   .track-metadata__title { font-size: 0.72rem; }

@@ -46,7 +46,7 @@ export function OrbitingTrackCarousel({
     return tracks.slice(start, start + visibleLimit).map((track, offset) => ({ track, queueIndex: start + offset }));
   }, [selectedIndex, tracks, visibleLimit]);
   const visibleSelectedIndex = Math.max(0, visibleEntries.findIndex((entry) => entry.queueIndex === selectedIndex));
-  const radius = isPhone ? "clamp(140px, 42vw, 168px)" : "var(--music-orbit-radius, 210px)";
+  const radius = isPhone ? "clamp(172px, 44vw, 196px)" : "var(--music-orbit-radius, 210px)";
   const style = { "--itemCount": Math.max(visibleEntries.length, 1), "--radius": radius } as CSSProperties;
   const selectVisible = useCallback((visibleIndex: number) => {
     const queueIndex = visibleEntries[visibleIndex]?.queueIndex;
