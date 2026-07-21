@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useMusicQueue } from "@/hooks/useMusicQueue";
 import { parseYouTubeLinks, youtubeArtworkCandidates } from "@/lib/music/youtube-url";
 import type { MusicPlayerController, MusicPlayerSnapshot, MusicTrack } from "@/types/music";
@@ -187,34 +188,38 @@ export function MusicExperience({ paused, onClose }: { paused: boolean; onClose:
           onController={receiveController}
         />
       )}
-      <PersistentMusicPlayer
-        tracks={tracks}
-        selectedIndex={selectedIndex}
-        track={selectedTrack}
-        snapshot={snapshot}
-        controller={controller}
-        sourceInput={input}
-        expanded={isPlayerExpanded}
-        sourceError={inputError}
-        sourceFeedback={feedback}
-        queueStatus={queueStatus}
-        hasPrevious={hasPrevious}
-        hasNext={hasNext}
-        onExpandedChange={setPlayerExpanded}
-        onSourceInputChange={(value) => {
-          setInput(value);
-          setInputError(null);
-          setFeedback(null);
-        }}
-        onSourceSubmit={handleAppend}
-        onReplaceQueue={handleReplace}
-        onSelectTrack={selectTrack}
-        onRemoveTrack={removeTrack}
-        onClearQueue={clearQueue}
-        onPrevious={previousTrack}
-        onNext={nextTrack}
-        onClose={onClose}
-      />
+      {typeof document !== "undefined" &&
+        createPortal(
+          <PersistentMusicPlayer
+            tracks={tracks}
+            selectedIndex={selectedIndex}
+            track={selectedTrack}
+            snapshot={snapshot}
+            controller={controller}
+            sourceInput={input}
+            expanded={isPlayerExpanded}
+            sourceError={inputError}
+            sourceFeedback={feedback}
+            queueStatus={queueStatus}
+            hasPrevious={hasPrevious}
+            hasNext={hasNext}
+            onExpandedChange={setPlayerExpanded}
+            onSourceInputChange={(value) => {
+              setInput(value);
+              setInputError(null);
+              setFeedback(null);
+            }}
+            onSourceSubmit={handleAppend}
+            onReplaceQueue={handleReplace}
+            onSelectTrack={selectTrack}
+            onRemoveTrack={removeTrack}
+            onClearQueue={clearQueue}
+            onPrevious={previousTrack}
+            onNext={nextTrack}
+            onClose={onClose}
+          />,
+          document.body,
+        )}
     </>
   );
 }

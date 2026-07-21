@@ -572,12 +572,16 @@
 }
 
 .home-center-column--music-open {
-  z-index: 30;
   padding-bottom: calc(var(--music-player-collapsed-height) + 2rem);
 }
 
+.home-center-column--music-open > :not(.home-jar-stage) {
+  position: relative;
+  z-index: 2;
+}
+
 .home-center-column--music-open .home-jar-stage {
-  z-index: 40;
+  z-index: 1;
 }
 
 .music-launcher-slot {
