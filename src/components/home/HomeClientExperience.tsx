@@ -494,7 +494,7 @@ export function HomeClientExperience() {
           <div className="hidden xl:block xl:col-span-2"><TodaysLetter /></div>
           <div className="hidden xl:block xl:col-span-2"><DailyReflection /></div>
           <div className="xl:col-span-2"><MemoryReel /></div>
-          <div className="grid min-w-0 grid-cols-1 items-center gap-2.5 border-t border-[var(--divider)] px-2 pb-4 pt-3 xl:col-span-2 xl:grid-cols-[minmax(0,1fr)_auto]">
+          <div className="home-desk-footer grid min-w-0 grid-cols-1 items-center gap-2.5 border-t border-[var(--divider)] px-3 pb-4 pt-3 xl:col-span-2 xl:grid-cols-[minmax(0,1fr)_auto]">
             <LittleMoments />
             <RelationshipPlant />
           </div>
