@@ -627,7 +627,8 @@
   position: absolute;
   inset: 0;
   z-index: 10;
-  overflow: clip;
+  overflow-x: clip;
+  overflow-y: visible;
   pointer-events: none;
 }
 
