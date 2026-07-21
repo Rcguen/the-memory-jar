@@ -629,7 +629,7 @@
 .music-orbit {
   position: absolute;
   left: 50%;
-  top: 50%;
+  top: calc(50% + clamp(2.5rem, 6vh, 4.5rem));
   width: 0;
   height: 0;
   transform-origin: center;
@@ -743,11 +743,16 @@
   width: min(9rem, 27vw);
   min-height: 2.35rem;
   text-align: center;
-  opacity: 0.18;
-  transition: opacity 160ms ease;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 160ms ease, visibility 0ms linear 160ms;
 }
 .track-orbit-card[data-focused="true"] .track-metadata,
-.track-orbit-card[data-selected="true"] .track-metadata { opacity: 1; }
+.track-orbit-card[data-selected="true"] .track-metadata {
+  visibility: visible;
+  opacity: 1;
+  transition-delay: 0ms;
+}
 .track-metadata__state,
 .track-metadata__title,
 .track-metadata__artist { display: block; }
@@ -908,9 +913,10 @@
   .home-center-column--music-open { padding-bottom: calc(var(--music-player-collapsed-height) + var(--mobile-bottom-nav-height) + var(--mobile-memory-fab-clearance) + env(safe-area-inset-bottom) + 1.5rem); }
   .music-launcher-slot { margin: 0.15rem 0 0.4rem; }
   .music-launcher { min-width: 2.75rem; padding: 0.55rem 0.75rem; }
-  .track-orbit-item { width: 4.7rem; min-height: 6.25rem; margin: -2.35rem 0 0 -2.35rem; }
-  .vinyl-record:not([data-compact="true"]) { width: clamp(4rem, 18vw, 4.8rem); }
-  .track-metadata { width: 6.4rem; min-height: 1.9rem; }
+  .music-orbit { top: calc(50% + clamp(4rem, 18vw, 5.25rem)); }
+  .track-orbit-item { width: 4.35rem; min-height: 5.9rem; margin: -2.175rem 0 0 -2.175rem; }
+  .vinyl-record:not([data-compact="true"]) { width: clamp(3.75rem, 16vw, 4.35rem); }
+  .track-metadata { display: none; }
   .track-metadata__state { font-size: 0.45rem; }
   .track-metadata__title { font-size: 0.72rem; }
   .track-metadata__artist { display: none; }
