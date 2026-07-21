@@ -417,11 +417,13 @@ export function HomeClientExperience() {
         <CouplePresenceAvatars motionActive={ambientMotion.isActive} />
 
         <div className="music-launcher-slot">
-          <MusicLauncher
-            isOpen={isMusicOpen}
-            onOpen={() => setIsMusicOpen(true)}
-            onIntentPrefetch={() => { void loadMusicExperience(); }}
-          />
+          {!isMusicOpen && (
+            <MusicLauncher
+              isOpen={false}
+              onOpen={() => setIsMusicOpen(true)}
+              onIntentPrefetch={() => { void loadMusicExperience(); }}
+            />
+          )}
         </div>
 
         {/* The Physical Glass Jar */}
