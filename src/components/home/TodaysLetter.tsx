@@ -56,7 +56,7 @@ export function TodaysLetter({ className }: { className?: string }) {
       transition={{ duration: 0.3, delay: 0.1 }}
       onClick={() => openViewer(letter.id)}
       className={cn(
-        "group relative flex flex-col justify-between overflow-hidden rounded-[1.35rem] border border-[#d2c9b6]/30 bg-[#FDFBF7] p-4 shadow-[2px_3px_10px_rgba(0,0,0,0.15)] text-left transition-all hover:shadow-[4px_6px_15px_rgba(0,0,0,0.1)] hover:-translate-y-0.5",
+        "group relative flex w-full flex-col justify-between overflow-hidden rounded-[1.35rem] border border-[#d2c9b6]/30 bg-[#FDFBF7] p-4 shadow-[2px_3px_10px_rgba(0,0,0,0.15)] text-left transition-all hover:shadow-[4px_6px_15px_rgba(0,0,0,0.1)] hover:-translate-y-0.5",
         "after:absolute after:inset-0 after:rounded-[1.35rem] after:shadow-[inset_0_0_20px_rgba(0,0,0,0.03)]",
         className
       )}

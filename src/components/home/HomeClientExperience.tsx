@@ -471,7 +471,7 @@ export function HomeClientExperience() {
 
           <div className="xl:col-span-2"><MemoryWhisper /></div>
           <div className="xl:col-span-2"><MemoryOfTheDay /></div>
-          <div className="grid gap-2.5 sm:grid-cols-[1fr_0.72fr] xl:col-span-2">
+          <div className="grid grid-cols-1 gap-2.5 xl:col-span-2 xl:grid-cols-[1fr_0.72fr] [&>*:only-child]:col-span-full">
             <ContinueReadingCard />
             <NextMomentCard />
           </div>

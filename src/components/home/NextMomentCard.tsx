@@ -60,7 +60,7 @@ export function NextMomentCard({ className }: { className?: string }) {
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3, delay: 0.15 }}
       className={cn(
-        "surface-paper flex flex-col justify-center border-dashed p-4",
+        "surface-paper flex min-h-[8.5rem] w-full flex-col justify-center border-dashed p-4",
         className
       )}
     >
