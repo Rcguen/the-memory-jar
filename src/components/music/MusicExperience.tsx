@@ -27,7 +27,7 @@ export function MusicExperience({ paused, onClose }: { paused: boolean; onClose:
   const [activeSource, setActiveSource] = useState<MusicSource | null>(null);
   const [snapshot, setSnapshot] = useState<MusicPlayerSnapshot>(EMPTY_SNAPSHOT);
   const [controller, setController] = useState<MusicPlayerController | null>(null);
-  const [isPlayerExpanded, setPlayerExpanded] = useState(true);
+  const [isPlayerExpanded, setPlayerExpanded] = useState(false);
 
   const selectedTrack = tracks[selectedIndex] ?? null;
   const submitSource = (event: React.FormEvent<HTMLFormElement>) => {
