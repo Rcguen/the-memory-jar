@@ -1,4 +1,4 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
@@ -627,8 +627,7 @@
   position: absolute;
   inset: 0;
   z-index: 10;
-  overflow-x: clip;
-  overflow-y: visible;
+  overflow: visible;
   pointer-events: none;
 }
 
@@ -1233,6 +1232,17 @@
   .persistent-music-player { bottom: 1.125rem; width: min(47rem, calc(100vw - 3rem)); }
 }
 
+@media (min-width: 1280px) {
+  .home-side-panel {
+    isolation: isolate;
+    border: 1px solid color-mix(in srgb, var(--divider) 90%, transparent);
+    border-radius: var(--radius-xl);
+    background: color-mix(in srgb, var(--surface-wood) 94%, var(--surface-base));
+    box-shadow: var(--shadow-2), inset 0 1px color-mix(in srgb, var(--jar-paper) 5%, transparent);
+  }
+  .home-side-panel--shelf { padding: 0.65rem; }
+  .home-side-panel--desk { padding: 0.75rem 0.6rem 0; }
+}
 @media (min-width: 1280px) and (max-width: 1535px) {
   .home-jar-stage { --music-orbit-radius: clamp(190px, calc((100vw - 53rem) / 2 - 3.75rem), 280px); }
   .persistent-music-player { width: min(47rem, max(22rem, calc(100vw - 53rem))); }
@@ -1249,15 +1259,19 @@
   .music-launcher-slot { margin: 0.15rem 0 0.4rem; }
   .music-launcher { min-width: 2.75rem; padding: 0.55rem 0.75rem; }
 
+  .music-orbit-layer {
+    overflow-x: clip;
+    overflow-y: visible;
+  }
   .music-orbit { top: 50%; }
-  .track-orbit-item { width: 4rem; min-height: 4rem; margin: -2rem 0 0 -2rem; }
+  .track-orbit-item { width: 4.75rem; min-height: 4.75rem; margin: -2.375rem 0 0 -2.375rem; }
 
   .track-orbit-card {
     opacity: max(var(--itemOpacity, 0.45), 0.45);
     filter: blur(min(var(--itemBlur, 2px), 2px));
     transform: rotate(var(--counterRotation, 0deg)) scale(clamp(0.86, var(--itemScale, 0.9), 1.06));
   }
-  .vinyl-record:not([data-compact="true"]) { width: 4rem; }
+  .vinyl-record:not([data-compact="true"]) { width: 4.75rem; }
   .track-metadata { display: none; }
   .track-metadata__state { font-size: 0.45rem; }
   .track-metadata__title { font-size: 0.72rem; }
