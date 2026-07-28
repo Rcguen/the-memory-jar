@@ -47,6 +47,22 @@ export function useOrbitPhysics({ orbitNode, itemCount, selectedIndex, onSelect,
   useEffect(() => { updateCards(currentRotation.current); }, [updateCards]);
 
   useEffect(() => {
+    if (!orbitNode || itemCount === 0) return;
+
+    const nextRotation = -selectedIndex * (360 / itemCount);
+    targetRotation.current = nextRotation;
+    userVelocity.current = 0;
+    lastInteractionTime.current = performance.now();
+
+    if (paused || reduceMotion) {
+      currentRotation.current = nextRotation;
+      targetRotation.current = null;
+      orbitNode.style.setProperty("transform", `rotate(${nextRotation}deg)`);
+      updateCards(nextRotation);
+    }
+  }, [itemCount, orbitNode, paused, reduceMotion, selectedIndex, updateCards]);
+
+  useEffect(() => {
     if (!orbitNode || paused || reduceMotion || itemCount === 0) return;
     const tick = () => {
       const now = performance.now();

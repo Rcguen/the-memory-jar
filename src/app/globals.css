@@ -1275,8 +1275,8 @@
     box-sizing: border-box;
     transform: none;
   }
-  .persistent-music-player__dock { grid-template-columns: auto minmax(3.6rem, 1fr) auto auto auto; min-height: var(--music-player-collapsed-height); gap: 0.2rem; padding: 0.45rem 0.45rem 0.4rem; }
-  .persistent-music-player__vinyl,
+  .persistent-music-player__dock { grid-template-columns: minmax(0, 1fr) auto auto auto; min-height: var(--music-player-collapsed-height); gap: 0.2rem; padding: 0.45rem 0.45rem 0.4rem; }
+  .persistent-music-player__vinyl { display: none; }
   .vinyl-record[data-compact="true"] { width: 2.25rem; }
   .persistent-music-player__copy strong { font-size: 0.82rem; }
   .persistent-music-player__copy .persistent-music-player__eyebrow { display: none; }
@@ -1319,11 +1319,6 @@
   .music-queue-list,
   .music-queue-row { min-width: 0; max-width: 100%; }
   .music-queue-list { max-height: 10.5rem; overflow-x: clip; }
-}
-
-@media (max-width: 390px) {
-  .persistent-music-player__vinyl { display: none; }
-  .persistent-music-player__dock { grid-template-columns: minmax(3.4rem, 1fr) auto auto auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {
