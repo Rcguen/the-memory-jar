@@ -659,8 +659,8 @@
 
 .track-orbit-card {
   display: block;
-  opacity: var(--itemOpacity, 0.35);
-  filter: blur(var(--itemBlur, 4px));
+  opacity: max(var(--itemOpacity, 0.48), 0.48);
+  filter: blur(min(var(--itemBlur, 1.25px), 1.25px));
   transform: rotate(var(--counterRotation, 0deg)) scale(var(--itemScale, 0.82));
   transform-origin: center;
   transition: opacity 180ms ease, filter 180ms ease, transform 180ms cubic-bezier(0.23, 1, 0.32, 1);
@@ -765,17 +765,6 @@
 .track-metadata__title { display: -webkit-box; overflow: hidden; margin-top: 0.12rem; font-family: var(--font-cormorant), serif; font-size: 0.86rem; font-weight: 700; line-height: 1.05; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .track-metadata__artist { overflow: hidden; margin-top: 0.08rem; color: var(--text-secondary); font-size: 0.58rem; text-overflow: ellipsis; white-space: nowrap; }
 
-.music-orbit-controls {
-  position: absolute;
-  right: -1.25rem;
-  top: 50%;
-  display: flex;
-  gap: 0.4rem;
-  pointer-events: auto;
-  transform: translateY(-50%);
-}
-
-.music-orbit-control,
 .music-player-icon,
 .music-player-close,
 .music-player-collapse,
@@ -790,8 +779,6 @@
   color: var(--text-primary);
   transition: transform 150ms cubic-bezier(0.23, 1, 0.32, 1), background-color 150ms ease, opacity 150ms ease;
 }
-.music-orbit-control:disabled { cursor: not-allowed; opacity: 0.32; }
-.music-orbit-control:active,
 .music-player-icon:active,
 .music-player-close:active,
 .music-player-collapse:active,
@@ -1260,15 +1247,18 @@
   .music-launcher { min-width: 2.75rem; padding: 0.55rem 0.75rem; }
 
   .music-orbit-layer {
-    overflow-x: clip;
-    overflow-y: visible;
+    left: 50%;
+    right: auto;
+    width: min(100vw, 32rem);
+    overflow: visible;
+    transform: translateX(-50%);
   }
   .music-orbit { top: 50%; }
   .track-orbit-item { width: 4.75rem; min-height: 4.75rem; margin: -2.375rem 0 0 -2.375rem; }
 
   .track-orbit-card {
-    opacity: max(var(--itemOpacity, 0.45), 0.45);
-    filter: blur(min(var(--itemBlur, 2px), 2px));
+    opacity: max(var(--itemOpacity, 0.56), 0.56);
+    filter: blur(min(var(--itemBlur, 0.75px), 0.75px));
     transform: rotate(var(--counterRotation, 0deg)) scale(clamp(0.86, var(--itemScale, 0.9), 1.06));
   }
   .vinyl-record:not([data-compact="true"]) { width: 4.75rem; }
@@ -1276,7 +1266,6 @@
   .track-metadata__state { font-size: 0.45rem; }
   .track-metadata__title { font-size: 0.72rem; }
   .track-metadata__artist { display: none; }
-  .music-orbit-controls { right: -0.25rem; }
   .persistent-music-player {
     left: max(0.75rem, env(safe-area-inset-left));
     right: max(0.75rem, env(safe-area-inset-right));
@@ -1342,7 +1331,6 @@
   .track-orbit-card,
   .vinyl-interaction-surface,
   .music-launcher,
-  .music-orbit-control,
   .music-player-icon,
   .music-player-close,
   .music-player-collapse,
