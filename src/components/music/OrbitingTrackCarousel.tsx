@@ -33,7 +33,7 @@ export function OrbitingTrackCarousel({
   const reducedMotion = useReducedMotion();
   const isPhone = useIsPhone();
   const [orbitNode, setOrbitNode] = useState<HTMLDivElement | null>(null);
-  const visibleLimit = isPhone ? 5 : 9;
+  const visibleLimit = isPhone ? 3 : 9;
   const visibleEntries = useMemo(() => {
     if (tracks.length <= visibleLimit) return tracks.map((track, queueIndex) => ({ track, queueIndex }));
     const half = Math.floor(visibleLimit / 2);
@@ -41,8 +41,9 @@ export function OrbitingTrackCarousel({
     return tracks.slice(start, start + visibleLimit).map((track, offset) => ({ track, queueIndex: start + offset }));
   }, [selectedIndex, tracks, visibleLimit]);
   const visibleSelectedIndex = Math.max(0, visibleEntries.findIndex((entry) => entry.queueIndex === selectedIndex));
+  const orbitSlotCount = isPhone && visibleEntries.length === 2 ? 3 : Math.max(visibleEntries.length, 1);
   const radius = isPhone ? "clamp(118px, calc(50vw - 2.75rem), 196px)" : "var(--music-orbit-radius, 210px)";
-  const style = { "--itemCount": Math.max(visibleEntries.length, 1), "--radius": radius } as CSSProperties;
+  const style = { "--itemCount": orbitSlotCount, "--radius": radius } as CSSProperties;
   const selectVisible = useCallback((visibleIndex: number) => {
     const queueIndex = visibleEntries[visibleIndex]?.queueIndex;
     if (queueIndex !== undefined) onSelectedIndexChange(queueIndex);
@@ -71,7 +72,7 @@ export function OrbitingTrackCarousel({
       {orbitNode && (
         <OrbitMotionController
           orbitNode={orbitNode}
-          itemCount={visibleEntries.length}
+          itemCount={orbitSlotCount}
           selectedIndex={visibleSelectedIndex}
           onSelect={selectVisible}
           paused={paused || visibleEntries.length <= 1}
