@@ -1,9 +1,10 @@
-"use client";
+﻿"use client";
 
-import { ChevronDown, ListMusic, Pause, Play, Plus, RefreshCw, Settings2, SkipBack, SkipForward, Trash2, X } from "lucide-react";
+import { ChevronDown, Link2, ListMusic, Pause, Play, Plus, RefreshCw, Search, Settings2, SkipBack, SkipForward, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { FormEventHandler } from "react";
-import type { MusicPlayerController, MusicPlayerSnapshot, MusicTrack } from "@/types/music";
+import type { MusicPlayerController, MusicPlayerSnapshot, MusicTrack, YouTubeMusicSearchResult } from "@/types/music";
+import { MusicSearchPanel } from "./MusicSearchPanel";
 import { VinylRecord } from "./OrbitingTrackCard";
 
 function formatTime(seconds: number) {
@@ -30,6 +31,8 @@ export function PersistentMusicPlayer({
   onSourceInputChange,
   onSourceSubmit,
   onReplaceQueue,
+  onAddSearchResult,
+  onPlaySearchResult,
   onSelectTrack,
   onRemoveTrack,
   onClearQueue,
@@ -53,6 +56,8 @@ export function PersistentMusicPlayer({
   onSourceInputChange: (value: string) => void;
   onSourceSubmit: FormEventHandler<HTMLFormElement>;
   onReplaceQueue: () => void;
+  onAddSearchResult: (result: YouTubeMusicSearchResult) => void;
+  onPlaySearchResult: (result: YouTubeMusicSearchResult) => void;
   onSelectTrack: (index: number) => void;
   onRemoveTrack: (trackId: string) => void;
   onClearQueue: () => void;
@@ -62,6 +67,7 @@ export function PersistentMusicPlayer({
 }) {
   const [scrubbing, setScrubbing] = useState<number | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [activeSection, setActiveSection] = useState<"search" | "paste" | "queue">("search");
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const expandButtonRef = useRef<HTMLButtonElement | null>(null);
   const previousExpandedRef = useRef(expanded);
@@ -72,7 +78,6 @@ export function PersistentMusicPlayer({
 
   useEffect(() => {
     const wasExpanded = previousExpandedRef.current;
-    if (expanded && !wasExpanded) inputRef.current?.focus();
     if (!expanded && wasExpanded) expandButtonRef.current?.focus();
     previousExpandedRef.current = expanded;
   }, [expanded]);
@@ -95,6 +100,13 @@ export function PersistentMusicPlayer({
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [confirmClear, expanded, onClose, onExpandedChange]);
 
+  const changeSection = (section: "search" | "paste" | "queue") => {
+    setActiveSection(section);
+    if (section === "paste") {
+      window.requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }));
+    }
+  };
+
   const clearQueue = () => {
     if (!confirmClear) {
       setConfirmClear(true);
@@ -112,82 +124,137 @@ export function PersistentMusicPlayer({
           <div className="music-player-source-editor__header">
             <span className="music-player-source-editor__handle" aria-hidden="true" />
             <div>
-              <span className="persistent-music-player__eyebrow">Add songs or a playlist</span>
-              <strong>Build your little radio</strong>
+              <span className="persistent-music-player__eyebrow">Our little radio</span>
+              <strong>Find, paste, or arrange songs</strong>
             </div>
             <button type="button" className="music-player-collapse focus-ring-premium" onClick={() => onExpandedChange(false)} aria-label="Collapse player">
               <ChevronDown className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
 
-          <form onSubmit={onSourceSubmit} className="music-player-source-form">
-            <label className="sr-only" htmlFor="music-youtube-url">One or more YouTube video or playlist links</label>
-            <textarea
-              ref={inputRef}
-              id="music-youtube-url"
-              value={sourceInput}
-              onChange={(event) => onSourceInputChange(event.target.value)}
-              placeholder="Paste one or more YouTube links"
-              inputMode="url"
-              autoComplete="url"
-              rows={2}
-              autoFocus={!track}
-              aria-invalid={Boolean(sourceError)}
-              aria-describedby={sourceError ? "music-source-error" : sourceFeedback ? "music-source-feedback" : undefined}
-            />
-            <div className="music-player-source-form__actions">
-              <button type="submit" className="music-player-add focus-ring-premium" disabled={!sourceInput.trim()}>
-                <Plus className="h-4 w-4" aria-hidden="true" /> Add to queue
-              </button>
-              <button type="button" className="music-player-replace focus-ring-premium" onClick={onReplaceQueue} disabled={!sourceInput.trim()}>
-                <RefreshCw className="h-4 w-4" aria-hidden="true" /> Replace queue
-              </button>
-            </div>
-          </form>
-          {sourceError && <p id="music-source-error" className="music-player-source-error" role="status">{sourceError}</p>}
-          {sourceFeedback && <p id="music-source-feedback" className="music-player-source-feedback" data-tone={sourceFeedback.tone} role="status">{sourceFeedback.message}</p>}
-
-          <div className="music-queue">
-            <div className="music-queue__header">
-              <div>
-                <span className="persistent-music-player__eyebrow">Queue</span>
-                <strong>{queueStatus}</strong>
-              </div>
-              {tracks.length > 0 && (
-                <button type="button" className="music-queue-clear focus-ring-premium" data-confirm={confirmClear} onClick={clearQueue}>
-                  <Trash2 className="h-4 w-4" aria-hidden="true" />
-                  {confirmClear ? "Confirm clear" : "Clear"}
-                </button>
-              )}
-            </div>
-            {tracks.length === 0 ? (
-              <div className="music-queue-empty">
-                <ListMusic className="h-5 w-5" aria-hidden="true" />
-                <span>Add a song to your little radio</span>
-              </div>
-            ) : (
-              <ol className="music-queue-list" aria-label={`${tracks.length} songs in queue`}>
-                {tracks.map((queueTrack, index) => (
-                  <li key={queueTrack.id} className="music-queue-row" data-selected={index === selectedIndex} data-unavailable={queueTrack.unavailable || undefined}>
-                    <button type="button" className="music-queue-row__select focus-ring-premium" onClick={() => onSelectTrack(index)} aria-current={index === selectedIndex ? "true" : undefined}>
-                      <VinylRecord track={queueTrack} selected={index === selectedIndex} playing={index === selectedIndex && isPlaying} compact />
-                      <span className="music-queue-row__position">{index + 1}</span>
-                      <span className="music-queue-row__copy">
-                        <strong>{queueTrack.title}</strong>
-                        <span>{queueTrack.unavailable ? "Unavailable" : queueTrack.artist ?? "YouTube"}</span>
-                      </span>
-                    </button>
-                    <button type="button" className="music-queue-row__remove focus-ring-premium" onClick={() => onRemoveTrack(queueTrack.id)} aria-label={`Remove ${queueTrack.title} from queue`}>
-                      <X className="h-4 w-4" aria-hidden="true" />
-                    </button>
-                  </li>
-                ))}
-              </ol>
-            )}
+          <div className="music-source-tabs" role="tablist" aria-label="Music sources">
+            <button
+              id="music-tab-search"
+              type="button"
+              role="tab"
+              aria-selected={activeSection === "search"}
+              aria-controls="music-panel-search"
+              className="focus-ring-premium"
+              onClick={() => changeSection("search")}
+            >
+              <Search aria-hidden="true" /> Search
+            </button>
+            <button
+              id="music-tab-paste"
+              type="button"
+              role="tab"
+              aria-selected={activeSection === "paste"}
+              aria-controls="music-panel-paste"
+              className="focus-ring-premium"
+              onClick={() => changeSection("paste")}
+            >
+              <Link2 aria-hidden="true" /> Paste Link
+            </button>
+            <button
+              id="music-tab-queue"
+              type="button"
+              role="tab"
+              aria-selected={activeSection === "queue"}
+              aria-controls="music-panel-queue"
+              className="focus-ring-premium"
+              onClick={() => changeSection("queue")}
+            >
+              <ListMusic aria-hidden="true" /> Queue <span>{tracks.length}</span>
+            </button>
           </div>
+
+          {activeSection === "search" && (
+            <MusicSearchPanel
+              tracks={tracks}
+              onAdd={onAddSearchResult}
+              onPlayNow={onPlaySearchResult}
+              onOpenPaste={() => changeSection("paste")}
+            />
+          )}
+
+          {activeSection === "paste" && (
+            <section id="music-panel-paste" className="music-source-panel" role="tabpanel" aria-labelledby="music-tab-paste">
+              <div className="music-source-panel__intro">
+                <span className="persistent-music-player__eyebrow">Paste Link</span>
+                <h3>Add a video or playlist you already love</h3>
+              </div>
+              <form onSubmit={onSourceSubmit} className="music-player-source-form">
+                <label className="sr-only" htmlFor="music-youtube-url">One or more YouTube video or playlist links</label>
+                <textarea
+                  ref={inputRef}
+                  id="music-youtube-url"
+                  value={sourceInput}
+                  onChange={(event) => onSourceInputChange(event.target.value)}
+                  placeholder="Paste one or more YouTube links"
+                  inputMode="url"
+                  autoComplete="url"
+                  rows={2}
+                  aria-invalid={Boolean(sourceError)}
+                  aria-describedby={sourceError ? "music-source-error" : sourceFeedback ? "music-source-feedback" : undefined}
+                />
+                <div className="music-player-source-form__actions">
+                  <button type="submit" className="music-player-add focus-ring-premium" disabled={!sourceInput.trim()}>
+                    <Plus className="h-4 w-4" aria-hidden="true" /> Add to queue
+                  </button>
+                  <button type="button" className="music-player-replace focus-ring-premium" onClick={onReplaceQueue} disabled={!sourceInput.trim()}>
+                    <RefreshCw className="h-4 w-4" aria-hidden="true" /> Replace queue
+                  </button>
+                </div>
+              </form>
+              {sourceError && <p id="music-source-error" className="music-player-source-error" role="status">{sourceError}</p>}
+              {sourceFeedback && <p id="music-source-feedback" className="music-player-source-feedback" data-tone={sourceFeedback.tone} role="status">{sourceFeedback.message}</p>}
+            </section>
+          )}
+
+          {activeSection === "queue" && (
+            <section id="music-panel-queue" className="music-source-panel" role="tabpanel" aria-labelledby="music-tab-queue">
+              <div className="music-queue">
+                <div className="music-queue__header">
+                  <div>
+                    <span className="persistent-music-player__eyebrow">Queue</span>
+                    <strong>{queueStatus}</strong>
+                  </div>
+                  {tracks.length > 0 && (
+                    <button type="button" className="music-queue-clear focus-ring-premium" data-confirm={confirmClear} onClick={clearQueue}>
+                      <Trash2 className="h-4 w-4" aria-hidden="true" />
+                      {confirmClear ? "Confirm clear" : "Clear"}
+                    </button>
+                  )}
+                </div>
+                {tracks.length === 0 ? (
+                  <div className="music-queue-empty">
+                    <ListMusic className="h-5 w-5" aria-hidden="true" />
+                    <span>Add a song to your little radio</span>
+                  </div>
+                ) : (
+                  <ol className="music-queue-list" aria-label={`${tracks.length} songs in queue`}>
+                    {tracks.map((queueTrack, index) => (
+                      <li key={queueTrack.id} className="music-queue-row" data-selected={index === selectedIndex} data-unavailable={queueTrack.unavailable || undefined}>
+                        <button type="button" className="music-queue-row__select focus-ring-premium" onClick={() => onSelectTrack(index)} aria-current={index === selectedIndex ? "true" : undefined}>
+                          <VinylRecord track={queueTrack} selected={index === selectedIndex} playing={index === selectedIndex && isPlaying} compact />
+                          <span className="music-queue-row__position">{index + 1}</span>
+                          <span className="music-queue-row__copy">
+                            <strong>{queueTrack.title}</strong>
+                            <span>{queueTrack.unavailable ? "Unavailable" : queueTrack.artist ?? "YouTube"}</span>
+                          </span>
+                        </button>
+                        <button type="button" className="music-queue-row__remove focus-ring-premium" onClick={() => onRemoveTrack(queueTrack.id)} aria-label={`Remove ${queueTrack.title} from queue`}>
+                          <X className="h-4 w-4" aria-hidden="true" />
+                        </button>
+                      </li>
+                    ))}
+                  </ol>
+                )}
+              </div>
+            </section>
+          )}
         </div>
       )}
-
       <div className="persistent-music-player__dock">
         <div className="persistent-music-player__vinyl">
           <VinylRecord track={track} selected={Boolean(track)} playing={isPlaying} compact />
@@ -195,7 +262,7 @@ export function PersistentMusicPlayer({
         <div className="persistent-music-player__copy">
           <span className="persistent-music-player__eyebrow">Our Little Radio</span>
           <strong>{track?.title ?? "Choose something to play"}</strong>
-          <span>{track ? `${selectedIndex + 1} of ${tracks.length} · ${track.unavailable ? "Unavailable" : track.artist ?? "YouTube"}` : "Add a song to begin"}</span>
+          <span>{track ? `${selectedIndex + 1} of ${tracks.length} - ${track.unavailable ? "Unavailable" : track.artist ?? "YouTube"}` : "Add a song to begin"}</span>
         </div>
         <div className="persistent-music-player__controls">
           <button type="button" className="music-player-icon focus-ring-premium" onClick={onPrevious} disabled={!hasPrevious} aria-label="Previous track"><SkipBack className="h-4 w-4" aria-hidden="true" /></button>
@@ -214,7 +281,10 @@ export function PersistentMusicPlayer({
           ref={expandButtonRef}
           type="button"
           className="music-player-change focus-ring-premium"
-          onClick={() => onExpandedChange(!expanded)}
+          onClick={() => {
+            if (!expanded) setActiveSection("search");
+            onExpandedChange(!expanded);
+          }}
           aria-expanded={expanded}
           aria-controls="music-source-editor"
           aria-label={expanded ? "Collapse music queue" : "Open music queue"}

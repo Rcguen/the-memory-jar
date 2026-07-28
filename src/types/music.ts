@@ -25,6 +25,34 @@ export type MusicTrack = {
   source: MusicSource;
 };
 
+export type YouTubeMusicSearchResult = {
+  videoId: string;
+  title: string;
+  channelTitle: string;
+  thumbnailUrl: string;
+  publishedAt?: string;
+};
+
+export type YouTubeMusicSearchErrorCode =
+  | "INVALID_QUERY"
+  | "UNAUTHENTICATED"
+  | "NOT_CONFIGURED"
+  | "QUOTA_EXCEEDED"
+  | "UPSTREAM_UNAVAILABLE";
+
+export type YouTubeMusicSearchResponse =
+  | {
+      ok: true;
+      query: string;
+      results: YouTubeMusicSearchResult[];
+      cached: boolean;
+    }
+  | {
+      ok: false;
+      code: YouTubeMusicSearchErrorCode;
+      message: string;
+    };
+
 export type ParsedYouTubeUrl =
   | { kind: "youtube-video"; videoId: string }
   | { kind: "youtube-playlist"; playlistId: string; videoId?: string }

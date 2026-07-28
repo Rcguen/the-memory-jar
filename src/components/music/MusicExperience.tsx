@@ -3,8 +3,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useMusicQueue } from "@/hooks/useMusicQueue";
+import { musicTrackFromSearchResult } from "@/lib/music/youtube-search";
 import { parseYouTubeLinks, youtubeArtworkCandidates } from "@/lib/music/youtube-url";
-import type { MusicPlayerController, MusicPlayerSnapshot, MusicTrack } from "@/types/music";
+import type {
+  MusicPlayerController,
+  MusicPlayerSnapshot,
+  MusicTrack,
+  YouTubeMusicSearchResult,
+} from "@/types/music";
 import { OrbitingTrackCarousel } from "./OrbitingTrackCarousel";
 import { PersistentMusicPlayer } from "./PersistentMusicPlayer";
 import { YouTubeMusicPlayer } from "./YouTubeMusicPlayer";
@@ -82,6 +88,7 @@ export function MusicExperience({ paused, onClose }: { paused: boolean; onClose:
   const [controller, setController] = useState<MusicPlayerController | null>(null);
   const [isPlayerExpanded, setPlayerExpanded] = useState(false);
   const handledEndedTrackRef = useRef<string | null>(null);
+  const pendingPlayTrackIdRef = useRef<string | null>(null);
   const {
     tracks,
     selectedIndex,
@@ -127,6 +134,30 @@ export function MusicExperience({ paused, onClose }: { paused: boolean; onClose:
   }, [submitSources]);
 
   const handleReplace = useCallback(() => submitSources("replace"), [submitSources]);
+  const handleAddSearchResult = useCallback((searchResult: YouTubeMusicSearchResult) => {
+    const previousIndex = selectedIndex;
+    const result = appendTracks([musicTrackFromSearchResult(searchResult)]);
+    if (tracks.length > 0) selectTrack(previousIndex);
+    if (process.env.NODE_ENV === "development" && result.duplicates > 0) {
+      console.debug("[music-search-client]", { queueDuplicatePreventedCount: result.duplicates });
+    }
+  }, [appendTracks, selectTrack, selectedIndex, tracks.length]);
+
+  const handlePlaySearchResult = useCallback((searchResult: YouTubeMusicSearchResult) => {
+    const trackToPlay = musicTrackFromSearchResult(searchResult);
+    const result = appendTracks([trackToPlay]);
+    pendingPlayTrackIdRef.current = trackToPlay.id;
+    selectTrack(result.selectedIndex);
+
+    if (selectedTrack?.id === trackToPlay.id && controller) {
+      pendingPlayTrackIdRef.current = null;
+      void controller.play();
+    }
+    if (process.env.NODE_ENV === "development" && result.duplicates > 0) {
+      console.debug("[music-search-client]", { queueDuplicatePreventedCount: result.duplicates });
+    }
+  }, [appendTracks, controller, selectTrack, selectedTrack?.id]);
+
   const receiveSnapshot = useCallback((next: MusicPlayerSnapshot) => setSnapshot(next), []);
   const receiveController = useCallback((next: MusicPlayerController) => setController(next), []);
 
@@ -140,11 +171,21 @@ export function MusicExperience({ paused, onClose }: { paused: boolean; onClose:
   useEffect(() => {
     const videoId = snapshot.videoData?.videoId;
     if (!videoId) return;
+    if (selectedTrack?.videoId === videoId && selectedTrack.metadataStatus === "provided") return;
     updateTrackMetadata(videoId, {
       title: snapshot.videoData?.title,
       artist: snapshot.videoData?.author,
     });
-  }, [snapshot.videoData, updateTrackMetadata]);
+  }, [selectedTrack, snapshot.videoData, updateTrackMetadata]);
+
+  useEffect(() => {
+    const pendingTrackId = pendingPlayTrackIdRef.current;
+    if (!pendingTrackId || !controller || selectedTrack?.id !== pendingTrackId) return;
+    if (snapshot.sourceKey !== trackSourceKey(selectedTrack)) return;
+    if (snapshot.state !== "ready" && snapshot.state !== "paused") return;
+    pendingPlayTrackIdRef.current = null;
+    void controller.play();
+  }, [controller, selectedTrack, snapshot.sourceKey, snapshot.state]);
 
   useEffect(() => {
     if (snapshot.state !== "error" || !selectedTrack || snapshot.sourceKey !== trackSourceKey(selectedTrack)) return;
@@ -211,6 +252,8 @@ export function MusicExperience({ paused, onClose }: { paused: boolean; onClose:
             }}
             onSourceSubmit={handleAppend}
             onReplaceQueue={handleReplace}
+            onAddSearchResult={handleAddSearchResult}
+            onPlaySearchResult={handlePlaySearchResult}
             onSelectTrack={selectTrack}
             onRemoveTrack={removeTrack}
             onClearQueue={clearQueue}
