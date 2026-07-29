@@ -1,9 +1,10 @@
 ﻿"use client";
 
-import { ChevronDown, Link2, ListMusic, Pause, Play, Plus, RefreshCw, Search, Settings2, SkipBack, SkipForward, Trash2, X } from "lucide-react";
+import { ChevronDown, HeartHandshake, Link2, ListMusic, Pause, Play, Plus, RefreshCw, Search, Settings2, SkipBack, SkipForward, Trash2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { FormEventHandler } from "react";
-import type { MusicPlayerController, MusicPlayerSnapshot, MusicTrack, YouTubeMusicSearchResult } from "@/types/music";
+import type { ListeningRoom, MusicPlayerController, MusicPlayerSnapshot, MusicTrack, YouTubeMusicSearchResult } from "@/types/music";
+import { ListenTogetherPanel } from "./ListenTogetherPanel";
 import { MusicSearchPanel } from "./MusicSearchPanel";
 import { VinylRecord } from "./OrbitingTrackCard";
 
@@ -16,6 +17,8 @@ function formatTime(seconds: number) {
 
 export function PersistentMusicPlayer({
   tracks,
+  relationshipId,
+  onLoadRoomTrack,
   selectedIndex,
   track,
   snapshot,
@@ -41,6 +44,8 @@ export function PersistentMusicPlayer({
   onClose,
 }: {
   tracks: MusicTrack[];
+  relationshipId: string | null | undefined;
+  onLoadRoomTrack: (room: ListeningRoom) => void;
   selectedIndex: number;
   track: MusicTrack | null;
   snapshot: MusicPlayerSnapshot;
@@ -67,7 +72,7 @@ export function PersistentMusicPlayer({
 }) {
   const [scrubbing, setScrubbing] = useState<number | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
-  const [activeSection, setActiveSection] = useState<"search" | "paste" | "queue">("search");
+  const [activeSection, setActiveSection] = useState<"search" | "paste" | "queue" | "together">("search");
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const expandButtonRef = useRef<HTMLButtonElement | null>(null);
   const previousExpandedRef = useRef(expanded);
@@ -100,7 +105,7 @@ export function PersistentMusicPlayer({
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [confirmClear, expanded, onClose, onExpandedChange]);
 
-  const changeSection = (section: "search" | "paste" | "queue") => {
+  const changeSection = (section: "search" | "paste" | "queue" | "together") => {
     setActiveSection(section);
     if (section === "paste") {
       window.requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }));
@@ -166,6 +171,17 @@ export function PersistentMusicPlayer({
             >
               <ListMusic aria-hidden="true" /> Queue <span>{tracks.length}</span>
             </button>
+            <button
+              id="music-tab-together"
+              type="button"
+              role="tab"
+              aria-selected={activeSection === "together"}
+              aria-controls="music-panel-together"
+              className="focus-ring-premium"
+              onClick={() => changeSection("together")}
+            >
+              <HeartHandshake aria-hidden="true" /> Together
+            </button>
           </div>
 
           {activeSection === "search" && (
@@ -209,6 +225,16 @@ export function PersistentMusicPlayer({
               {sourceError && <p id="music-source-error" className="music-player-source-error" role="status">{sourceError}</p>}
               {sourceFeedback && <p id="music-source-feedback" className="music-player-source-feedback" data-tone={sourceFeedback.tone} role="status">{sourceFeedback.message}</p>}
             </section>
+          )}
+
+          {activeSection === "together" && (
+            <ListenTogetherPanel
+              relationshipId={relationshipId}
+              currentTrack={track}
+              snapshot={snapshot}
+              tracks={tracks}
+              onLoadRoomTrack={onLoadRoomTrack}
+            />
           )}
 
           {activeSection === "queue" && (

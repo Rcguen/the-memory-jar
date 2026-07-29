@@ -861,7 +861,7 @@
 
 .music-source-tabs {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.25rem;
   margin-top: 0.7rem;
   border: 1px solid color-mix(in srgb, var(--jar-paper) 12%, transparent);
@@ -1346,4 +1346,77 @@
   .music-search-result__actions button,
   .music-queue-clear,
   .music-queue-row__remove { transition-duration: 0ms; }
+}
+
+.listening-room-panel { min-height: 10rem; }
+.listening-room-empty,
+.listening-room-loading {
+  display: grid;
+  min-height: 10rem;
+  place-items: center;
+  align-content: center;
+  gap: 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--jar-paper) 12%, transparent);
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--surface-base) 32%, transparent);
+  padding: 1rem;
+  text-align: center;
+}
+.listening-room-empty > svg,
+.listening-room-loading > svg { width: 1.35rem; height: 1.35rem; color: color-mix(in srgb, var(--accent-primary) 74%, white); }
+.listening-room-loading > svg,
+.listening-room-button > svg[data-lucide="loader-circle"] { animation: vinyl-spin 900ms linear infinite; }
+.listening-room-empty h3,
+.listening-room-card h3 { margin: 0; font-family: var(--font-cormorant), serif; font-size: 1.15rem; }
+.listening-room-empty p,
+.listening-room-card p,
+.listening-room-load p,
+.listening-room-confirm p { margin: 0; color: color-mix(in srgb, var(--jar-paper) 66%, transparent); font-size: 0.72rem; line-height: 1.45; }
+.listening-room-note,
+.listening-room-error { max-width: 30rem; margin: 0.2rem 0 0; font-size: 0.68rem; line-height: 1.4; }
+.listening-room-note { color: color-mix(in srgb, var(--jar-paper) 60%, transparent); }
+.listening-room-error { color: #ffd4d4; }
+.listening-room-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--accent-primary) 24%, var(--jar-paper) 10%);
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--surface-base) 42%, transparent);
+  padding: 0.75rem;
+}
+.listening-room-card__record { display: grid; width: 3.5rem; place-items: center; }
+.listening-room-card__record .vinyl-record { width: 3.25rem; }
+.listening-room-card__copy { min-width: 0; }
+.listening-room-card__copy h3 { overflow: hidden; margin-top: 0.12rem; text-overflow: ellipsis; white-space: nowrap; }
+.listening-room-presence { display: flex; align-items: center; gap: 0.35rem; margin-top: 0.5rem; color: color-mix(in srgb, var(--jar-paper) 72%, transparent); font-size: 0.64rem; }
+.listening-room-presence svg { width: 0.9rem; height: 0.9rem; }
+.listening-room-role { margin-left: 0.15rem; border-left: 1px solid color-mix(in srgb, var(--jar-paper) 16%, transparent); padding-left: 0.5rem; color: color-mix(in srgb, var(--accent-primary) 72%, white); }
+.listening-room-load,
+.listening-room-confirm { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-top: 0.55rem; border-radius: 0.65rem; background: color-mix(in srgb, var(--jar-paper) 5%, transparent); padding: 0.55rem 0.65rem; }
+.listening-room-actions,
+.listening-room-confirm > div { display: flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.6rem; }
+.listening-room-confirm > div { margin-top: 0; }
+.listening-room-button { display: inline-flex; min-height: 2.75rem; align-items: center; justify-content: center; gap: 0.4rem; border: 1px solid color-mix(in srgb, var(--jar-paper) 18%, transparent); border-radius: 999px; padding: 0.45rem 0.8rem; color: var(--jar-paper); font-size: 0.69rem; font-weight: 700; transition: transform 150ms cubic-bezier(0.23, 1, 0.32, 1), opacity 150ms ease, background-color 150ms ease; }
+.listening-room-button svg { width: 0.95rem; height: 0.95rem; }
+.listening-room-button:active { transform: scale(0.97); }
+.listening-room-button:disabled { cursor: not-allowed; opacity: 0.44; }
+.listening-room-button--primary { border-color: transparent; background: var(--accent-primary); color: white; }
+.listening-room-button--quiet { color: color-mix(in srgb, var(--jar-paper) 68%, transparent); }
+.listening-room-button--danger { border-color: color-mix(in srgb, #ff9a9a 40%, transparent); color: #ffd4d4; }
+
+@media (max-width: 767px) {
+  .music-source-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .listening-room-load,
+  .listening-room-confirm { align-items: stretch; flex-direction: column; }
+  .listening-room-actions,
+  .listening-room-confirm > div { display: grid; grid-template-columns: minmax(0, 1fr); }
+  .listening-room-button { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .listening-room-loading > svg,
+  .listening-room-button > svg[data-lucide="loader-circle"] { animation: none; }
+  .listening-room-button { transition-duration: 0ms; }
 }

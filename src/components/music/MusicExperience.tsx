@@ -3,9 +3,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useMusicQueue } from "@/hooks/useMusicQueue";
+import { useRelationshipContext } from "@/hooks/useRelationshipContext";
+import { musicTrackFromListeningRoom } from "@/lib/music/listening-room";
 import { musicTrackFromSearchResult } from "@/lib/music/youtube-search";
 import { parseYouTubeLinks, youtubeArtworkCandidates } from "@/lib/music/youtube-url";
 import type {
+  ListeningRoom,
   MusicPlayerController,
   MusicPlayerSnapshot,
   MusicTrack,
@@ -81,6 +84,7 @@ function playlistTracks(playlistId: string, videoIds: string[]): MusicTrack[] {
 }
 
 export function MusicExperience({ paused, onClose }: { paused: boolean; onClose: () => void }) {
+  const { data: relationshipContext } = useRelationshipContext();
   const [input, setInput] = useState("");
   const [inputError, setInputError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<SourceFeedback>(null);
@@ -158,6 +162,13 @@ export function MusicExperience({ paused, onClose }: { paused: boolean; onClose:
     }
   }, [appendTracks, controller, selectTrack, selectedTrack?.id]);
 
+  const handleLoadRoomTrack = useCallback((room: ListeningRoom) => {
+    const roomTrack = musicTrackFromListeningRoom(room);
+    if (!roomTrack) return;
+    const result = appendTracks([roomTrack]);
+    selectTrack(result.selectedIndex);
+  }, [appendTracks, selectTrack]);
+
   const receiveSnapshot = useCallback((next: MusicPlayerSnapshot) => setSnapshot(next), []);
   const receiveController = useCallback((next: MusicPlayerController) => setController(next), []);
 
@@ -233,6 +244,8 @@ export function MusicExperience({ paused, onClose }: { paused: boolean; onClose:
         createPortal(
           <PersistentMusicPlayer
             tracks={tracks}
+            relationshipId={relationshipContext?.relationshipId}
+            onLoadRoomTrack={handleLoadRoomTrack}
             selectedIndex={selectedIndex}
             track={selectedTrack}
             snapshot={snapshot}

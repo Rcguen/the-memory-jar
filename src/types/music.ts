@@ -80,3 +80,55 @@ export type MusicPlayerController = {
   pause: () => void;
   seek: (seconds: number) => void;
 };
+
+export type ListeningRoomSourceKind = "youtube_video" | "youtube_playlist";
+export type ListeningRoomPlaybackState = "idle" | "playing" | "paused" | "buffering" | "ended";
+export type ListeningRoomParticipantRole = "host" | "listener";
+
+export type ListeningRoom = {
+  id: string;
+  relationshipId: string;
+  hostId: string;
+  sourceKind: ListeningRoomSourceKind | null;
+  videoId: string | null;
+  playlistId: string | null;
+  playlistIndex: number | null;
+  playbackState: ListeningRoomPlaybackState;
+  positionSeconds: number;
+  revision: number;
+  stateChangedAt: string;
+  createdAt: string;
+  updatedAt: string;
+  endedAt: string | null;
+  endedBy: string | null;
+};
+
+export type ListeningRoomParticipant = {
+  roomId: string;
+  profileId: string;
+  role: ListeningRoomParticipantRole;
+  joinedAt: string;
+  leftAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ListeningRoomTrackSnapshot = {
+  sourceKind: ListeningRoomSourceKind;
+  videoId: string;
+  playlistId: string | null;
+  playlistIndex: number | null;
+  playbackState: Exclude<ListeningRoomPlaybackState, "ended">;
+  positionSeconds: number;
+};
+
+export type ListeningRoomErrorCode =
+  | "NO_ACTIVE_RELATIONSHIP"
+  | "ROOM_ALREADY_ACTIVE"
+  | "ROOM_NOT_FOUND"
+  | "ROOM_ENDED"
+  | "NOT_RELATIONSHIP_MEMBER"
+  | "HOST_ONLY"
+  | "NOT_JOINED"
+  | "INVALID_TRACK"
+  | "UNKNOWN";
