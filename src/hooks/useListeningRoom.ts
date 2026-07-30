@@ -44,6 +44,7 @@ export function useListeningRoom({
     queryFn: () => getActiveListeningRoom(relationshipId!),
     enabled: enabled && Boolean(relationshipId),
     staleTime: 0,
+    retry: 1,
     refetchOnWindowFocus: false,
     refetchInterval: false,
   });
@@ -54,6 +55,7 @@ export function useListeningRoom({
     queryFn: () => getListeningRoomParticipants(room!.id),
     enabled: enabled && Boolean(room?.id),
     staleTime: 0,
+    retry: 1,
     refetchOnWindowFocus: false,
     refetchInterval: false,
   });
