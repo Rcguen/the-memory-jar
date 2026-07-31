@@ -44,6 +44,7 @@ function trackFromParsed(
 
   return {
     id: `playlist:${parsed.playlistId}`,
+    videoId: parsed.videoId,
     playlistId: parsed.playlistId,
     title: "YouTube playlist",
     artist: "Playlist",
@@ -84,7 +85,8 @@ function playlistTracks(playlistId: string, videoIds: string[]): MusicTrack[] {
 }
 
 export function MusicExperience({ paused, onClose }: { paused: boolean; onClose: () => void }) {
-  const { data: relationshipContext } = useRelationshipContext();
+  const relationshipContextQuery = useRelationshipContext();
+  const relationshipContext = relationshipContextQuery.data;
   const [input, setInput] = useState("");
   const [inputError, setInputError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<SourceFeedback>(null);
@@ -245,6 +247,7 @@ export function MusicExperience({ paused, onClose }: { paused: boolean; onClose:
           <PersistentMusicPlayer
             tracks={tracks}
             relationshipId={relationshipContext?.relationshipId}
+            relationshipLoading={relationshipContextQuery.isPending}
             onLoadRoomTrack={handleLoadRoomTrack}
             selectedIndex={selectedIndex}
             track={selectedTrack}

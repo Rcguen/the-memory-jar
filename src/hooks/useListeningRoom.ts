@@ -9,6 +9,7 @@ import {
   getListeningRoomParticipants,
   joinListeningRoom,
   leaveListeningRoom,
+  ListeningRoomServiceError,
 } from "@/services/listening-room";
 import type {
   ListeningRoom,
@@ -17,6 +18,23 @@ import type {
 } from "@/types/music";
 
 const EMPTY_PARTICIPANTS: ListeningRoomParticipant[] = [];
+
+const createRoomCounters = {
+  mutationInvoked: 0,
+  mutationSuccess: 0,
+  mutationError: 0,
+};
+
+function recordCreateRoomEvent(
+  event: "mutationInvoked" | "mutationSuccess" | "mutationError",
+): void {
+  if (process.env.NODE_ENV !== "development") return;
+  createRoomCounters[event] += 1;
+  console.debug("[listening-room] create flow", {
+    event,
+    count: createRoomCounters[event],
+  });
+}
 
 export const listeningRoomKeys = {
   active: (relationshipId: string | null | undefined) => [
@@ -71,17 +89,33 @@ export function useListeningRoom({
   };
 
   const createMutation = useMutation({
-    mutationFn: (snapshot: ListeningRoomTrackSnapshot) =>
-      createListeningRoom(relationshipId ?? "", snapshot),
+    mutationFn: (snapshot: ListeningRoomTrackSnapshot) => {
+      recordCreateRoomEvent("mutationInvoked");
+      return createListeningRoom(relationshipId ?? "", snapshot);
+    },
     onSuccess: async (createdRoom) => {
+      recordCreateRoomEvent("mutationSuccess");
       queryClient.setQueryData<ListeningRoom>(
         listeningRoomKeys.active(relationshipId),
         createdRoom,
       );
       await invalidateParticipants(createdRoom.id);
     },
-    onError: async () => {
-      await queryClient.invalidateQueries({ queryKey: listeningRoomKeys.active(relationshipId) });
+    onError: async (error) => {
+      recordCreateRoomEvent("mutationError");
+      if (
+        error instanceof ListeningRoomServiceError
+        && error.code === "ROOM_ALREADY_ACTIVE"
+      ) {
+        await queryClient.refetchQueries({
+          queryKey: listeningRoomKeys.active(relationshipId),
+          type: "active",
+        });
+        return;
+      }
+      await queryClient.invalidateQueries({
+        queryKey: listeningRoomKeys.active(relationshipId),
+      });
     },
   });
 

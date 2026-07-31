@@ -35,6 +35,12 @@ function asNullableNonnegativeInteger(value: unknown): number | null {
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
 }
 
+function asSafeYouTubeIdentifier(value: unknown): string | null {
+  return typeof value === "string" && /^[A-Za-z0-9_-]{6,}$/.test(value)
+    ? value
+    : null;
+}
+
 function asSourceKind(value: unknown): ListeningRoomSourceKind | null {
   return value === "youtube_video" || value === "youtube_playlist" ? value : null;
 }
@@ -113,7 +119,11 @@ export function createListeningRoomSnapshot(
   track: MusicTrack | null,
   snapshot: MusicPlayerSnapshot,
 ): ListeningRoomTrackSnapshot | null {
-  if (!track?.videoId) return null;
+  if (!track) return null;
+  const videoId = asSafeYouTubeIdentifier(track.source.videoId)
+    ?? asSafeYouTubeIdentifier(track.videoId);
+  if (!videoId) return null;
+
   const snapshotMatchesTrack = snapshot.sourceKey === trackSourceKey(track);
   const playbackState = snapshotMatchesTrack ? roomPlaybackState(snapshot) : "paused";
   const positionSeconds = snapshotMatchesTrack ? asNonnegativeNumber(snapshot.currentTime) : 0;
@@ -121,7 +131,7 @@ export function createListeningRoomSnapshot(
   if (track.source.kind === "youtube-video") {
     return {
       sourceKind: "youtube_video",
-      videoId: track.videoId,
+      videoId,
       playlistId: null,
       playlistIndex: null,
       playbackState,
@@ -129,11 +139,15 @@ export function createListeningRoomSnapshot(
     };
   }
 
+  const playlistId = asSafeYouTubeIdentifier(track.source.playlistId);
+  const playlistIndex = asNullableNonnegativeInteger(track.source.playlistIndex);
+  if (!playlistId || playlistIndex === null) return null;
+
   return {
     sourceKind: "youtube_playlist",
-    videoId: track.videoId,
-    playlistId: track.source.playlistId,
-    playlistIndex: Math.max(0, track.source.playlistIndex),
+    videoId,
+    playlistId,
+    playlistIndex,
     playbackState,
     positionSeconds,
   };

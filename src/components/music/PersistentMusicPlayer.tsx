@@ -18,6 +18,7 @@ function formatTime(seconds: number) {
 export function PersistentMusicPlayer({
   tracks,
   relationshipId,
+  relationshipLoading,
   onLoadRoomTrack,
   selectedIndex,
   track,
@@ -45,6 +46,7 @@ export function PersistentMusicPlayer({
 }: {
   tracks: MusicTrack[];
   relationshipId: string | null | undefined;
+  relationshipLoading: boolean;
   onLoadRoomTrack: (room: ListeningRoom) => void;
   selectedIndex: number;
   track: MusicTrack | null;
@@ -230,6 +232,7 @@ export function PersistentMusicPlayer({
           {activeSection === "together" && (
             <ListenTogetherPanel
               relationshipId={relationshipId}
+              relationshipLoading={relationshipLoading}
               currentTrack={track}
               snapshot={snapshot}
               tracks={tracks}

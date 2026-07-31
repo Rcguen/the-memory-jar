@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   HeartHandshake,
   LoaderCircle,
@@ -18,6 +18,7 @@ import {
 import { useAuth } from "@/providers/auth-provider";
 import type {
   ListeningRoom,
+  ListeningRoomTrackSnapshot,
   MusicPlayerSnapshot,
   MusicTrack,
 } from "@/types/music";
@@ -29,14 +30,35 @@ function errorMessage(error: unknown): string {
     : "The listening room could not be updated. Please try again.";
 }
 
+type StartRoomBlock = "no-track" | "no-relationship" | "invalid-source";
+
+const startRoomCounters = {
+  startButtonClick: 0,
+  blockedNoTrack: 0,
+  blockedNoRelationship: 0,
+};
+
+function recordStartRoomEvent(
+  event: "startButtonClick" | "blockedNoTrack" | "blockedNoRelationship",
+): void {
+  if (process.env.NODE_ENV !== "development") return;
+  startRoomCounters[event] += 1;
+  console.debug("[listening-room] start interaction", {
+    event,
+    count: startRoomCounters[event],
+  });
+}
+
 export function ListenTogetherPanel({
   relationshipId,
+  relationshipLoading,
   currentTrack,
   snapshot,
   tracks,
   onLoadRoomTrack,
 }: {
   relationshipId: string | null | undefined;
+  relationshipLoading: boolean;
   currentTrack: MusicTrack | null;
   snapshot: MusicPlayerSnapshot;
   tracks: MusicTrack[];
@@ -44,6 +66,8 @@ export function ListenTogetherPanel({
 }) {
   const { profile } = useAuth();
   const [confirmEnd, setConfirmEnd] = useState(false);
+  const startPendingRef = useRef(false);
+  const lastReportedBlockRef = useRef<StartRoomBlock | null>(null);
   const {
     room,
     participants,
@@ -86,20 +110,48 @@ export function ListenTogetherPanel({
     (participant) => participant.profileId !== profile?.id,
   );
   const pending = isCreating || isJoining || isLeaving || isEnding;
+  const startBlock = useMemo<StartRoomBlock | null>(() => {
+    if (relationshipLoading || !relationshipId) return "no-relationship";
+    if (!currentTrack) return "no-track";
+    if (!roomSnapshot) return "invalid-source";
+    return null;
+  }, [currentTrack, relationshipId, relationshipLoading, roomSnapshot]);
+  const startBlockMessage = startBlock === "no-track"
+    ? "Choose a song before opening the room."
+    : startBlock === "no-relationship"
+      ? relationshipLoading
+        ? "Your relationship is still getting ready."
+        : "Choose your relationship before opening the room."
+      : startBlock === "invalid-source"
+        ? "This song cannot open a listening room."
+        : null;
 
-  if (!relationshipId) {
-    return (
-      <section id="music-panel-together" className="music-source-panel listening-room-panel" role="tabpanel" aria-labelledby="music-tab-together">
-        <div className="listening-room-empty">
-          <HeartHandshake aria-hidden="true" />
-          <h3>Listen together</h3>
-          <p>Choose your relationship before opening a room for the two of you.</p>
-        </div>
-      </section>
-    );
-  }
+  useEffect(() => {
+    if (lastReportedBlockRef.current === startBlock) return;
+    lastReportedBlockRef.current = startBlock;
+    if (startBlock === "no-track") recordStartRoomEvent("blockedNoTrack");
+    if (startBlock === "no-relationship") {
+      recordStartRoomEvent("blockedNoRelationship");
+    }
+  }, [startBlock]);
 
-  if (roomQuery.isLoading) {
+  const submitStartRoom = useCallback(async (
+    validSnapshot: ListeningRoomTrackSnapshot,
+  ) => {
+    recordStartRoomEvent("startButtonClick");
+    if (startPendingRef.current) return;
+
+    startPendingRef.current = true;
+    try {
+      await createRoom(validSnapshot);
+    } catch {
+      // The mutation exposes a sanitized error through createError.
+    } finally {
+      startPendingRef.current = false;
+    }
+  }, [createRoom]);
+
+  if (relationshipId && roomQuery.isLoading) {
     return (
       <section id="music-panel-together" className="music-source-panel listening-room-panel" role="tabpanel" aria-labelledby="music-tab-together" aria-busy="true">
         <div className="listening-room-loading">
@@ -136,17 +188,17 @@ export function ListenTogetherPanel({
             Your music keeps playing here as it does now. This room simply gives
             your partner a private place to join.
           </p>
-          {!roomSnapshot && (
+          {startBlockMessage && (
             <p className="listening-room-note" role="status">
-              Choose a song first. A playlist also needs to finish loading its current song.
+              {startBlockMessage}
             </p>
           )}
           <button
             type="button"
             className="listening-room-button listening-room-button--primary focus-ring-premium"
-            disabled={!roomSnapshot || isCreating}
+            disabled={Boolean(startBlock) || isCreating}
             onClick={() => {
-              if (roomSnapshot) void createRoom(roomSnapshot);
+              if (roomSnapshot) void submitStartRoom(roomSnapshot);
             }}
           >
             {isCreating ? <LoaderCircle aria-hidden="true" /> : <Radio aria-hidden="true" />}
