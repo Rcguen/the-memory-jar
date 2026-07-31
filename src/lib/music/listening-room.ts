@@ -1,10 +1,12 @@
 import type {
   ListeningRoom,
   ListeningRoomParticipant,
+  ListeningRoomPlaybackCommand,
   ListeningRoomPlaybackState,
   ListeningRoomSourceKind,
   ListeningRoomTrackSnapshot,
   MusicPlayerSnapshot,
+  MusicSource,
   MusicTrack,
 } from "@/types/music";
 import { youtubeArtworkCandidates } from "./youtube-url";
@@ -45,13 +47,14 @@ function asSourceKind(value: unknown): ListeningRoomSourceKind | null {
   return value === "youtube_video" || value === "youtube_playlist" ? value : null;
 }
 
-function asPlaybackState(value: unknown): ListeningRoomPlaybackState {
-  return value === "playing"
+function asPlaybackState(value: unknown): ListeningRoomPlaybackState | null {
+  return value === "idle"
+    || value === "playing"
     || value === "paused"
     || value === "buffering"
     || value === "ended"
     ? value
-    : "idle";
+    : null;
 }
 
 export function mapListeningRoom(value: unknown): ListeningRoom | null {
@@ -61,19 +64,35 @@ export function mapListeningRoom(value: unknown): ListeningRoom | null {
   const id = asString(row.id);
   const relationshipId = asString(row.relationship_id);
   const hostId = asString(row.host_id);
-  if (!id || !relationshipId || !hostId) return null;
+  const sourceKind = asSourceKind(row.source_kind);
+  const videoId = row.video_id === null ? null : asSafeYouTubeIdentifier(row.video_id);
+  const playlistId = row.playlist_id === null ? null : asSafeYouTubeIdentifier(row.playlist_id);
+  const playlistIndex = row.playlist_index === null
+    ? null
+    : asNullableNonnegativeInteger(row.playlist_index);
+  const playbackState = asPlaybackState(row.playback_state);
+  const positionSeconds = asNonnegativeNumber(row.position_seconds);
+  const revision = asNullableNonnegativeInteger(row.revision);
+  const validSource =
+    (sourceKind === null && videoId === null && playlistId === null && playlistIndex === null)
+    || (sourceKind === "youtube_video" && videoId !== null && playlistId === null && playlistIndex === null)
+    || (sourceKind === "youtube_playlist" && videoId !== null && playlistId !== null && playlistIndex !== null);
+
+  if (!id || !relationshipId || !hostId || !playbackState || revision === null || !validSource) {
+    return null;
+  }
 
   return {
     id,
     relationshipId,
     hostId,
-    sourceKind: asSourceKind(row.source_kind),
-    videoId: asNullableString(row.video_id),
-    playlistId: asNullableString(row.playlist_id),
-    playlistIndex: asNullableNonnegativeInteger(row.playlist_index),
-    playbackState: asPlaybackState(row.playback_state),
-    positionSeconds: asNonnegativeNumber(row.position_seconds),
-    revision: asNonnegativeNumber(row.revision),
+    sourceKind,
+    videoId,
+    playlistId,
+    playlistIndex,
+    playbackState,
+    positionSeconds,
+    revision,
     stateChangedAt: asString(row.state_changed_at),
     createdAt: asString(row.created_at),
     updatedAt: asString(row.updated_at),
@@ -198,5 +217,44 @@ export function musicTrackFromListeningRoom(room: ListeningRoom): MusicTrack | n
     artworkUrl: youtubeArtworkCandidates(room.videoId)[0] ?? "",
     metadataStatus: "placeholder",
     source: { kind: "youtube-video", videoId: room.videoId },
+  };
+}
+export function musicSourceFromListeningRoom(room: ListeningRoom): MusicSource | null {
+  if (!room.videoId || !room.sourceKind) return null;
+  if (room.sourceKind === "youtube_video") {
+    return { kind: "youtube-video", videoId: room.videoId };
+  }
+  if (!room.playlistId || room.playlistIndex === null) return null;
+  return {
+    kind: "youtube-playlist-item",
+    videoId: room.videoId,
+    playlistId: room.playlistId,
+    playlistIndex: room.playlistIndex,
+  };
+}
+
+export function createListeningRoomTrackCommand(
+  kind: "track_change" | "next" | "previous",
+  expectedRevision: number,
+  track: MusicTrack,
+  resultingState: "playing" | "paused",
+): ListeningRoomPlaybackCommand | null {
+  const snapshot = createListeningRoomSnapshot(track, {
+    state: resultingState,
+    currentTime: 0,
+    duration: 0,
+    sourceKey: trackSourceKey(track),
+  });
+  if (!snapshot || snapshot.sourceKind === null) return null;
+
+  return {
+    kind,
+    expectedRevision,
+    sourceKind: snapshot.sourceKind,
+    videoId: snapshot.videoId,
+    playlistId: snapshot.playlistId,
+    playlistIndex: snapshot.playlistIndex,
+    positionSeconds: 0,
+    resultingState,
   };
 }

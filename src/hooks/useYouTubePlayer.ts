@@ -85,6 +85,8 @@ export function useYouTubePlayer(source: MusicSource | null) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const playerRef = useRef<YouTubePlayer | null>(null);
   const sourceRef = useRef(source);
+  const loadedSourceKeyRef = useRef<string | undefined>(undefined);
+  const snapshotRef = useRef<MusicPlayerSnapshot>({ state: "idle", currentTime: 0, duration: 0 });
   const readyRef = useRef(false);
   const metadataTimersRef = useRef<number[]>([]);
   const [snapshot, setSnapshot] = useState<MusicPlayerSnapshot>({
@@ -96,6 +98,10 @@ export function useYouTubePlayer(source: MusicSource | null) {
   useEffect(() => {
     sourceRef.current = source;
   }, [source]);
+
+  useEffect(() => {
+    snapshotRef.current = snapshot;
+  }, [snapshot]);
 
   const readPlayerData = useCallback(() => {
     const player = playerRef.current;
@@ -134,8 +140,12 @@ export function useYouTubePlayer(source: MusicSource | null) {
   }, [readPlayerData]);
 
   const cueSource = useCallback((nextSource: MusicSource | null) => {
+    sourceRef.current = nextSource;
     const player = playerRef.current;
     if (!player || !readyRef.current || !nextSource) return;
+
+    const nextSourceKey = sourceKey(nextSource);
+    if (loadedSourceKeyRef.current === nextSourceKey) return;
 
     const currentData = player.getVideoData?.();
     if (nextSource.kind === "youtube-video") {
@@ -150,6 +160,7 @@ export function useYouTubePlayer(source: MusicSource | null) {
       }
     }
 
+    loadedSourceKeyRef.current = nextSourceKey;
     setSnapshot((previous) => ({
       ...previous,
       state: "ready",
@@ -157,6 +168,7 @@ export function useYouTubePlayer(source: MusicSource | null) {
       duration: 0,
       error: undefined,
       sourceKey: sourceKey(nextSource),
+      autoplayBlocked: false,
     }));
     schedulePlayerDataReads();
   }, [schedulePlayerDataReads]);
@@ -181,7 +193,13 @@ export function useYouTubePlayer(source: MusicSource | null) {
           },
           onStateChange: (event: { data: number }) => {
             if (!alive) return;
-            setSnapshot((previous) => ({ ...previous, state: stateFromYouTube(event.data) }));
+            setSnapshot((previous) => ({
+              ...previous,
+              state: stateFromYouTube(event.data),
+              autoplayBlocked: event.data === YT.PlayerState.PLAYING
+                ? false
+                : previous.autoplayBlocked,
+            }));
             readPlayerData();
             if (event.data === YT.PlayerState.CUED || event.data === YT.PlayerState.PLAYING) {
               schedulePlayerDataReads();
@@ -195,6 +213,13 @@ export function useYouTubePlayer(source: MusicSource | null) {
               error: "This song is not available in the player.",
               sourceKey: sourceKey(sourceRef.current),
             }));
+          },
+          onAutoplayBlocked: () => {
+            if (!alive) return;
+            setSnapshot((previous) => ({ ...previous, autoplayBlocked: true }));
+            if (process.env.NODE_ENV === "development") {
+              console.debug("[music-youtube]", { autoplayBlockedCount: 1 });
+            }
           },
         },
       });
@@ -218,6 +243,7 @@ export function useYouTubePlayer(source: MusicSource | null) {
       metadataTimersRef.current = [];
       playerRef.current?.destroy();
       playerRef.current = null;
+      loadedSourceKeyRef.current = undefined;
       host.replaceChildren();
       if (process.env.NODE_ENV === "development") console.debug("[music-youtube]", { playerDestroys: 1 });
     };
@@ -233,21 +259,34 @@ export function useYouTubePlayer(source: MusicSource | null) {
     return () => window.clearInterval(timer);
   }, [readPlayerData, snapshot.state]);
 
-  const controller = useMemo<MusicPlayerController>(() => ({
-    play: async () => {
-      playerRef.current?.playVideo();
-      if (process.env.NODE_ENV === "development") console.debug("[music-youtube]", { plays: 1 });
-    },
-    pause: () => {
-      playerRef.current?.pauseVideo();
-      if (process.env.NODE_ENV === "development") console.debug("[music-youtube]", { pauses: 1 });
-    },
-    seek: (seconds) => {
+  const controller = useMemo<MusicPlayerController>(() => {
+    const seekTo = (seconds: number) => {
       playerRef.current?.seekTo(seconds, true);
       readPlayerData();
       if (process.env.NODE_ENV === "development") console.debug("[music-youtube]", { seeks: 1 });
-    },
-  }), [readPlayerData]);
+    };
+
+    return {
+      play: async () => {
+        playerRef.current?.playVideo();
+        if (process.env.NODE_ENV === "development") console.debug("[music-youtube]", { plays: 1 });
+      },
+      pause: () => {
+        playerRef.current?.pauseVideo();
+        setSnapshot((previous) => ({ ...previous, autoplayBlocked: false }));
+        if (process.env.NODE_ENV === "development") console.debug("[music-youtube]", { pauses: 1 });
+      },
+      seek: seekTo,
+      seekTo,
+      loadSource: cueSource,
+      getCurrentTime: () => playerRef.current?.getCurrentTime() ?? 0,
+      getDuration: () => playerRef.current?.getDuration() ?? 0,
+      getPlaybackState: () => snapshotRef.current.state,
+      getCurrentVideoId: () => playerRef.current?.getVideoData?.().video_id ?? null,
+      isReady: () => readyRef.current,
+      isBuffering: () => snapshotRef.current.state === "buffering",
+    };
+  }, [cueSource, readPlayerData]);
 
   return { hostRef, snapshot, controller };
 }

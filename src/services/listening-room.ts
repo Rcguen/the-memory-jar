@@ -9,6 +9,7 @@ import type {
   ListeningRoom,
   ListeningRoomErrorCode,
   ListeningRoomParticipant,
+  ListeningRoomPlaybackCommand,
   ListeningRoomTrackSnapshot,
 } from "@/types/music";
 
@@ -23,7 +24,8 @@ type ListeningRoomOperation =
   | "create_room"
   | "join_room"
   | "leave_room"
-  | "end_room";
+  | "end_room"
+  | "apply_command";
 
 export class ListeningRoomServiceError extends Error {
   constructor(
@@ -41,9 +43,11 @@ const ERROR_COPY: Record<ListeningRoomErrorCode, string> = {
   ROOM_NOT_FOUND: "This listening room is no longer available.",
   ROOM_ENDED: "This listening room has already ended.",
   NOT_RELATIONSHIP_MEMBER: "This listening room is private.",
-  HOST_ONLY: "Only the host can end this listening room.",
+  HOST_ONLY: "Only the host can guide this listening room.",
   NOT_JOINED: "You are not currently in this listening room.",
   INVALID_TRACK: "Choose a song before opening a listening room.",
+  INVALID_COMMAND: "That shared music action could not be applied.",
+  REVISION_CONFLICT: "The shared player changed. Please try that action again.",
   NOT_CONFIGURED: "Listening rooms are not available yet. Please try again later.",
   UNAUTHENTICATED: "Sign in again to open your listening room.",
   FORBIDDEN: "You do not have access to this listening room.",
@@ -122,6 +126,14 @@ function mapFailure(
     code = "NOT_RELATIONSHIP_MEMBER";
   } else if (message.includes("LISTENING_ROOM_HOST_ONLY")) {
     code = "HOST_ONLY";
+  } else if (message.includes("LISTENING_ROOM_NOT_JOINED")) {
+    code = "NOT_JOINED";
+  } else if (message.includes("LISTENING_ROOM_REVISION_CONFLICT")) {
+    code = "REVISION_CONFLICT";
+  } else if (message.includes("LISTENING_ROOM_INVALID_COMMAND")) {
+    code = "INVALID_COMMAND";
+  } else if (message.includes("LISTENING_ROOM_UNAUTHENTICATED")) {
+    code = "UNAUTHENTICATED";
   } else if (message.includes("LISTENING_ROOM_INVALID_STATE")) {
     code = "INVALID_TRACK";
   } else {
@@ -229,5 +241,66 @@ export async function endListeningRoom(roomId: string): Promise<ListeningRoom> {
   if (error) throw mapFailure(error, "end_room", status);
   const room = mapListeningRoom(firstResult(data));
   if (!room) throw loggedDomainError("MALFORMED_RESPONSE", "end_room", status);
+  return room;
+}
+
+const playbackCommandCounters = {
+  start: 0,
+  success: 0,
+  conflict: 0,
+  error: 0,
+};
+
+function recordPlaybackCommand(
+  event: "start" | "success" | "conflict" | "error",
+  revision: number,
+): void {
+  if (process.env.NODE_ENV !== "development") return;
+  playbackCommandCounters[event] += 1;
+  console.debug("[listening-room] playback command", {
+    event,
+    count: playbackCommandCounters[event],
+    revision,
+  });
+}
+
+export async function applyListeningRoomCommand(
+  roomId: string,
+  command: ListeningRoomPlaybackCommand,
+): Promise<ListeningRoom> {
+  recordPlaybackCommand("start", command.expectedRevision);
+  const trackCommand = command.kind === "track_change"
+    || command.kind === "next"
+    || command.kind === "previous";
+  const seekCommand = command.kind === "seek";
+  const supabase = createClient();
+  const { data, error, status } = await supabase.rpc("apply_listening_room_command", {
+    p_room_id: roomId,
+    p_command: command.kind,
+    p_expected_revision: command.expectedRevision,
+    p_position_seconds: command.positionSeconds,
+    p_resulting_state: seekCommand || trackCommand ? command.resultingState : null,
+    p_source_kind: trackCommand ? command.sourceKind : null,
+    p_video_id: trackCommand ? command.videoId : null,
+    p_playlist_id: trackCommand ? command.playlistId : null,
+    p_playlist_index: trackCommand ? command.playlistIndex : null,
+  });
+
+  if (error) {
+    const mapped = mapFailure(error, "apply_command", status);
+    recordPlaybackCommand(
+      mapped.code === "REVISION_CONFLICT" ? "conflict" : "error",
+      command.expectedRevision,
+    );
+    throw mapped;
+  }
+
+  const room = mapListeningRoom(firstResult(data));
+  if (!room) {
+    recordPlaybackCommand("error", command.expectedRevision);
+    throw loggedDomainError("MALFORMED_RESPONSE", "apply_command", status);
+  }
+
+  recordPlaybackCommand("success", room.revision);
   return room;
 }

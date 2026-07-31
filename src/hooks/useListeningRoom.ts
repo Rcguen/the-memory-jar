@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  applyListeningRoomCommand,
   createListeningRoom,
   endListeningRoom,
   getActiveListeningRoom,
@@ -14,6 +15,7 @@ import {
 import type {
   ListeningRoom,
   ListeningRoomParticipant,
+  ListeningRoomPlaybackCommand,
   ListeningRoomTrackSnapshot,
 } from "@/types/music";
 
@@ -158,9 +160,38 @@ export function useListeningRoom({
     },
   });
 
+  const commandMutation = useMutation({
+    mutationFn: ({
+      roomId,
+      command,
+    }: {
+      roomId: string;
+      command: ListeningRoomPlaybackCommand;
+    }) => applyListeningRoomCommand(roomId, command),
+    retry: false,
+    onSuccess: (canonicalRoom) => {
+      queryClient.setQueryData<ListeningRoom>(
+        listeningRoomKeys.active(relationshipId),
+        canonicalRoom,
+      );
+    },
+    onError: async (error) => {
+      if (
+        error instanceof ListeningRoomServiceError
+        && error.code === "REVISION_CONFLICT"
+      ) {
+        await queryClient.refetchQueries({
+          queryKey: listeningRoomKeys.active(relationshipId),
+          type: "active",
+        });
+      }
+    },
+  });
+
   const actionError = joinMutation.error
     ?? leaveMutation.error
     ?? endMutation.error
+    ?? commandMutation.error
     ?? null;
 
   return {
@@ -173,11 +204,14 @@ export function useListeningRoom({
     joinRoom: joinMutation.mutateAsync,
     leaveRoom: leaveMutation.mutateAsync,
     endRoom: endMutation.mutateAsync,
+    applyCommand: commandMutation.mutateAsync,
     isCreating: createMutation.isPending,
     isJoining: joinMutation.isPending,
     isLeaving: leaveMutation.isPending,
     isEnding: endMutation.isPending,
+    isApplyingCommand: commandMutation.isPending,
     createError: createMutation.error,
+    commandError: commandMutation.error,
     actionError,
   };
 }

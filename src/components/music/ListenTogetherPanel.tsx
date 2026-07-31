@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  Headphones,
   HeartHandshake,
   LoaderCircle,
   LogOut,
+  Play,
   Radio,
   RefreshCw,
   Users,
@@ -15,9 +17,10 @@ import {
   findLocalListeningRoomTrack,
   musicTrackFromListeningRoom,
 } from "@/lib/music/listening-room";
-import { useAuth } from "@/providers/auth-provider";
 import type {
   ListeningRoom,
+  ListeningRoomPresence,
+  ListeningRoomRealtimeStatus,
   ListeningRoomTrackSnapshot,
   MusicPlayerSnapshot,
   MusicTrack,
@@ -30,6 +33,7 @@ function errorMessage(error: unknown): string {
     : "The listening room could not be updated. Please try again.";
 }
 
+type ListeningRoomModel = ReturnType<typeof useListeningRoom>;
 type StartRoomBlock = "no-track" | "no-relationship" | "invalid-source";
 
 const startRoomCounters = {
@@ -50,21 +54,34 @@ function recordStartRoomEvent(
 }
 
 export function ListenTogetherPanel({
+  listeningRoom,
+  realtimeStatus,
+  partnerPresence,
+  listenerReady,
+  listenerBlocked,
   relationshipId,
   relationshipLoading,
   currentTrack,
   snapshot,
   tracks,
   onLoadRoomTrack,
+  onListenerReady,
+  onAutoplayRecovery,
 }: {
+  listeningRoom: ListeningRoomModel;
+  realtimeStatus: ListeningRoomRealtimeStatus;
+  partnerPresence: ListeningRoomPresence | null;
+  listenerReady: boolean;
+  listenerBlocked: boolean;
   relationshipId: string | null | undefined;
   relationshipLoading: boolean;
   currentTrack: MusicTrack | null;
   snapshot: MusicPlayerSnapshot;
   tracks: MusicTrack[];
   onLoadRoomTrack: (room: ListeningRoom) => void;
+  onListenerReady: () => void;
+  onAutoplayRecovery: () => void;
 }) {
-  const { profile } = useAuth();
   const [confirmEnd, setConfirmEnd] = useState(false);
   const startPendingRef = useRef(false);
   const lastReportedBlockRef = useRef<StartRoomBlock | null>(null);
@@ -84,11 +101,7 @@ export function ListenTogetherPanel({
     isEnding,
     createError,
     actionError,
-  } = useListeningRoom({
-    relationshipId,
-    profileId: profile?.id,
-    enabled: true,
-  });
+  } = listeningRoom;
 
   const roomSnapshot = useMemo(
     () => createListeningRoomSnapshot(currentTrack, snapshot),
@@ -104,10 +117,15 @@ export function ListenTogetherPanel({
   );
   const displayedTrack = localRoomTrack ?? fallbackRoomTrack;
   const activeParticipants = participants.filter((participant) => participant.leftAt === null);
-  const isHost = Boolean(room && profile?.id && room.hostId === profile.id);
+  const isHost = currentParticipant?.role === "host";
   const isJoined = currentParticipant?.leftAt === null;
+  const isListener = currentParticipant?.role === "listener";
   const partnerIsPresent = activeParticipants.some(
-    (participant) => participant.profileId !== profile?.id,
+    (participant) => participant.role !== currentParticipant?.role,
+  );
+  const liveParticipantCount = Math.max(
+    activeParticipants.length,
+    isJoined && partnerPresence ? 2 : 0,
   );
   const pending = isCreating || isJoining || isLeaving || isEnding;
   const startBlock = useMemo<StartRoomBlock | null>(() => {
@@ -210,6 +228,22 @@ export function ListenTogetherPanel({
     );
   }
 
+  const roomStatusCopy = isListener && isJoined
+    ? listenerReady
+      ? "Your partner is guiding the music."
+      : "Press Ready when you want the shared song to begin."
+    : partnerPresence?.blocked
+      ? "Your partner needs to tap before the music can continue."
+      : partnerPresence?.buffering
+        ? "Your partner is catching up."
+        : partnerPresence?.ready
+          ? "Your partner is ready to listen."
+          : partnerPresence || partnerIsPresent
+            ? "Both of you are in the room."
+            : isJoined
+              ? "You are here. Your partner has not joined yet."
+              : "Join when you are ready. Nothing will autoplay.";
+
   return (
     <section id="music-panel-together" className="music-source-panel listening-room-panel" role="tabpanel" aria-labelledby="music-tab-together">
       <div className="listening-room-card">
@@ -221,20 +255,20 @@ export function ListenTogetherPanel({
             {isHost ? "Your listening room is open" : "Your partner opened a listening room"}
           </span>
           <h3>{localRoomTrack?.title ?? "A song is waiting in the room"}</h3>
-          <p>
-            {partnerIsPresent
-              ? "Both of you are in the room."
-              : isJoined
-                ? "You are here. Your partner has not joined yet."
-                : "Join when you are ready. Nothing will autoplay."}
-          </p>
-          <div className="listening-room-presence" aria-label={`${activeParticipants.length} active ${activeParticipants.length === 1 ? "participant" : "participants"}`}>
+          <p>{roomStatusCopy}</p>
+          <div className="listening-room-presence" aria-label={`${liveParticipantCount} active ${liveParticipantCount === 1 ? "participant" : "participants"}`}>
             <Users aria-hidden="true" />
-            <span>{activeParticipants.length} here</span>
+            <span>{liveParticipantCount} here</span>
             <span className="listening-room-role">{isHost ? "Host" : "Listener"}</span>
           </div>
         </div>
       </div>
+
+      {(realtimeStatus === "reconnecting" || realtimeStatus === "error") && isJoined && (
+        <p className="listening-room-note" role="status">
+          Live controls are reconnecting.
+        </p>
+      )}
 
       {!localRoomTrack && fallbackRoomTrack && (
         <div className="listening-room-load">
@@ -259,6 +293,24 @@ export function ListenTogetherPanel({
           >
             {isJoining ? <LoaderCircle aria-hidden="true" /> : <HeartHandshake aria-hidden="true" />}
             {isJoining ? "Joining..." : isHost ? "Rejoin room" : "Join room"}
+          </button>
+        )}
+        {isJoined && isListener && !listenerReady && (
+          <button
+            type="button"
+            className="listening-room-button listening-room-button--primary focus-ring-premium"
+            onClick={onListenerReady}
+          >
+            <Headphones aria-hidden="true" /> Ready to listen
+          </button>
+        )}
+        {isJoined && isListener && listenerBlocked && (
+          <button
+            type="button"
+            className="listening-room-button listening-room-button--primary focus-ring-premium"
+            onClick={onAutoplayRecovery}
+          >
+            <Play aria-hidden="true" /> Tap to continue listening
           </button>
         )}
         {isJoined && (

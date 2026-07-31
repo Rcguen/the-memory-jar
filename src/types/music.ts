@@ -73,12 +73,21 @@ export type MusicPlayerSnapshot = {
   };
   playlistVideoIds?: string[];
   playlistIndex?: number;
+  autoplayBlocked?: boolean;
 };
 
 export type MusicPlayerController = {
   play: () => Promise<void>;
   pause: () => void;
   seek: (seconds: number) => void;
+  seekTo: (seconds: number) => void;
+  loadSource: (source: MusicSource) => void;
+  getCurrentTime: () => number;
+  getDuration: () => number;
+  getPlaybackState: () => MusicPlaybackState;
+  getCurrentVideoId: () => string | null;
+  isReady: () => boolean;
+  isBuffering: () => boolean;
 };
 
 export type ListeningRoomSourceKind = "youtube_video" | "youtube_playlist";
@@ -122,6 +131,44 @@ export type ListeningRoomTrackSnapshot = {
   positionSeconds: number;
 };
 
+export type ListeningRoomPlaybackCommand =
+  | {
+      kind: "play" | "pause";
+      expectedRevision: number;
+      positionSeconds: number;
+    }
+  | {
+      kind: "seek";
+      expectedRevision: number;
+      positionSeconds: number;
+      resultingState: "playing" | "paused";
+    }
+  | {
+      kind: "track_change" | "next" | "previous";
+      expectedRevision: number;
+      sourceKind: ListeningRoomSourceKind;
+      videoId: string;
+      playlistId: string | null;
+      playlistIndex: number | null;
+      positionSeconds: number;
+      resultingState: "playing" | "paused";
+    };
+
+export type ListeningRoomRealtimeStatus =
+  | "idle"
+  | "connecting"
+  | "connected"
+  | "reconnecting"
+  | "error"
+  | "closed";
+
+export type ListeningRoomPresence = {
+  role: ListeningRoomParticipantRole;
+  ready: boolean;
+  buffering: boolean;
+  blocked: boolean;
+};
+
 export type ListeningRoomErrorCode =
   | "NO_ACTIVE_RELATIONSHIP"
   | "ROOM_ALREADY_ACTIVE"
@@ -131,6 +178,8 @@ export type ListeningRoomErrorCode =
   | "HOST_ONLY"
   | "NOT_JOINED"
   | "INVALID_TRACK"
+  | "INVALID_COMMAND"
+  | "REVISION_CONFLICT"
   | "NOT_CONFIGURED"
   | "UNAUTHENTICATED"
   | "FORBIDDEN"
