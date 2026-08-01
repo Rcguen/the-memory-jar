@@ -1,6 +1,6 @@
-﻿"use client";
+"use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useMemo } from "react";
 import { Search, X } from "lucide-react";
 import { useYouTubeMusicSearch } from "@/hooks/useYouTubeMusicSearch";
 import type {
@@ -21,7 +21,6 @@ export function MusicSearchPanel({
   onOpenPaste: () => void;
 }) {
   const search = useYouTubeMusicSearch();
-  const inputRef = useRef<HTMLInputElement | null>(null);
   const queuedVideoIds = useMemo(
     () => new Set(tracks.map((track) => track.videoId).filter(Boolean)),
     [tracks],
@@ -31,9 +30,6 @@ export function MusicSearchPanel({
     search.errorMessage ? "music-search-error" : null,
   ].filter(Boolean).join(" ");
 
-  useEffect(() => {
-    inputRef.current?.focus({ preventScroll: true });
-  }, []);
 
   const submit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -55,11 +51,8 @@ export function MusicSearchPanel({
   };
 
   return (
-    <section
-      id="music-panel-search"
+    <div
       className="music-search-panel"
-      role="tabpanel"
-      aria-labelledby="music-tab-search"
       onKeyDown={(event) => {
         if (event.key === "Escape" && (search.input || search.hasSearched)) {
           event.stopPropagation();
@@ -84,7 +77,6 @@ export function MusicSearchPanel({
         <div className="music-search-form__field">
           <Search aria-hidden="true" />
           <input
-            ref={inputRef}
             id="music-youtube-search"
             type="search"
             value={search.input}
@@ -180,6 +172,6 @@ export function MusicSearchPanel({
             ? "Searching for songs."
             : ""}
       </p>
-    </section>
+    </div>
   );
 }

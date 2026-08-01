@@ -9,7 +9,9 @@ import {
   Play,
   Radio,
   RefreshCw,
-  Users,
+  UserRound,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
 import { useListeningRoom } from "@/hooks/useListeningRoom";
 import {
@@ -123,10 +125,6 @@ export function ListenTogetherPanel({
   const partnerIsPresent = activeParticipants.some(
     (participant) => participant.role !== currentParticipant?.role,
   );
-  const liveParticipantCount = Math.max(
-    activeParticipants.length,
-    isJoined && partnerPresence ? 2 : 0,
-  );
   const pending = isCreating || isJoining || isLeaving || isEnding;
   const startBlock = useMemo<StartRoomBlock | null>(() => {
     if (relationshipLoading || !relationshipId) return "no-relationship";
@@ -172,9 +170,10 @@ export function ListenTogetherPanel({
   if (relationshipId && roomQuery.isLoading) {
     return (
       <section id="music-panel-together" className="music-source-panel listening-room-panel" role="tabpanel" aria-labelledby="music-tab-together" aria-busy="true">
-        <div className="listening-room-loading">
-          <LoaderCircle aria-hidden="true" />
-          <span>Opening your shared radio...</span>
+        <div className="listening-room-loading" aria-label="Opening your shared radio">
+          <span className="listening-room-loading__avatars" aria-hidden="true"><i /><i /></span>
+          <span className="listening-room-loading__line" aria-hidden="true" />
+          <span className="sr-only">Opening your shared radio...</span>
         </div>
       </section>
     );
@@ -183,12 +182,13 @@ export function ListenTogetherPanel({
   if (roomQuery.isError) {
     return (
       <section id="music-panel-together" className="music-source-panel listening-room-panel" role="tabpanel" aria-labelledby="music-tab-together">
-        <div className="listening-room-empty">
+        <div className="listening-room-empty" data-tone="error">
           <Radio aria-hidden="true" />
+          <span className="persistent-music-player__eyebrow">Listen together</span>
           <h3>The room could not be opened</h3>
-          <p>{errorMessage(roomQuery.error)}</p>
+          <p>The listening room is unavailable right now.</p>
           <button type="button" className="listening-room-button listening-room-button--primary focus-ring-premium" onClick={() => void roomQuery.refetch()}>
-            <RefreshCw aria-hidden="true" /> Retry
+            <RefreshCw aria-hidden="true" /> Try again
           </button>
         </div>
       </section>
@@ -200,15 +200,12 @@ export function ListenTogetherPanel({
       <section id="music-panel-together" className="music-source-panel listening-room-panel" role="tabpanel" aria-labelledby="music-tab-together">
         <div className="listening-room-empty">
           <HeartHandshake aria-hidden="true" />
-          <span className="persistent-music-player__eyebrow">Listen Together</span>
-          <h3>Open a little room for the two of you.</h3>
-          <p>
-            Your music keeps playing here as it does now. This room simply gives
-            your partner a private place to join.
-          </p>
+          <span className="persistent-music-player__eyebrow">Listen together</span>
+          <h3>Open a room for the two of you</h3>
+          <p>Choose a song, open the room, and invite your partner into the same moment.</p>
           {startBlockMessage && (
             <p className="listening-room-note" role="status">
-              {startBlockMessage}
+              {startBlock === "no-track" ? "Choose a song first." : startBlockMessage}
             </p>
           )}
           <button
@@ -220,59 +217,127 @@ export function ListenTogetherPanel({
             }}
           >
             {isCreating ? <LoaderCircle aria-hidden="true" /> : <Radio aria-hidden="true" />}
-            {isCreating ? "Opening room..." : "Start listening room"}
+            {isCreating ? "Opening room..." : "Open listening room"}
           </button>
           {createError && <p className="listening-room-error" role="status">{errorMessage(createError)}</p>}
         </div>
       </section>
     );
   }
-
-  const roomStatusCopy = isListener && isJoined
-    ? listenerReady
-      ? "Your partner is guiding the music."
-      : "Press Ready when you want the shared song to begin."
-    : partnerPresence?.blocked
-      ? "Your partner needs to tap before the music can continue."
-      : partnerPresence?.buffering
-        ? "Your partner is catching up."
-        : partnerPresence?.ready
-          ? "Your partner is ready to listen."
-          : partnerPresence || partnerIsPresent
-            ? "Both of you are in the room."
-            : isJoined
-              ? "You are here. Your partner has not joined yet."
-              : "Join when you are ready. Nothing will autoplay.";
+  const partnerConnected = Boolean(partnerPresence || partnerIsPresent);
+  const connectionInterrupted = realtimeStatus === "reconnecting" || realtimeStatus === "error";
+  const togetherState = connectionInterrupted && isJoined
+    ? {
+        eyebrow: "Room open",
+        heading: "Reconnecting the room",
+        body: "Your listening room is still open.",
+        detail: "Live controls are reconnecting",
+      }
+    : partnerPresence?.buffering
+      ? {
+          eyebrow: "Listening together",
+          heading: "Catching up",
+          body: "The music will continue in a moment.",
+          detail: "Partner catching up",
+        }
+      : isListener && !isJoined
+        ? {
+            eyebrow: "Your partner opened a room",
+            heading: "A song is waiting for you",
+            body: "Join when you are ready. Nothing will autoplay.",
+            detail: "Private room for two",
+          }
+        : isListener && listenerBlocked
+          ? {
+              eyebrow: "Listening together",
+              heading: "Tap to keep listening",
+              body: "Your partner is guiding the music.",
+              detail: "Playback is waiting for you",
+            }
+          : isListener && !listenerReady
+            ? {
+                eyebrow: "Your partner opened a room",
+                heading: "A song is waiting for you",
+                body: "Tap when you're ready to let the music begin.",
+                detail: "Getting ready",
+              }
+            : isListener
+              ? {
+                  eyebrow: "Listening together",
+                  heading: "Listening together",
+                  body: "Your partner is guiding the music.",
+                  detail: "Connected",
+                }
+              : !partnerConnected
+                ? {
+                    eyebrow: "Room open",
+                    heading: "Waiting for your partner",
+                    body: "The room is ready. The music will begin when both of you are here.",
+                    detail: "1 of 2 here",
+                  }
+                : partnerPresence?.ready
+                  ? {
+                      eyebrow: "Both here",
+                      heading: "Both of you are ready",
+                      body: "You're guiding the music.",
+                      detail: "Live controls connected",
+                    }
+                  : {
+                      eyebrow: "Both here",
+                      heading: "Your partner joined",
+                      body: "They're getting ready to listen.",
+                      detail: "2 of 2 here / Getting ready",
+                    };
 
   return (
     <section id="music-panel-together" className="music-source-panel listening-room-panel" role="tabpanel" aria-labelledby="music-tab-together">
-      <div className="listening-room-card">
-        <div className="listening-room-card__record" aria-hidden="true">
-          <VinylRecord track={displayedTrack} selected playing={false} compact />
+      <div className="listening-room-hero" data-state={connectionInterrupted ? "reconnecting" : partnerPresence?.buffering ? "buffering" : "connected"}>
+        <div className="listening-room-hero__copy">
+          <span className="persistent-music-player__eyebrow">{togetherState.eyebrow}</span>
+          <h3>{togetherState.heading}</h3>
+          <p>{togetherState.body}</p>
         </div>
-        <div className="listening-room-card__copy">
-          <span className="persistent-music-player__eyebrow">
-            {isHost ? "Your listening room is open" : "Your partner opened a listening room"}
+
+        <div
+          className="listening-room-connection"
+          data-connected={partnerConnected || undefined}
+          data-ready={partnerPresence?.ready || undefined}
+          data-interrupted={connectionInterrupted || undefined}
+          aria-label={togetherState.detail}
+        >
+          <span className="listening-room-avatar">
+            <UserRound aria-hidden="true" />
+            <span>You</span>
           </span>
-          <h3>{localRoomTrack?.title ?? "A song is waiting in the room"}</h3>
-          <p>{roomStatusCopy}</p>
-          <div className="listening-room-presence" aria-label={`${liveParticipantCount} active ${liveParticipantCount === 1 ? "participant" : "participants"}`}>
-            <Users aria-hidden="true" />
-            <span>{liveParticipantCount} here</span>
-            <span className="listening-room-role">{isHost ? "Host" : "Listener"}</span>
+          <span className="listening-room-connection__line" aria-hidden="true">
+            {connectionInterrupted ? <WifiOff /> : <HeartHandshake />}
+          </span>
+          <span className="listening-room-avatar" data-connected={partnerConnected || undefined}>
+            <UserRound aria-hidden="true" />
+            <span>Partner</span>
+          </span>
+        </div>
+
+        <div className="listening-room-state">
+          {connectionInterrupted ? <WifiOff aria-hidden="true" /> : <Wifi aria-hidden="true" />}
+          <span>{togetherState.detail}</span>
+          <span className="listening-room-role">{isHost ? "Guide" : "Listening"}</span>
+        </div>
+
+        <div className="listening-room-track">
+          <div className="listening-room-track__record" aria-hidden="true">
+            <VinylRecord track={displayedTrack} selected playing={false} compact />
+          </div>
+          <div>
+            <span>In the room</span>
+            <strong>{localRoomTrack?.title ?? "A song is waiting in the room"}</strong>
           </div>
         </div>
       </div>
 
-      {(realtimeStatus === "reconnecting" || realtimeStatus === "error") && isJoined && (
-        <p className="listening-room-note" role="status">
-          Live controls are reconnecting.
-        </p>
-      )}
-
       {!localRoomTrack && fallbackRoomTrack && (
         <div className="listening-room-load">
-          <p>This song is not in your local queue yet.</p>
+          <p>This room song is not in your queue yet.</p>
           <button
             type="button"
             className="listening-room-button focus-ring-premium"

@@ -55,22 +55,22 @@ export function MusicSearchResult({
       <div className="music-search-result__actions">
         <button
           type="button"
-          className="music-search-result__add focus-ring-premium"
-          onClick={() => onAdd(result)}
-          disabled={queued}
-          aria-label={queued ? `${result.title} is already in queue` : `Add ${result.title} to queue`}
-        >
-          {queued ? <Check aria-hidden="true" /> : <Plus aria-hidden="true" />}
-          <span>{queued ? "In queue" : "Add"}</span>
-        </button>
-        <button
-          type="button"
           className="music-search-result__play focus-ring-premium"
           onClick={() => onPlayNow(result)}
-          aria-label={`Play ${result.title} now`}
+          aria-label={"Play " + result.title + " now"}
         >
           <Play fill="currentColor" aria-hidden="true" />
           <span>Play now</span>
+        </button>
+        <button
+          type="button"
+          className="music-search-result__add focus-ring-premium"
+          onClick={() => onAdd(result)}
+          disabled={queued}
+          aria-label={queued ? result.title + " is already in queue" : "Add " + result.title + " to queue"}
+        >
+          {queued ? <Check aria-hidden="true" /> : <Plus aria-hidden="true" />}
+          <span>{queued ? "In queue" : "Add"}</span>
         </button>
       </div>
     </li>
