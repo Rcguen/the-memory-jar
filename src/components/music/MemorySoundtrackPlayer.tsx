@@ -43,10 +43,16 @@ export function MemorySoundtrackPlayer({
     ? Math.min(100, Math.max(0, (snapshot.currentTime / duration) * 100))
     : 0;
 
+  const isIdle = snapshot.state === "idle" || snapshot.state === "ready";
+
   const togglePlayback = () => {
     if (isPlaying) {
       controller.pause();
       return;
+    }
+    // If the player hasn't loaded the source yet, cue it first then play.
+    if (isIdle) {
+      controller.loadSource?.(source);
     }
     void controller.play();
   };
