@@ -43,16 +43,21 @@ export function MemorySoundtrackPlayer({
     ? Math.min(100, Math.max(0, (snapshot.currentTime / duration) * 100))
     : 0;
 
-  const isIdle = snapshot.state === "idle" || snapshot.state === "ready";
+  const isLoading = snapshot.state === "idle";
 
   const togglePlayback = () => {
     if (isPlaying) {
       controller.pause();
       return;
     }
-    // If the player hasn't loaded the source yet, cue it first then play.
-    if (isIdle) {
-      controller.loadSource?.(source);
+    if (process.env.NODE_ENV === "development") {
+      console.debug("[soundtrack] togglePlayback", {
+        state: snapshot.state,
+        autoplayBlocked: snapshot.autoplayBlocked,
+        isLoading,
+        isBusy,
+        isUnavailable,
+      });
     }
     void controller.play();
   };
@@ -98,11 +103,11 @@ export function MemorySoundtrackPlayer({
         <button
           type="button"
           onClick={togglePlayback}
-          disabled={isBusy || isUnavailable}
+          disabled={isLoading || isBusy || isUnavailable}
           className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-rose-500 text-white shadow-sm transition-[transform,background-color] duration-150 hover:bg-rose-400 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-200 disabled:cursor-not-allowed disabled:bg-stone-700 disabled:text-stone-400 motion-reduce:transform-none motion-reduce:transition-none"
           aria-label={isPlaying ? "Pause memory soundtrack" : "Play memory soundtrack"}
         >
-          {isBusy ? (
+          {isLoading || isBusy ? (
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
           ) : isPlaying ? (
             <Pause className="h-4 w-4 fill-current" aria-hidden="true" />
