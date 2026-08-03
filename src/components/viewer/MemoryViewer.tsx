@@ -17,6 +17,7 @@ import { useAuth } from "@/providers/auth-provider";
 import { memoryService } from "@/services/memory";
 import { useIsPhone } from "@/hooks/useIsPhone";
 import { notifyPushEvent } from "@/lib/push/client-events";
+import { MemorySoundtrackPlayer } from "@/components/music/MemorySoundtrackPlayer";
 
 type ViewerState = "LOADING" | "LOCKED" | "WAITING_PARTNER" | "OPENING" | "VIEWING" | "ERROR";
 
@@ -279,14 +280,19 @@ export function MemoryViewer() {
             )}
 
             {(viewerState === "OPENING" || viewerState === "VIEWING") && fullMemory && (
-              <ViewerAnimation
-                key={`anim-${activeMemoryState.id}`}
-                memoryId={activeMemoryState.id}
-                type={activeMemoryState.type}
-                fullMemory={fullMemory}
-                onClose={closeViewer}
-                stage={viewerState === "VIEWING" || navigateDirection ? "viewing" : "opening"}
-              />
+              <>
+                <ViewerAnimation
+                  key={`anim-${activeMemoryState.id}`}
+                  memoryId={activeMemoryState.id}
+                  type={activeMemoryState.type}
+                  fullMemory={fullMemory}
+                  onClose={closeViewer}
+                  stage={viewerState === "VIEWING" || navigateDirection ? "viewing" : "opening"}
+                />
+                {fullMemory.soundtrack && (
+                  <MemorySoundtrackPlayer soundtrack={fullMemory.soundtrack} memoryTitle={fullMemory.title} />
+                )}
+              </>
             )}
           </motion.div>
         </div>

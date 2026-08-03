@@ -6,7 +6,7 @@ import type { FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { motion } from "framer-motion";
-import { MemoryType } from "@/types/memory";
+import { DecorationID, MemorySoundtrack, MemoryThemeType, MemoryType } from "@/types/memory";
 import { useMemoryDraft } from "@/hooks/useMemoryDraft";
 import { MoodPicker } from "./MoodPicker";
 import { AttachmentUploader } from "./AttachmentUploader";
@@ -14,8 +14,8 @@ import { TimeCapsulePicker } from "./TimeCapsulePicker";
 import { ThemePicker } from "./ThemePicker";
 import { DecorationPicker } from "./DecorationPicker";
 import { VoiceRecorder } from "./VoiceRecorder";
+import { MemorySoundtrackPicker } from "@/components/music/MemorySoundtrackPicker";
 import { MEMORY_THEMES, DECORATIONS } from "@/lib/memoryThemes";
-import { MemoryThemeType, DecorationID } from "@/types/memory";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -28,6 +28,27 @@ import { X } from "lucide-react";
 const validThemes = Object.keys(MEMORY_THEMES) as [MemoryThemeType, ...MemoryThemeType[]];
 const validDecorations = DECORATIONS.map(d => d.id) as [DecorationID, ...DecorationID[]];
 
+const soundtrackSchema = z.discriminatedUnion("source_kind", [
+  z.object({
+    source_kind: z.literal("youtube_video"),
+    video_id: z.string().min(6),
+    playlist_id: z.null(),
+    playlist_index: z.null(),
+    title: z.string().min(1).max(200),
+    artist: z.string().max(160).nullable(),
+    artwork_url: z.string().url().nullable(),
+  }),
+  z.object({
+    source_kind: z.literal("youtube_playlist"),
+    video_id: z.string().min(6).nullable(),
+    playlist_id: z.string().min(6),
+    playlist_index: z.number().int().nonnegative(),
+    title: z.string().min(1).max(200),
+    artist: z.string().max(160).nullable(),
+    artwork_url: z.string().url().nullable(),
+  }),
+]);
+
 // The unified Zod schema for all memory types
 const memorySchema = z.object({
   title: z.string().min(1, "Title is required").max(100),
@@ -36,6 +57,7 @@ const memorySchema = z.object({
   memory_date: z.string(), // ISO string
   unlock_at: z.string().nullable().optional(),
   is_collaborative: z.boolean(),
+  soundtrack: soundtrackSchema.nullable(),
   theme: z.enum(validThemes),
   decorations: z.array(z.enum(validDecorations)).max(4, "Maximum 4 decorations allowed"),
 });
@@ -92,6 +114,7 @@ export function DynamicMemoryForm({
       memory_date: initialData?.memory_date ? initialData.memory_date.split("T")[0] : new Date().toISOString().split("T")[0],
       unlock_at: initialData?.unlock_at || undefined,
       is_collaborative: initialData?.is_collaborative || false,
+      soundtrack: initialData?.soundtrack ?? null,
       theme: initialData?.theme || "modern",
       decorations: initialData?.decorations || [],
     },
@@ -107,6 +130,7 @@ export function DynamicMemoryForm({
         memory_date: draft.memory_date || new Date().toISOString().split("T")[0],
         unlock_at: draft.unlock_at,
         is_collaborative: draft.is_collaborative || false,
+        soundtrack: (draft as typeof draft & { soundtrack?: MemorySoundtrack | null }).soundtrack ?? null,
         theme: (draft.theme as MemoryThemeType) || "modern",
         decorations: (draft.decorations as DecorationID[]) || [],
       });
@@ -276,6 +300,14 @@ export function DynamicMemoryForm({
             onRemoveExisting={onRemoveAttachment}
           />
         )}
+
+        <MemorySoundtrackPicker
+          value={form.watch("soundtrack")}
+          onChange={(soundtrack) => {
+            form.setValue("soundtrack", soundtrack, { shouldDirty: true, shouldValidate: true });
+          }}
+          disabled={isSubmitting}
+        />
 
         {/* Mood Picker */}
         <div className="pt-4">

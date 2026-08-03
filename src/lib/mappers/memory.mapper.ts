@@ -12,6 +12,27 @@ const AttachmentSchema = z.object({
 
 const DecorationSchema = z.string();
 
+const SoundtrackSchema = z.discriminatedUnion("source_kind", [
+  z.object({
+    source_kind: z.literal("youtube_video"),
+    video_id: z.string().min(6),
+    playlist_id: z.null(),
+    playlist_index: z.null(),
+    title: z.string().min(1).max(200),
+    artist: z.string().max(160).nullable(),
+    artwork_url: z.string().url().nullable(),
+  }),
+  z.object({
+    source_kind: z.literal("youtube_playlist"),
+    video_id: z.string().min(6).nullable(),
+    playlist_id: z.string().min(6),
+    playlist_index: z.number().int().nonnegative(),
+    title: z.string().min(1).max(200),
+    artist: z.string().max(160).nullable(),
+    artwork_url: z.string().url().nullable(),
+  }),
+]);
+
 const MemorySchema = z.object({
   id: z.string().uuid(),
   relationship_id: z.string().uuid(),
@@ -25,6 +46,7 @@ const MemorySchema = z.object({
   paper_style: z.enum(["letter", "folded_letter", "diary", "postcard", "notebook", "parchment"]).default("letter"),
   decorations: z.array(DecorationSchema).default([]),
   mood_id: z.string().nullable(),
+  soundtrack: SoundtrackSchema.nullable().default(null),
   is_collaborative: z.boolean().default(false),
   memory_date: z.string(),
   unlock_at: z.string().nullable(),
@@ -92,6 +114,7 @@ export function mapDatabaseMemory(data: unknown): Memory {
     theme: typeof raw.theme === "string" ? raw.theme : "modern",
     paper_style: typeof raw.paper_style === "string" ? raw.paper_style : "letter",
     decorations: Array.isArray(raw.decorations) ? raw.decorations : [],
+    soundtrack: SoundtrackSchema.safeParse(raw.soundtrack).success ? raw.soundtrack : null,
     attachments: sortMemoryAttachments(raw.memory_attachments),
   };
 

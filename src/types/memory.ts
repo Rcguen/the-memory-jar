@@ -63,6 +63,26 @@ export interface MemoryMood {
   color: string;
 }
 
+export type MemorySoundtrack =
+  | {
+      source_kind: "youtube_video";
+      video_id: string;
+      playlist_id: null;
+      playlist_index: null;
+      title: string;
+      artist: string | null;
+      artwork_url: string | null;
+    }
+  | {
+      source_kind: "youtube_playlist";
+      video_id: string | null;
+      playlist_id: string;
+      playlist_index: number;
+      title: string;
+      artist: string | null;
+      artwork_url: string | null;
+    };
+
 export interface Memory {
   id: string;
   relationship_id: string;
@@ -76,6 +96,7 @@ export interface Memory {
   decorations: DecorationID[] | null;
   paper_style: PaperStyleType | null;
   mood_id: string | null;
+  soundtrack: MemorySoundtrack | null;
   is_collaborative: boolean;
   memory_date: string;
   unlock_at: string | null;

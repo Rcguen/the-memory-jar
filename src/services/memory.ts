@@ -167,7 +167,7 @@ function applyClientFilter(memory: Memory, filter: MemoryFilter, userId: string 
   return true;
 }
 
-const HOME_MEMORY_SELECT = "id,relationship_id,type,status,capsule_style,version,title,content,theme,decorations,paper_style,mood_id,is_collaborative,memory_date,unlock_at,sealed_at,unlocked_at,opened_at,deleted_at,created_by,created_at,updated_at,is_pinned,pinned_at,memory_attachments(id,memory_id,file_type,url,upload_index:metadata->>upload_index,created_at),memory_tags(tags(id,name))";
+const HOME_MEMORY_SELECT = "id,relationship_id,type,status,capsule_style,version,title,content,theme,decorations,paper_style,mood_id,soundtrack,is_collaborative,memory_date,unlock_at,sealed_at,unlocked_at,opened_at,deleted_at,created_by,created_at,updated_at,is_pinned,pinned_at,memory_attachments(id,memory_id,file_type,url,upload_index:metadata->>upload_index,created_at),memory_tags(tags(id,name))";
 
 function normalizeHomeSearch(value?: string) {
   return value?.trim().toLowerCase() ?? "";
@@ -1596,6 +1596,7 @@ export const memoryService = {
         updated_at: new Date().toISOString(),
         created_by: "system",
         mood_id: null,
+        soundtrack: null,
         deleted_at: null
       } as Memory;
     }

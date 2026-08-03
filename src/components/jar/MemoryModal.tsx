@@ -81,6 +81,7 @@ export function MemoryModal() {
       title: data.title,
       content: data.content,
       mood_id: data.mood_id,
+      soundtrack: data.soundtrack,
       memory_date: data.memory_date,
       unlock_at: data.unlock_at || null,
       is_collaborative: data.is_collaborative,
