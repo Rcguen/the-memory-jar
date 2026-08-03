@@ -158,8 +158,8 @@ function applyClientFilter(memory: Memory, filter: MemoryFilter, userId: string 
   if (filter === "videos") return memory.type === "video";
   if (filter === "letters") return memory.type === "letter";
   if (filter === "time_capsules") return !!memory.unlock_at;
-  if (filter === "locked") return memory.status === "sealed" || isFutureCapsule;
-  if (filter === "unlocked") return memory.status !== "sealed" && !isFutureCapsule;
+  if (filter === "locked") return isFutureCapsule;
+  if (filter === "unlocked") return !isFutureCapsule;
   if (filter === "mine") return !!userId && memory.created_by === userId;
   if (filter === "partner") return !!userId && memory.created_by !== userId;
   if (filter === "favorites") return memory.is_favorite === true;
@@ -171,6 +171,26 @@ const HOME_MEMORY_SELECT = "id,relationship_id,type,status,capsule_style,version
 
 function normalizeHomeSearch(value?: string) {
   return value?.trim().toLowerCase() ?? "";
+}
+
+const HOME_TEMPORAL_FILTER_SNAPSHOT_LIMIT = 32;
+const homeTemporalFilterSnapshots = new Map<string, string>();
+
+function getHomeTemporalFilterCutoff(key: string, offset: number) {
+  const existing = homeTemporalFilterSnapshots.get(key);
+  if (offset > 0 && existing) return existing;
+
+  const cutoff = new Date().toISOString();
+  homeTemporalFilterSnapshots.delete(key);
+  homeTemporalFilterSnapshots.set(key, cutoff);
+
+  while (homeTemporalFilterSnapshots.size > HOME_TEMPORAL_FILTER_SNAPSHOT_LIMIT) {
+    const oldestKey = homeTemporalFilterSnapshots.keys().next().value;
+    if (typeof oldestKey !== "string") break;
+    homeTemporalFilterSnapshots.delete(oldestKey);
+  }
+
+  return cutoff;
 }
 
 function escapePostgrestLike(value: string) {
@@ -395,6 +415,7 @@ export const memoryService = {
     if (!relationshipId) {
       return { memories: [], nextOffset: null, hasMore: false, totalCount: 0, attachmentSummaryCount: 0, legacyOriginalFallbackCount: 0 };
     }
+    const normalizedSearch = normalizeHomeSearch(options.search);
 
     let favoriteIds: string[] | null = null;
     if (filter === "favorites") {
@@ -425,11 +446,14 @@ export const memoryService = {
     if (filter === "pinned") query = query.eq("is_pinned", true);
     if (favoriteIds) query = query.in("id", favoriteIds);
 
-    const nowIso = new Date().toISOString();
-    if (filter === "locked") query = query.or(`status.eq.sealed,unlock_at.gt.${nowIso}`);
-    if (filter === "unlocked") query = query.neq("status", "sealed").or(`unlock_at.is.null,unlock_at.lte.${nowIso}`);
+    if (filter === "locked" || filter === "unlocked") {
+      const temporalFilterKey = [relationshipId, user?.id ?? "", filter, normalizedSearch, options.sort ?? "newest"].join("|");
+      const cutoffIso = getHomeTemporalFilterCutoff(temporalFilterKey, offset);
 
-    const normalizedSearch = normalizeHomeSearch(options.search);
+      if (filter === "locked") query = query.gt("unlock_at", cutoffIso);
+      else query = query.or(`unlock_at.is.null,unlock_at.lte.${cutoffIso}`);
+    }
+
     if (normalizedSearch) {
       const searchValue = escapePostgrestLike(normalizedSearch);
       if (!searchValue) {

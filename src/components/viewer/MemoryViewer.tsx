@@ -274,6 +274,7 @@ export function MemoryViewer() {
               <TimeCapsuleViewer
                 memory={fullMemory}
                 onClose={closeViewer}
+                canPreviewLetter={isCreator && fullMemory.type === "letter"}
                 onEdit={isCreator ? () => setIsEditingCapsule(true) : undefined}
                 onDelete={isCreator ? handleCapsuleDelete : undefined}
               />

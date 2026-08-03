@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Memory } from "@/types/memory";
 import { useUnlockScheduler } from "@/providers/unlock-scheduler";
 import { useAuth } from "@/providers/auth-provider";
-import { DoorOpen, KeyRound, Pencil, SkipForward, Trash2 } from "lucide-react";
+import { DoorOpen, Eye, KeyRound, Pencil, SkipForward, Trash2 } from "lucide-react";
 import { useKnockState } from "@/hooks/useKnockState";
 import { createClient } from "@/lib/supabase/client";
 import { daysUntil, formatInTimezone, normalizeTimezone } from "@/lib/timezone";
@@ -15,11 +15,12 @@ import { usePresence } from "@/hooks/usePresence";
 interface TimeCapsuleViewerProps {
   memory: Memory;
   onClose: () => void;
+  canPreviewLetter?: boolean;
   onEdit?: () => void;
   onDelete?: () => void;
 }
 
-export function TimeCapsuleViewer({ memory, onClose, onEdit, onDelete }: TimeCapsuleViewerProps) {
+export function TimeCapsuleViewer({ memory, onClose, canPreviewLetter = false, onEdit, onDelete }: TimeCapsuleViewerProps) {
   const { now } = useUnlockScheduler();
   const { profile } = useAuth();
   const { hasKnocked, partnerKnocked, knock, openMemory } = useKnockState(memory.id, profile?.id);
@@ -28,6 +29,7 @@ export function TimeCapsuleViewer({ memory, onClose, onEdit, onDelete }: TimeCap
   const [relationshipTimezone, setRelationshipTimezone] = useState<string>("UTC");
   const [ceremonyPhase, setCeremonyPhase] = useState<"idle" | "countdown" | "release" | "opening">("idle");
   const [countdownValue, setCountdownValue] = useState(3);
+  const [isCreatorPreviewOpen, setIsCreatorPreviewOpen] = useState(false);
   const { partnerOnline } = usePresence(memory.relationship_id, profile?.id, partnerId);
 
 
@@ -141,6 +143,7 @@ export function TimeCapsuleViewer({ memory, onClose, onEdit, onDelete }: TimeCap
   const daysRemaining = memory.unlock_at ? daysUntil(memory.unlock_at) : 0;
   const unlockAtMs = memory.unlock_at ? new Date(memory.unlock_at).getTime() : 0;
   const isLocked = !!memory.unlock_at && Number.isFinite(unlockAtMs) && now.getTime() < unlockAtMs;
+  const canShowCreatorPreview = canPreviewLetter && memory.type === "letter" && isLocked;
 
   return (
     <motion.div
@@ -194,15 +197,47 @@ export function TimeCapsuleViewer({ memory, onClose, onEdit, onDelete }: TimeCap
           </div>
         )}
 
-        {(onEdit || onDelete) && (
+        {canShowCreatorPreview && isCreatorPreviewOpen && (
+          <section
+            aria-label="Creator-only letter preview"
+            className="mt-7 max-h-64 w-full overflow-y-auto rounded-2xl border border-amber-200/25 bg-[#f5eddd] px-5 py-4 text-left text-stone-800 shadow-[0_14px_36px_rgba(0,0,0,0.18)]"
+          >
+            <p className="font-inter text-[10px] font-semibold uppercase tracking-[0.16em] text-amber-800/65">
+              Creator preview
+            </p>
+            <h3 className="mt-2 font-cormorant text-2xl font-semibold leading-tight text-stone-900">
+              {memory.title?.trim() || "Untitled letter"}
+            </h3>
+            <p className="mt-3 whitespace-pre-wrap font-cormorant text-lg leading-7 text-stone-700">
+              {memory.content?.trim() || "This letter is empty."}
+            </p>
+            <p className="mt-4 border-t border-stone-300/70 pt-3 font-inter text-[10px] leading-4 text-stone-500">
+              Only you can preview this letter before its opening date. The capsule remains locked.
+            </p>
+          </section>
+        )}
+
+        {(canShowCreatorPreview || onEdit || onDelete) && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7, duration: 0.5 }}
-            className="flex gap-3 mt-8 justify-center"
+            className="mt-8 flex flex-wrap justify-center gap-2"
           >
+            {canShowCreatorPreview && (
+              <button
+                type="button"
+                onClick={() => setIsCreatorPreviewOpen((current) => !current)}
+                aria-expanded={isCreatorPreviewOpen}
+                className="flex items-center gap-2 rounded-full border border-amber-200/20 bg-amber-100/10 px-4 py-2 text-sm font-medium text-amber-100 transition-colors hover:bg-amber-100/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/70"
+              >
+                <Eye className="h-3.5 w-3.5" aria-hidden="true" />
+                {isCreatorPreviewOpen ? "Hide preview" : "Preview letter"}
+              </button>
+            )}
             {onEdit && (
               <motion.button
+                type="button"
                 whileTap={{ scale: 0.95 }}
                 transition={{ type: "spring", bounce: 0, duration: 0.4 }}
                 onClick={onEdit}
