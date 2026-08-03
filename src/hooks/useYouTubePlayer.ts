@@ -178,9 +178,12 @@ export function useYouTubePlayer(source: MusicSource | null) {
     if (!host || !sourceRef.current) return;
     let alive = true;
 
+    const mountPoint = document.createElement("div");
+    host.replaceChildren(mountPoint);
+
     void loadYouTubeApi().then((YT) => {
       if (!alive || !host) return;
-      const player = new YT.Player(host, {
+      const player = new YT.Player(mountPoint, {
         height: "1",
         width: "1",
         playerVars: { autoplay: 0, controls: 0, rel: 0, playsinline: 1 },
