@@ -20,9 +20,10 @@ export function YouTubeMusicPlayer({
 
   return (
     <div
-      ref={hostRef}
       className="pointer-events-none absolute -left-[9999px] -top-[9999px] h-px w-px opacity-0"
       aria-hidden="true"
-    />
+    >
+      <div ref={hostRef} />
+    </div>
   );
 }
