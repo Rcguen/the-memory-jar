@@ -103,13 +103,11 @@ export function MemorySoundtrackPicker({
     setLinkError(null);
   };
 
-  const submitSearch = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const submitSearch = () => {
     search.submit();
   };
 
-  const submitLink = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const submitLink = () => {
     const soundtrack = soundtrackFromLink(link);
     if (!soundtrack) {
       setLinkError("Paste a valid YouTube video or playlist link.");
@@ -179,7 +177,7 @@ export function MemorySoundtrackPicker({
 
       {isOpen && !value && (
         <div className="mt-4 border-t border-stone-200 pt-4 dark:border-stone-800">
-          <form onSubmit={submitSearch} role="search">
+          <div role="search">
             <label htmlFor="memory-soundtrack-search" className="font-inter text-xs font-medium text-stone-700 dark:text-stone-300">
               Find a song
             </label>
@@ -191,6 +189,12 @@ export function MemorySoundtrackPicker({
                   type="search"
                   value={search.input}
                   onChange={(event) => search.updateInput(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      submitSearch();
+                    }
+                  }}
                   placeholder="Song, artist, or mood"
                   autoComplete="off"
                   enterKeyHint="search"
@@ -199,14 +203,15 @@ export function MemorySoundtrackPicker({
                 />
               </div>
               <button
-                type="submit"
+                type="button"
+                onClick={submitSearch}
                 disabled={search.isPending || !search.input.trim()}
                 className="inline-flex h-11 items-center justify-center rounded-lg bg-stone-900 px-4 font-inter text-xs font-medium text-white transition-transform duration-150 active:scale-[0.97] disabled:opacity-45 dark:bg-stone-100 dark:text-stone-900 motion-reduce:transform-none motion-reduce:transition-none"
               >
                 {search.isPending ? "Searching..." : "Search"}
               </button>
             </div>
-          </form>
+          </div>
 
           {search.errorMessage && (
             <p className="mt-2 font-inter text-xs text-rose-600" role="status">
@@ -248,7 +253,7 @@ export function MemorySoundtrackPicker({
             <span className="h-px flex-1 bg-stone-200 dark:bg-stone-800" />
           </div>
 
-          <form onSubmit={submitLink}>
+          <div>
             <label htmlFor="memory-soundtrack-link" className="sr-only">YouTube video or playlist link</label>
             <div className="flex gap-2">
               <div className="relative min-w-0 flex-1">
@@ -261,12 +266,19 @@ export function MemorySoundtrackPicker({
                     setLink(event.target.value);
                     setLinkError(null);
                   }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      submitLink();
+                    }
+                  }}
                   placeholder="Paste a YouTube link"
                   className="h-11 w-full rounded-lg border border-stone-200 bg-white pl-9 pr-3 font-inter text-sm text-stone-900 outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-500/20 dark:border-stone-700 dark:bg-stone-950 dark:text-stone-100"
                 />
               </div>
               <button
-                type="submit"
+                type="button"
+                onClick={submitLink}
                 disabled={!link.trim()}
                 className="inline-flex h-11 items-center justify-center rounded-lg border border-stone-300 bg-white px-4 font-inter text-xs font-medium text-stone-700 transition-transform duration-150 active:scale-[0.97] disabled:opacity-45 dark:border-stone-700 dark:bg-stone-950 dark:text-stone-200 motion-reduce:transform-none motion-reduce:transition-none"
               >
@@ -274,7 +286,7 @@ export function MemorySoundtrackPicker({
               </button>
             </div>
             {linkError && <p className="mt-2 font-inter text-xs text-rose-600" role="status">{linkError}</p>}
-          </form>
+          </div>
         </div>
       )}
     </section>
