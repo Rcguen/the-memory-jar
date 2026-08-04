@@ -50,15 +50,13 @@ export function MemorySoundtrackPlayer({
       controller.pause();
       return;
     }
-    if (process.env.NODE_ENV === "development") {
-      console.debug("[soundtrack] togglePlayback", {
-        state: snapshot.state,
-        autoplayBlocked: snapshot.autoplayBlocked,
-        isLoading,
-        isBusy,
-        isUnavailable,
-      });
-    }
+    console.debug("[soundtrack] click", {
+      state: snapshot.state,
+      autoplayBlocked: snapshot.autoplayBlocked,
+      isLoading,
+      isBusy,
+      isUnavailable,
+    });
     void controller.play();
   };
 
@@ -139,7 +137,7 @@ export function MemorySoundtrackPlayer({
       )}
 
       <div
-        className="pointer-events-none absolute -left-[9999px] -top-[9999px] h-px w-px opacity-0"
+        className="pointer-events-none absolute inset-0 -z-10 opacity-0 mix-blend-difference"
         aria-hidden="true"
       >
         <div ref={hostRef} />
