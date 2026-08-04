@@ -28,6 +28,11 @@ import { X } from "lucide-react";
 const validThemes = Object.keys(MEMORY_THEMES) as [MemoryThemeType, ...MemoryThemeType[]];
 const validDecorations = DECORATIONS.map(d => d.id) as [DecorationID, ...DecorationID[]];
 
+function getLocalDateString() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 const soundtrackSchema = z.discriminatedUnion("source_kind", [
   z.object({
     source_kind: z.literal("youtube_video"),
@@ -111,7 +116,7 @@ export function DynamicMemoryForm({
       title: initialData?.title || "",
       content: initialData?.content || "",
       mood_id: initialData?.mood_id || "",
-      memory_date: initialData?.memory_date ? initialData.memory_date.split("T")[0] : new Date().toISOString().split("T")[0],
+      memory_date: initialData?.memory_date ? initialData.memory_date.split("T")[0] : getLocalDateString(),
       unlock_at: initialData?.unlock_at || undefined,
       is_collaborative: initialData?.is_collaborative || false,
       soundtrack: initialData?.soundtrack ?? null,
@@ -127,7 +132,7 @@ export function DynamicMemoryForm({
         title: draft.title || "",
         content: draft.content || "",
         mood_id: draft.mood_id || "",
-        memory_date: draft.memory_date || new Date().toISOString().split("T")[0],
+        memory_date: draft.memory_date || getLocalDateString(),
         unlock_at: draft.unlock_at,
         is_collaborative: draft.is_collaborative || false,
         soundtrack: (draft as typeof draft & { soundtrack?: MemorySoundtrack | null }).soundtrack ?? null,

@@ -509,7 +509,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                             <MemoryKeepsake
                               key={memory.id}
                               memory={memory}
-                              metadata={{ title, preview: isLockedCapsule ? "" : preview, dateLabel: format(new Date(memory.memory_date), "MMM d, yyyy"), comments: memory.comment_count ?? 0, favorites: memory.favorite_count ?? 0, reaction: memory.my_reaction, reactions: reactionTotal, tags: memory.tags?.map((tag) => tag.name) }}
+                              metadata={{ title, preview: isLockedCapsule ? "" : preview, dateLabel: format(new Date(`${memory.memory_date.slice(0, 10)}T00:00:00`), "MMM d, yyyy"), comments: memory.comment_count ?? 0, favorites: memory.favorite_count ?? 0, reaction: memory.my_reaction, reactions: reactionTotal, tags: memory.tags?.map((tag) => tag.name) }}
                               previewState="idle"
                               isLocked={isLockedCapsule}
                               isCollaborative={memory.is_collaborative}
