@@ -21,6 +21,7 @@ export function YouTubeMusicPlayer({
   return (
     <div
       className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
+      style={{ opacity: 0.01 }}
       aria-hidden="true"
     >
       <div ref={hostRef} />

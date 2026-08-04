@@ -149,14 +149,14 @@ export function useYouTubePlayer(source: MusicSource | null) {
 
     const currentData = player.getVideoData?.();
     if (nextSource.kind === "youtube-video") {
-      if (currentData?.video_id !== nextSource.videoId) player.cueVideoById(nextSource.videoId);
+      if (currentData?.video_id !== nextSource.videoId) player.loadVideoById(nextSource.videoId);
     } else {
       const currentIndex = player.getPlaylistIndex?.();
       const alreadyAtSource =
         currentIndex === nextSource.playlistIndex &&
         (!nextSource.videoId || currentData?.video_id === nextSource.videoId);
       if (!alreadyAtSource) {
-        player.cuePlaylist({ list: nextSource.playlistId, index: nextSource.playlistIndex });
+        player.loadPlaylist({ list: nextSource.playlistId, index: nextSource.playlistIndex });
       }
     }
 
