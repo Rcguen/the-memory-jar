@@ -394,7 +394,10 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
       {/* Header */}
       <div className={cn("relative z-10 flex-shrink-0 border-b border-stone-700/10 bg-[#fdfbf7]/95 px-8 py-5 pr-28", isPhone && "sticky top-0 px-5 pb-4 pt-[calc(env(safe-area-inset-top)+0.9rem)] backdrop-blur-xl")}>
         <p className="mb-2 text-[12px] font-medium tracking-[0.12em] text-stone-500">
-          {(() => { const d = fullMemory.memory_date ?? fullMemory.created_at; return d ? format(new Date(d.slice(0, 10).replace(/-/g, "/")), "MMMM do, yyyy") : null; })()}
+          {(() => { 
+            const d = fullMemory.unlock_at ? fullMemory.created_at : (fullMemory.memory_date ?? fullMemory.created_at); 
+            return d ? format(new Date(d.slice(0, 10).replace(/-/g, "/")), "MMMM do, yyyy") : null; 
+          })()}
           {fullMemory.is_pinned && (
             <span className="ml-3 inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
               <Pin className="w-3 h-3" /> Pinned
