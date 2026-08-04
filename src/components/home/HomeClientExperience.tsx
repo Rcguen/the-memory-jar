@@ -465,8 +465,8 @@ export function HomeClientExperience() {
       </div>
 
       {/* LEFT PANEL: Memory Shelf (Primary Actions) */}
-      <div className="home-side-panel home-side-panel--shelf relative z-10 mt-8 w-full max-w-[23rem] px-3 sm:max-w-3xl sm:px-4 xl:absolute xl:bottom-6 xl:left-6 xl:top-24 xl:mt-0 xl:w-[24rem] xl:max-w-none xl:px-0 xl:pb-0 2xl:w-[34rem] xl:overflow-y-auto xl:[scrollbar-width:none] xl:[&::-webkit-scrollbar]:hidden">
-        <div className="flex flex-col relative z-10 xl:pr-3 xl:pb-12 min-h-full">
+      <div className="relative z-10 mt-8 w-full max-w-[23rem] px-3 sm:max-w-3xl sm:px-4 xl:absolute xl:bottom-6 xl:left-6 xl:top-24 xl:mt-0 xl:w-[24rem] xl:max-w-none xl:px-0 xl:pb-0 2xl:w-[34rem] xl:overflow-y-auto xl:[scrollbar-width:none] xl:[&::-webkit-scrollbar]:hidden pointer-events-none">
+        <div className="flex flex-col relative z-10 xl:pr-3 xl:pb-12 min-h-full pointer-events-auto">
           <LivingMemoryShelf className="home-shelf relative min-h-[500px] flex-1">
             <DeskCat motionActive={ambientMotion.isActive} isPhone={ambientMotion.isPhone} />
             <ErrorBoundary fallbackMessage="Memory tools failed to load.">
