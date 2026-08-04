@@ -184,8 +184,8 @@ export function useYouTubePlayer(source: MusicSource | null) {
     void loadYouTubeApi().then((YT) => {
       if (!alive || !host) return;
       const player = new YT.Player(mountPoint, {
-        height: "200",
-        width: "200",
+        height: "100%",
+        width: "100%",
         playerVars: { autoplay: 0, controls: 0, rel: 0, playsinline: 1 },
         events: {
           onReady: () => {

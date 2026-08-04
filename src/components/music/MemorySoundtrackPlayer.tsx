@@ -137,7 +137,7 @@ export function MemorySoundtrackPlayer({
       )}
 
       <div
-        className="pointer-events-none absolute inset-0 -z-10 opacity-0 mix-blend-difference"
+        className="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-xl"
         aria-hidden="true"
       >
         <div ref={hostRef} />
