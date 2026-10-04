@@ -32,20 +32,20 @@ export function DropMemoryButton() {
       <Button
         onClick={openModal}
         size="lg"
-        className="group relative flex h-auto w-[min(100vw-3rem,21rem)] items-center justify-center gap-2 overflow-hidden rounded-full border-0 bg-gradient-to-br from-emerald-500 to-emerald-600 px-6 py-4 text-base font-semibold text-white shadow-[0_8px_30px_rgb(16,185,129,0.3)] transition-all dark:from-emerald-600 dark:to-emerald-700 hover:from-emerald-400 hover:to-emerald-500 sm:w-auto sm:px-8 sm:text-lg font-inter"
+        className="group relative flex h-auto w-max items-center justify-between gap-6 overflow-hidden rounded-full border-0 bg-gradient-to-br from-[#1a1a1a] to-[#2a2a2a] dark:from-white dark:to-zinc-200 px-2 py-2 pr-6 pl-8 text-base font-semibold text-white dark:text-black shadow-[0_12px_40px_rgb(0,0,0,0.4)] dark:shadow-[0_12px_40px_rgb(255,255,255,0.15)] transition-all sm:text-lg font-cormorant tracking-wide"
       >
-        <motion.div
-          animate={{ rotate: isHovered ? 90 : 0 }}
-          transition={{ type: "spring", stiffness: 200, damping: 10 }}
-          className="flex items-center justify-center"
-        >
-          <Plus className="w-5 h-5" />
-        </motion.div>
         <span>Drop a Memory</span>
+        <motion.div
+          animate={{ scale: isHovered ? 1.05 : 1, x: isHovered ? 2 : 0 }}
+          transition={{ type: "spring", stiffness: 400, damping: 25 }}
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 dark:bg-black/10 backdrop-blur-md"
+        >
+          <Plus className="w-5 h-5 text-white dark:text-black transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:rotate-90" />
+        </motion.div>
 
         {/* Sweeping Glass Reflection */}
         <motion.div
-          className="absolute inset-0 -skew-x-12 w-12 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+          className="absolute inset-0 -skew-x-12 w-12 bg-gradient-to-r from-transparent via-white/20 dark:via-black/10 to-transparent"
           initial={{ x: "-150%" }}
           animate={{ x: isHovered ? "400%" : "-150%" }}
           transition={{ 

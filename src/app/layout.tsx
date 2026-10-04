@@ -61,6 +61,7 @@ export default async function RootLayout({
         suppressHydrationWarning
         className={`${cormorantGaramond.variable} ${inter.variable} font-sans antialiased min-h-screen bg-background text-foreground flex flex-col overflow-x-hidden`}
       >
+        <div className="editorial-noise" />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

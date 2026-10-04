@@ -405,6 +405,25 @@
     outline: 2px solid var(--focus-color);
     outline-offset: 2px;
   }
+  
+  .editorial-noise {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    opacity: 0.025;
+  }
+  .dark .editorial-noise {
+    opacity: 0.04;
+  }
+
+  .double-bezel {
+    @apply rounded-[2rem] p-1.5 bg-black/5 dark:bg-white/5 ring-1 ring-black/5 dark:border dark:border-white/10;
+  }
+  .double-bezel-inner {
+    @apply rounded-[calc(2rem-0.375rem)] shadow-[inset_0_1px_1px_rgba(255,255,255,0.15)] bg-card overflow-hidden;
+  }
 }
 @layer utilities {
   .home-room {

@@ -67,13 +67,18 @@ export function TodayCard({ className }: { className?: string }) {
 
   return (
     <motion.div 
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className={cn("paper-surface p-5 rounded-[1.35rem] border border-white/[0.20] dark:border-white/[0.08] flex flex-col justify-center", className)}
+      transition={{ duration: 0.8, ease: [0.32, 0.72, 0, 1] }}
+      className={cn("double-bezel group cursor-default", className)}
     >
-      <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-1 font-semibold">Today</p>
-      <h2 className="font-cormorant text-2xl sm:text-3xl text-[color:var(--jar-ink)] dark:text-amber-50 mb-1.5 leading-none">{greeting}</h2>
-      <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-snug">{dynamicSentence}</p>
+      <div className="double-bezel-inner paper-surface p-8 h-full flex flex-col justify-center transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-[0.98]">
+        <span className="editorial-kicker text-zinc-500 mb-4 inline-flex px-3 py-1 bg-black/5 dark:bg-white/5 rounded-full w-max">
+          Today
+        </span>
+        <h2 className="type-hero text-[color:var(--jar-ink)] dark:text-amber-50 mb-3">{greeting}</h2>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-snug">{dynamicSentence}</p>
+      </div>
     </motion.div>
   );
 }
