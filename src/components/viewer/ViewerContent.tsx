@@ -391,30 +391,30 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
         </button>
       </div>
 
-      {/* Header */}
-      <div className={cn("relative z-10 flex-shrink-0 border-b border-stone-700/10 bg-[#fdfbf7]/95 px-8 py-5 pr-28", isPhone && "sticky top-0 px-5 pb-4 pt-[calc(env(safe-area-inset-top)+0.9rem)] backdrop-blur-xl")}>
-        <p className="mb-2 text-[12px] font-medium tracking-[0.12em] text-stone-500">
+            {/* Header Cinematic */}
+      <div className={cn("relative z-10 flex-shrink-0 border-b border-black/5 bg-[#fdfbf7]/95 px-8 py-10 pr-28", isPhone && "sticky top-0 px-6 pb-6 pt-[calc(env(safe-area-inset-top)+2rem)] backdrop-blur-2xl")}>
+        <div className="editorial-kicker mb-6 inline-flex px-3 py-1 bg-black/5 rounded-full text-[11px] font-semibold tracking-widest text-stone-500 uppercase">
           {(() => { 
             const d = fullMemory.unlock_at ? fullMemory.created_at : (fullMemory.memory_date ?? fullMemory.created_at); 
             return d ? format(new Date(d.slice(0, 10).replace(/-/g, "/")), "MMMM do, yyyy") : null; 
           })()}
           {fullMemory.is_pinned && (
-            <span className="ml-3 inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+            <span className="ml-3 inline-flex items-center gap-1 text-emerald-600">
               <Pin className="w-3 h-3" /> Pinned
             </span>
           )}
-        </p>
-        <h2 className={cn("font-semibold text-stone-800", isPhone ? "max-w-[18rem] text-[2.15rem] leading-[1]" : "text-4xl")}>
+        </div>
+        <h2 className={cn("font-cormorant text-stone-900 tracking-tight", isPhone ? "text-5xl leading-[0.95]" : "text-7xl leading-[0.9]")}>
           <EmojiText text={fullMemory.title || "Untitled memory"} />
         </h2>
       </div>
 
       <div className="relative z-10 flex min-h-0 flex-1 flex-col lg:flex-row">
-        <main className={cn("min-h-0 flex-1 overflow-y-auto custom-scrollbar", isPhone ? "flex-none overflow-visible px-5 py-6" : "px-8 py-7")}>
-          <div className={cn("mx-auto flex w-full flex-col justify-start gap-5", isReadingMemory ? "max-w-[46rem]" : "max-w-[56rem]")}>
+                <main className={cn("min-h-0 flex-1 overflow-y-auto custom-scrollbar", isPhone ? "flex-none overflow-visible px-6 py-10" : "px-16 py-16")}>
+          <div className={cn("mx-auto flex w-full flex-col justify-start gap-12", isReadingMemory ? "max-w-[42rem]" : "max-w-[56rem]")}>
             {fullMemory.content && (
-              <div className={cn("prose prose-stone max-w-none rounded-[var(--radius-small)] border border-stone-700/10 bg-[#fffaf0] p-5 shadow-sm prose-p:leading-[1.72] sm:p-7", isPhone ? "prose-base" : "prose-lg")}>
-                <p className="whitespace-pre-wrap font-normal text-stone-700"><EmojiText text={fullMemory.content} /></p>
+              <div className={cn("prose prose-stone max-w-none prose-p:leading-[1.8] prose-p:tracking-[-0.01em]", isPhone ? "prose-lg" : "prose-xl")}>
+                <p className="whitespace-pre-wrap font-normal text-stone-800"><EmojiText text={fullMemory.content} /></p>
               </div>
             )}
             <PhotoGallery attachments={photoAttachments} onFullscreenChange={setIsPhotoGalleryOpen} />
@@ -424,21 +424,23 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
           </div>
         </main>
 
-        <aside className="flex min-h-0 shrink-0 flex-col border-t border-stone-700/10 bg-[#eee7db]/70 lg:w-[29%] lg:min-w-[18rem] lg:max-w-[23rem] lg:border-l lg:border-t-0">
-          <div className="border-b border-stone-700/10 p-3">
+        <aside className="flex min-h-0 shrink-0 flex-col border-t border-black/5 bg-[#f7f4ec]/80 lg:w-[26rem] lg:border-l lg:border-t-0 shadow-[inset_1px_0_10px_rgba(0,0,0,0.02)]">
+          <div className="border-b border-black/5 p-6">
             {isActionRailExpanded && (
-              <div className="mb-2 flex flex-wrap gap-1 rounded-[var(--radius-small)] bg-white/45 p-1.5">
-                {quickReactions.map((emoji) => <button key={emoji} type="button" onClick={() => handleReaction(emoji)} className="inline-flex h-9 w-9 items-center justify-center rounded-md text-lg hover:bg-white" aria-label={`React with ${emoji}`}>{emoji}</button>)}
+              <div className="mb-4 flex flex-wrap gap-2 double-bezel backdrop-blur-md">
+                <div className="double-bezel-inner bg-white/80 p-2 flex gap-1 w-full justify-around">
+                  {quickReactions.map((emoji) => <button key={emoji} type="button" onClick={() => handleReaction(emoji)} className="inline-flex h-12 w-12 items-center justify-center rounded-full text-2xl hover:bg-black/5 transition-transform hover:scale-110 ease-[cubic-bezier(0.32,0.72,0,1)] duration-500" aria-label={`React with ${emoji}`}>{emoji}</button>)}
+                </div>
               </div>
             )}
-            <div className="grid grid-cols-4 gap-1.5">
-              <button type="button" onClick={handleFavorite} disabled={isFavoriting} className={cn("inline-flex min-h-11 flex-col items-center justify-center rounded-[var(--radius-small)] text-[10px] font-medium", fullMemory.is_favorite ? "bg-rose-100 text-rose-700" : "bg-white/55 text-stone-600")}><Heart className={cn("mb-0.5 h-4 w-4", fullMemory.is_favorite && "fill-current")} />Favorite</button>
-              <button type="button" onClick={() => setIsActionRailExpanded((value) => !value)} className={cn("inline-flex min-h-11 flex-col items-center justify-center rounded-[var(--radius-small)] bg-white/55 text-[10px] font-medium text-stone-600", isActionRailExpanded && "bg-amber-100 text-amber-800")}><Sparkles className="mb-0.5 h-4 w-4" />React</button>
-              <button type="button" onClick={handleShare} className="inline-flex min-h-11 flex-col items-center justify-center rounded-[var(--radius-small)] bg-white/55 text-[10px] font-medium text-stone-600"><Share2 className="mb-0.5 h-4 w-4" />{canShare ? "Share" : "Copy"}</button>
-              <button type="button" onClick={handleDownload} disabled={downloadTargets.length === 0 || isDownloading} className="inline-flex min-h-11 flex-col items-center justify-center rounded-[var(--radius-small)] bg-white/55 px-1 text-[10px] font-medium leading-tight text-stone-600 disabled:opacity-40">{isDownloading ? <Loader2 className="mb-0.5 h-4 w-4 animate-spin" /> : <Download className="mb-0.5 h-4 w-4" />}{isDownloading ? "Saving" : photoAttachments.length > 1 ? `Save all (${photoAttachments.length})` : "Save"}</button>
+            <div className="grid grid-cols-4 gap-2">
+              <button type="button" onClick={handleFavorite} disabled={isFavoriting} className={cn("inline-flex min-h-16 flex-col items-center justify-center rounded-2xl text-[11px] font-semibold tracking-wide transition-all ease-[cubic-bezier(0.32,0.72,0,1)] duration-500 hover:scale-[0.95]", fullMemory.is_favorite ? "bg-rose-100 text-rose-700 shadow-inner" : "bg-white/80 text-stone-600 hover:bg-white")}><Heart className={cn("mb-1.5 h-5 w-5", fullMemory.is_favorite && "fill-current")} />Favorite</button>
+              <button type="button" onClick={() => setIsActionRailExpanded((value) => !value)} className={cn("inline-flex min-h-16 flex-col items-center justify-center rounded-2xl bg-white/80 text-[11px] font-semibold tracking-wide text-stone-600 transition-all ease-[cubic-bezier(0.32,0.72,0,1)] duration-500 hover:scale-[0.95]", isActionRailExpanded && "bg-amber-100 text-amber-800 shadow-inner")}><Sparkles className="mb-1.5 h-5 w-5" />React</button>
+              <button type="button" onClick={handleShare} className="inline-flex min-h-16 flex-col items-center justify-center rounded-2xl bg-white/80 text-[11px] font-semibold tracking-wide text-stone-600 transition-all ease-[cubic-bezier(0.32,0.72,0,1)] duration-500 hover:scale-[0.95] hover:bg-white"><Share2 className="mb-1.5 h-5 w-5" />{canShare ? "Share" : "Copy"}</button>
+              <button type="button" onClick={handleDownload} disabled={downloadTargets.length === 0 || isDownloading} className="inline-flex min-h-16 flex-col items-center justify-center rounded-2xl bg-white/80 px-1 text-[11px] font-semibold tracking-wide leading-tight text-stone-600 disabled:opacity-40 transition-all ease-[cubic-bezier(0.32,0.72,0,1)] duration-500 hover:scale-[0.95] hover:bg-white">{isDownloading ? <Loader2 className="mb-1.5 h-5 w-5 animate-spin" /> : <Download className="mb-1.5 h-5 w-5" />}{isDownloading ? "Saving" : photoAttachments.length > 1 ? `Save all` : "Save"}</button>
             </div>
           </div>
-          <MemoryComments memoryId={memoryId} className="min-h-0 flex-1" />
+          <MemoryComments memoryId={memoryId} className="min-h-0 flex-1 px-2" />
         </aside>
       </div>
 
