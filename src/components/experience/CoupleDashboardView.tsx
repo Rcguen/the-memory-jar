@@ -87,7 +87,7 @@ export function CoupleDashboardView() {
   });
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-emerald-50/30 px-4 py-8 pb-36 dark:bg-emerald-950/20 sm:pb-8" {...pullToRefresh.bind}>
+    <main className="relative h-[100dvh] overflow-y-auto overflow-x-hidden bg-emerald-50/30 px-4 py-8 pb-36 dark:bg-emerald-950/20 sm:pb-8" {...pullToRefresh.bind}>
       {relationship?.relationshipTimezone && (
         <RelationshipAmbientBackdrop timezone={relationship.relationshipTimezone} />
       )}
