@@ -31,7 +31,7 @@ export function MobileBottomNav() {
 
   return (
     <>
-      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+4.15rem)] z-[85] flex justify-center px-4 sm:hidden">
+      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] z-[85] flex justify-center px-4 sm:hidden">
         <motion.button
           type="button"
           whileTap={{ scale: 0.95 }}
@@ -55,8 +55,9 @@ export function MobileBottomNav() {
         </motion.button>
       </div>
 
-      <nav aria-label="Primary navigation" className="mobile-safe-bottom fixed inset-x-0 bottom-0 z-[80] border-t border-[var(--divider)] bg-[var(--surface-wood)]/85 px-3 pb-[calc(env(safe-area-inset-bottom)+0.45rem)] pt-2.5 shadow-[var(--shadow-modal)] backdrop-blur-2xl sm:hidden">
-        <div className="mx-auto grid max-w-md grid-cols-5 gap-1 rounded-[1.45rem] border border-[var(--divider)] bg-[var(--surface-raised)]/5 p-1.5">
+      <nav aria-label="Primary navigation" className="mobile-safe-bottom fixed inset-x-0 bottom-0 z-[80] px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-2 sm:hidden flex justify-center">
+        <div className="w-full max-w-md double-bezel shadow-[0_24px_80px_rgba(0,0,0,0.6)] backdrop-blur-3xl">
+          <div className="double-bezel-inner bg-zinc-950/70 p-1.5 grid grid-cols-5 gap-1">
           {ITEMS.map((item) => {
             const Icon = item.icon;
             const active = pathname === item.href;
@@ -75,8 +76,8 @@ export function MobileBottomNav() {
                 }}
                 onClick={() => trigger("light")}
                 className={cn(
-                  "flex min-h-[52px] flex-col items-center justify-center rounded-[1.1rem] px-1 py-2 text-center transition-colors focus-ring-premium",
-                  active ? "bg-white/10 text-white" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+                  "flex min-h-[52px] flex-col items-center justify-center rounded-[1.1rem] px-1 py-2 text-center transition-all focus-ring-premium",
+                  active ? "bg-white/15 text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.25)] scale-[0.98]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5",
                 )}
                 aria-current={active ? "page" : undefined}
               >
@@ -85,6 +86,7 @@ export function MobileBottomNav() {
               </MotionLink>
             );
           })}
+          </div>
         </div>
       </nav>
     </>
