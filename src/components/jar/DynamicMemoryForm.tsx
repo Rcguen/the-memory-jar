@@ -23,7 +23,7 @@ import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { useIsPhone } from "@/hooks/useIsPhone";
-import { X } from "lucide-react";
+import { X, Calendar } from "lucide-react";
 
 const validThemes = Object.keys(MEMORY_THEMES) as [MemoryThemeType, ...MemoryThemeType[]];
 const validDecorations = DECORATIONS.map(d => d.id) as [DecorationID, ...DecorationID[]];
@@ -329,12 +329,15 @@ export function DynamicMemoryForm({
         <div className={cn("flex items-center justify-between pt-2 border-t border-stone-100 dark:border-stone-800/50 mt-4", isPhone && "flex-col gap-4 items-start")}>
           <div className={cn("flex w-1/2 flex-col gap-1.5 pr-2", isPhone && "w-full pr-0")}>
             <label htmlFor="memory_date" className="font-inter text-[11px] font-semibold uppercase tracking-wider text-stone-500">Date</label>
-            <Input 
-              id="memory_date"
-              type="date" 
-              {...form.register("memory_date")} 
-              className="h-12 w-full rounded-xl border border-[rgba(92,75,54,0.18)] bg-white/60 px-4 font-inter text-sm font-medium text-stone-700 shadow-inner transition-all duration-300 hover:bg-white focus-visible:border-stone-400 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-stone-400/20 dark:border-white/10 dark:bg-zinc-900/60 dark:text-stone-300 uppercase tracking-widest"
-            />
+            <div className="relative w-full">
+                <Calendar className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 opacity-50 z-10 pointer-events-none text-stone-700 dark:text-stone-300" />
+                <Input 
+                  id="memory_date"
+                  type="date" 
+                  {...form.register("memory_date")} 
+                  className="relative z-0 h-12 w-full rounded-xl border border-[rgba(92,75,54,0.18)] bg-white/60 pl-10 pr-4 font-inter text-sm font-medium text-stone-700 shadow-inner transition-all duration-300 hover:bg-white focus-visible:border-stone-400 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-stone-400/20 dark:border-white/10 dark:bg-zinc-900/60 dark:text-stone-300 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
+                />
+              </div>
           </div>
           
           <div className={cn("flex w-1/2 flex-col gap-1.5 pl-4 sm:border-l sm:border-stone-200 sm:dark:border-stone-800", isPhone && "w-full pl-0")}>
