@@ -140,17 +140,17 @@ export function TimeCapsulePicker({ value, onChange }: TimeCapsulePickerProps) {
     <div className="space-y-1.5">
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger render={
-          <Button
-            variant="outline"
+          <button
+            type="button"
             disabled={!isTimezoneReady}
             className={cn(
-              "w-full justify-start text-left font-normal bg-white/50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800",
-              !value && "text-muted-foreground"
+              "flex h-12 w-full items-center justify-start rounded-xl border border-[rgba(92,75,54,0.18)] bg-white/60 px-4 font-inter text-sm font-medium shadow-inner transition-all duration-300 hover:bg-white focus-visible:border-stone-400 focus-visible:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/20 dark:border-white/10 dark:bg-zinc-900/60 dark:text-stone-300",
+              !value ? "text-stone-500" : "text-stone-700"
             )}
           />
         }>
-          <Clock className="mr-2 h-4 w-4 opacity-50" />
-          {!isTimezoneReady ? "Loading timezone..." : value ? getLabel() : "Open Today (No lock)"}
+            <Clock className="mr-2 h-4 w-4 opacity-50" />
+            {!isTimezoneReady ? "Loading timezone..." : value ? getLabel() : "Open Today (No lock)"}
         </PopoverTrigger>
         <PopoverContent className="w-80 p-0" align="start">
           <div className="p-2 space-y-1">
