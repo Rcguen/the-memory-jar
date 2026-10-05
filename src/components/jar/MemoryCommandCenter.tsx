@@ -424,7 +424,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                           value={search}
                           onChange={(event) => { setSearch(event.target.value); setDisplayState({ key: "", limit: initialDisplayLimit }); }}
                           placeholder="Search"
-                          className="h-11 w-full rounded-full border border-white/[0.1] bg-black/35 pl-9 pr-11 text-sm text-zinc-100 placeholder:text-zinc-400 outline-none transition focus-visible:border-emerald-400/50 focus-visible:ring-2 focus-visible:ring-emerald-400/15"
+                          className="h-11 w-full rounded-full border border-white/[0.1] bg-white/[0.05] pl-9 pr-11 text-sm text-zinc-100 placeholder:text-zinc-400 outline-none transition focus-visible:border-emerald-400/50 focus-visible:ring-2 focus-visible:ring-emerald-400/15"
                         />
                         {search && (
                           <button
@@ -509,7 +509,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                             <MemoryKeepsake
                               key={memory.id}
                               memory={memory}
-                              metadata={{ title, preview: isLockedCapsule ? "" : preview, dateLabel: format(new Date(`${memory.memory_date.slice(0, 10)}T00:00:00`), "MMM d, yyyy"), comments: memory.comment_count ?? 0, favorites: memory.favorite_count ?? 0, reaction: memory.my_reaction, reactions: reactionTotal, tags: memory.tags?.map((tag) => tag.name) }}
+                              metadata={{ title, preview: isLockedCapsule ? "" : preview, dateLabel: format(new Date(memory.unlock_at ? memory.created_at : `${memory.memory_date.slice(0, 10)}T00:00:00`), "MMM d, yyyy"), comments: memory.comment_count ?? 0, favorites: memory.favorite_count ?? 0, reaction: memory.my_reaction, reactions: reactionTotal, tags: memory.tags?.map((tag) => tag.name) }}
                               previewState="idle"
                               isLocked={isLockedCapsule}
                               isCollaborative={memory.is_collaborative}
@@ -572,7 +572,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                           </div>
                           <div>
                             <p className="text-zinc-300"><EmojiText text={activityLabel(activity)} /></p>
-                            <p className="mt-1 text-xs text-zinc-600">{formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}</p>
+                            <p className="mt-1 text-xs text-zinc-400">{formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}</p>
                           </div>
                         </div>
                       </motion.div>
