@@ -22,11 +22,11 @@ function ThemeCard({ theme, isSelected, onClick }: { theme: MemoryThemeDefinitio
       type="button"
       onClick={onClick}
       className={cn(
-        "relative flex-shrink-0 w-32 h-40 rounded-xl overflow-hidden snap-center outline-none transition-all duration-300",
-        "border-2 hover:scale-[1.02] focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2",
+        "relative flex-shrink-0 w-36 h-44 rounded-2xl overflow-hidden snap-center outline-none transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
+        "border focus-visible:ring-2 focus-visible:ring-emerald-500",
         isSelected 
-          ? "border-emerald-500 shadow-md shadow-emerald-500/10" 
-          : "border-zinc-200 dark:border-zinc-800"
+          ? "border-emerald-500/40 shadow-[0_8px_30px_rgb(16,185,129,0.15)] ring-1 ring-emerald-500/50 scale-[1.02]" 
+          : "border-black/5 dark:border-white/5 opacity-80 hover:opacity-100 hover:scale-[1.02] hover:shadow-xl"
       )}
     >
       {theme.previewThumbnail && !imgError ? (

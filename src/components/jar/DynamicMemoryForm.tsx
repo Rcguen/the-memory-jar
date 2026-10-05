@@ -231,7 +231,7 @@ export function DynamicMemoryForm({
             id="title"
             {...form.register("title")} 
             placeholder="Give this memory a title..." 
-            className="h-auto rounded-none border-b border-transparent bg-transparent px-2 py-3 font-cormorant text-3xl font-medium leading-tight text-stone-900 shadow-none transition-colors placeholder:text-stone-400 hover:border-stone-200 focus-visible:border-rose-300 focus-visible:bg-stone-50/50 focus-visible:ring-0 dark:text-stone-100 dark:placeholder:text-stone-600 dark:hover:border-stone-800 dark:focus-visible:bg-stone-900/50"
+            className="h-auto rounded-none border-b border-stone-200 bg-transparent px-2 py-4 font-cormorant text-4xl font-medium leading-tight text-stone-900 shadow-none transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-stone-300 hover:border-stone-400 focus-visible:border-stone-800 focus-visible:bg-transparent focus-visible:ring-0 dark:border-white/10 dark:text-stone-100 dark:placeholder:text-stone-600 dark:hover:border-white/30 dark:focus-visible:border-white/60"
           />
           {form.formState.errors.title && (
             <p className="text-red-500 text-xs mt-1 px-2">{form.formState.errors.title.message}</p>
@@ -246,7 +246,7 @@ export function DynamicMemoryForm({
               id="content"
               {...form.register("content")} 
               placeholder="Pour your heart out here..." 
-              className="min-h-[140px] max-h-[50vh] resize-y rounded-xl border border-stone-200 bg-stone-50/50 px-4 py-4 font-inter text-base leading-7 text-stone-800 transition-colors focus-visible:border-rose-300 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-rose-500/20 dark:border-stone-800 dark:bg-stone-900/50 dark:text-stone-200 dark:focus-visible:bg-stone-950 sm:min-h-[220px]"
+              className="min-h-[160px] max-h-[50vh] resize-y rounded-2xl border border-[rgba(92,75,54,0.18)] bg-white/50 px-6 py-6 font-cormorant text-[22px] leading-9 text-stone-800 shadow-inner transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:border-stone-400 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-stone-400/20 dark:border-white/10 dark:bg-zinc-900/50 dark:text-stone-200 sm:min-h-[280px]"
             />
             
             <ThemePicker 
@@ -333,7 +333,7 @@ export function DynamicMemoryForm({
               id="memory_date"
               type="date" 
               {...form.register("memory_date")} 
-              className="h-11 rounded-lg border-stone-200 bg-stone-50/50 px-3 font-inter text-sm shadow-none transition-colors focus-visible:border-rose-300 focus-visible:ring-2 focus-visible:ring-rose-500/20 dark:border-stone-800 dark:bg-stone-900/50"
+              className="h-12 w-full rounded-xl border border-[rgba(92,75,54,0.18)] bg-white/60 px-4 font-inter text-sm font-medium text-stone-700 shadow-inner transition-all duration-300 hover:bg-white focus-visible:border-stone-400 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-stone-400/20 dark:border-white/10 dark:bg-zinc-900/60 dark:text-stone-300 uppercase tracking-widest"
             />
           </div>
           

@@ -119,7 +119,7 @@ export function ViewerAnimation({ memoryId, type, fullMemory, onClose, stage: in
         return (
           <motion.div
             animate={isUnveiling ? { rotateY: [0, 14, 0], rotateZ: [-2, 3, 0], scale: [1, 1.12, 1.04] } : { rotateY: 0, rotateZ: 0, scale: 1 }}
-            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 1.2, ease: [0.32, 0.72, 0, 1] }}
             style={{ transformStyle: "preserve-3d" }}
           >
             <Polaroid {...commonProps} />
@@ -129,7 +129,7 @@ export function ViewerAnimation({ memoryId, type, fullMemory, onClose, stage: in
         return (
           <motion.div
             animate={isUnveiling ? { rotateX: -20, scale: 1.1 } : { rotateX: 0, scale: 1 }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 1.2, ease: [0.32, 0.72, 0, 1] }}
           >
             <Cassette {...commonProps} />
           </motion.div>
@@ -138,7 +138,7 @@ export function ViewerAnimation({ memoryId, type, fullMemory, onClose, stage: in
         return (
           <motion.div
             animate={isUnveiling ? { rotateX: [0, -34, 0], scaleY: [1, 0.82, 1.12], opacity: [1, 0.86, 1] } : { rotateX: 0, scaleY: 1 }}
-            transition={{ duration: 0.82, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 1.2, ease: [0.32, 0.72, 0, 1] }}
             style={{ transformOrigin: "50% 100%", transformStyle: "preserve-3d" }}
           >
             <Letter {...commonProps} />
@@ -148,7 +148,7 @@ export function ViewerAnimation({ memoryId, type, fullMemory, onClose, stage: in
         return (
           <motion.div
             animate={isUnveiling ? { scale: 1.1 } : {}}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 1.2, ease: [0.32, 0.72, 0, 1] }}
           >
             <WaxSealDoc {...commonProps} />
           </motion.div>
@@ -159,7 +159,7 @@ export function ViewerAnimation({ memoryId, type, fullMemory, onClose, stage: in
         return (
           <motion.div
             animate={isUnveiling ? { rotate: 180, scale: 1.5, opacity: 0.8 } : {}}
-            transition={{ duration: 1 }}
+            transition={{ duration: 1.2, ease: [0.32, 0.72, 0, 1] }}
           >
             <OrigamiStar {...commonProps} />
           </motion.div>
@@ -168,7 +168,7 @@ export function ViewerAnimation({ memoryId, type, fullMemory, onClose, stage: in
         return (
           <motion.div
             animate={isUnveiling ? { rotateY: -180, scale: 1.2 } : {}}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 1.2, ease: [0.32, 0.72, 0, 1] }}
           >
             <Postcard {...commonProps} />
           </motion.div>
@@ -177,7 +177,7 @@ export function ViewerAnimation({ memoryId, type, fullMemory, onClose, stage: in
         return (
           <motion.div
             animate={isUnveiling ? { scale: 1.5 } : {}}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 1.2, ease: [0.32, 0.72, 0, 1] }}
           >
             <GlowingNote {...commonProps} />
           </motion.div>
@@ -186,7 +186,7 @@ export function ViewerAnimation({ memoryId, type, fullMemory, onClose, stage: in
         return (
           <motion.div
             animate={isUnveiling ? { y: [0, -14, 0], rotate: [0, 8, -2], scale: [1, 1.18, 1.04] } : {}}
-            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 1.2, ease: [0.32, 0.72, 0, 1] }}
           >
             <TinySlip {...commonProps} />
           </motion.div>
@@ -261,7 +261,7 @@ export function ViewerAnimation({ memoryId, type, fullMemory, onClose, stage: in
             key="physical-object"
             initial={{ opacity: 1 }}
             exit={{ opacity: 0, scale: 1.5 }}
-            transition={{ duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
+            transition={{ duration: 1.2, ease: [0.32, 0.72, 0, 1] }}
             className="absolute z-20 flex flex-col items-center justify-center gap-2"
           >
             {renderPhysicalObject()}
@@ -286,7 +286,7 @@ export function ViewerAnimation({ memoryId, type, fullMemory, onClose, stage: in
             animate="animate"
             exit="exit"
             variants={readingVariants}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+            transition={{ duration: 1.2, ease: [0.32, 0.72, 0, 1] }}
             onAnimationStart={() => {
               // Enable will-change only during active transitions
               document.documentElement.style.setProperty('--reading-will-change', 'transform, opacity');
