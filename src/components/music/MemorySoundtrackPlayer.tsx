@@ -62,7 +62,7 @@ export function MemorySoundtrackPlayer({
 
   return (
     <aside
-      className="fixed bottom-[calc(env(safe-area-inset-bottom)+0.8rem)] left-1/2 z-[170] w-[min(calc(100vw-1rem),28rem)] -translate-x-1/2 rounded-xl border border-stone-200/80 bg-[#181713]/95 p-2 text-stone-100 shadow-[0_16px_45px_rgba(0,0,0,0.32)] backdrop-blur-md sm:bottom-6 sm:w-[min(32rem,calc(100vw-2rem))]"
+      className="fixed sm:absolute bottom-[calc(env(safe-area-inset-bottom)+0.8rem)] left-1/2 z-[170] w-[min(calc(100vw-1rem),28rem)] sm:w-[min(calc(100%-2rem),28rem)] -translate-x-1/2 lg:left-[calc(50%-13rem)] rounded-xl border border-stone-200/80 bg-[#181713]/95 p-2 text-stone-100 shadow-[0_16px_45px_rgba(0,0,0,0.32)] backdrop-blur-md sm:bottom-6 sm:w-[min(32rem,calc(100vw-2rem))]"
       aria-label={`Soundtrack for ${memoryTitle || "this memory"}`}
       onClick={(event) => event.stopPropagation()}
     >

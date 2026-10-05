@@ -424,7 +424,7 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
           </div>
         </main>
 
-        <aside className="flex min-h-0 shrink-0 flex-col border-t border-black/5 bg-[#f7f4ec]/80 lg:w-[26rem] lg:border-l lg:border-t-0 shadow-[inset_1px_0_10px_rgba(0,0,0,0.02)]">
+        <aside className="flex min-h-0 shrink-0 flex-col border-t border-black/5 bg-[#f7f4ec]/80 dark:bg-black/20 dark:border-white/5 lg:w-[26rem] lg:border-l lg:border-t-0 shadow-[inset_1px_0_10px_rgba(0,0,0,0.02)]">
           <div className="border-b border-black/5 p-6">
             {isActionRailExpanded && (
               <div className="mb-4 flex flex-wrap gap-2 rounded-2xl border border-black/5 bg-white/50 shadow-sm dark:border-white/10 dark:bg-white/10">
@@ -444,7 +444,7 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
         </aside>
       </div>
 
-      <div className="relative z-10 hidden items-center justify-between border-t border-stone-700/10 bg-[#eee7db]/55 px-6 py-2 lg:flex">
+      <div className="relative z-10 hidden items-center justify-between border-t border-stone-700/10 bg-[#eee7db]/55 dark:border-white/5 dark:bg-black/20 px-6 py-2 lg:flex">
         <div className="flex gap-1"><button onClick={handlePrev} disabled={!prevId} className="inline-flex h-10 w-10 items-center justify-center rounded-md text-stone-500 hover:bg-white/60 disabled:opacity-30" aria-label="Previous memory"><ChevronLeft className="h-5 w-5" /></button><button onClick={handleNext} disabled={!nextId} className="inline-flex h-10 w-10 items-center justify-center rounded-md text-stone-500 hover:bg-white/60 disabled:opacity-30" aria-label="Next memory"><ChevronRight className="h-5 w-5" /></button></div>
         <span className="font-cormorant text-sm italic text-stone-500">With Love</span>
       </div>
