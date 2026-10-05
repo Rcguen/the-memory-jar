@@ -103,7 +103,7 @@ export function DynamicMemoryForm({
   existingAttachments = [],
   onRemoveAttachment
 }: DynamicMemoryFormProps) {
-  const { draft, saveDraft, flushDraft, isDraftSaved, isLoaded } = useMemoryDraft();
+  const { draft, saveDraft, flushDraft, clearDraft, isDraftSaved, isLoaded } = useMemoryDraft();
   const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isPhone = useIsPhone();
@@ -156,8 +156,8 @@ export function DynamicMemoryForm({
   const onSubmit = async (data: MemoryFormData) => {
     try {
       setIsSubmitting(true);
-      flushDraft();
       await onSave(data, files);
+      clearDraft();
     } catch (error: unknown) {
       console.error("Save Memory Error:", error);
       toast.error(getErrorMessage(error));
@@ -199,7 +199,7 @@ export function DynamicMemoryForm({
     >
       {/* Sticky Header with Close Button */}
       <div className={cn(
-        "sticky top-0 z-50 flex items-center justify-between border-b border-stone-200/50 bg-[var(--surface-paper)] py-3",
+        "relative flex items-center justify-between border-b border-[rgba(92,75,54,0.18)] pb-4 mb-4",
         isPhone ? "pt-[calc(env(safe-area-inset-top)+1rem)] -mx-4 px-4" : "px-2 mb-6"
       )}>
         <div className="flex flex-col" aria-hidden="true">
@@ -382,7 +382,7 @@ export function DynamicMemoryForm({
       {/* Actions */}
       <div className={cn(
         "mt-8 flex items-center justify-end",
-        isPhone ? "sticky bottom-0 z-50 -mx-4 border-t border-stone-200/50 bg-[var(--surface-paper)] px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-3 shadow-[0_-4px_12px_rgba(0,0,0,0.02)] dark:border-stone-800/50" : "border-t border-stone-100 pt-6 dark:border-stone-800/50"
+        isPhone ? "relative mt-8 pt-4 pb-8" : "border-t border-[rgba(92,75,54,0.18)] pt-6"
       )}>
         <Button 
           type="submit" 
