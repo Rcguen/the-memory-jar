@@ -94,7 +94,7 @@ export function WritingDesk() {
       
       <div className="flex items-center justify-center gap-2 mb-4 text-amber-800/60 dark:text-amber-500/50">
         <PenTool className="w-4 h-4" />
-        <h3 className="font-cormorant text-lg uppercase tracking-widest text-center">The Writing Desk</h3>
+        <h3 className="font-cormorant text-xl tracking-[0.2em] uppercase text-stone-500">The Writing Desk</h3>
       </div>
       
       <div className="space-y-4">
@@ -108,15 +108,15 @@ export function WritingDesk() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
-                className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md rounded-2xl p-5 border border-amber-900/10 dark:border-amber-700/20 shadow-xl shadow-amber-900/5 flex flex-col gap-3"
+                className="double-bezel bg-white/40 p-6 flex flex-col gap-4 transition-all ease-[cubic-bezier(0.32,0.72,0,1)] duration-700 hover:scale-[1.02]"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-amber-700 dark:text-amber-400">
+                    <div className="w-12 h-12 rounded-full double-bezel flex items-center justify-center text-amber-700 bg-white/50">
                       <ScrollText className="w-5 h-5" />
                     </div>
                     <div>
-                      <p className="font-medium text-zinc-800 dark:text-zinc-200">{memory.title || "Untitled Memory"}</p>
+                      <p className="font-semibold text-lg text-stone-800 tracking-tight">{memory.title || "Untitled Memory"}</p>
                       <p className="text-xs text-zinc-500 dark:text-zinc-400">
                         Waiting to be sealed...
                       </p>
@@ -132,7 +132,7 @@ export function WritingDesk() {
                   {!isCreator && (
                     <button
                       onClick={() => handleSeal(memory)}
-                      className="flex items-center gap-1.5 text-xs font-medium bg-amber-700 hover:bg-amber-800 text-white px-3 py-1.5 rounded-full transition-colors shadow-md shadow-amber-900/20"
+                      className="flex items-center gap-1.5 text-xs font-semibold bg-white/80 hover:bg-white text-stone-700 px-4 py-2 rounded-full transition-all ease-[cubic-bezier(0.32,0.72,0,1)] duration-500 hover:scale-[0.95] shadow-sm"
                     >
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       Seal Together

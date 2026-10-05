@@ -148,7 +148,7 @@ export function GlassJar({
 
       {/* Layer 2: Subtle Ambient Emotion Light */}
       <motion.div
-        className="absolute inset-0 z-[-2] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(251,191,36,0.15)_0%,transparent_65%)] pointer-events-none"
+        className="absolute inset-0 z-[-2] rounded-full bg-[radial-gradient(ellipse_at_center,rgba(212,185,142,0.2)_0%,transparent_65%)] pointer-events-none"
         animate={
           ambientMotionActive && !reduceMotion && !isPhone
             ? { opacity: [0.3, 0.4, 0.3], scale: [1, 1.05, 1] }
