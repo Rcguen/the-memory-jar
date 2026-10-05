@@ -344,7 +344,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: useSimpleMotion ? 0 : -16, scale: useSimpleMotion ? 1 : 0.985 }}
             transition={{ duration: useSimpleMotion ? 0.15 : 0.34, ease: [0.22, 1, 0.36, 1] }}
-            className="relative overflow-hidden rounded-[1.35rem] border border-white/[0.12] bg-[linear-gradient(145deg,rgba(38,33,26,0.98),rgba(18,27,24,0.96))] shadow-2xl backdrop-blur-md sm:bg-[linear-gradient(145deg,rgba(38,33,26,0.92),rgba(18,27,24,0.88))] xl:bg-[linear-gradient(145deg,rgba(38,33,26,0.85),rgba(18,27,24,0.80))]"
+            className="relative overflow-hidden rounded-[1.35rem] border border-white/[0.12] bg-[linear-gradient(145deg,rgba(38,33,26,0.98),rgba(18,27,24,0.96))] shadow-2xl sm:backdrop-blur-md sm:bg-[linear-gradient(145deg,rgba(38,33,26,0.92),rgba(18,27,24,0.88))] xl:bg-[linear-gradient(145deg,rgba(38,33,26,0.85),rgba(18,27,24,0.80))]"
           >
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(222,176,106,0.16),transparent_42%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.12),transparent_46%),linear-gradient(180deg,rgba(255,255,255,0.075),transparent_36%)]" />
 

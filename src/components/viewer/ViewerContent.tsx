@@ -392,7 +392,7 @@ export function ViewerContent({ memoryId, type, fullMemory, loadError, onClose }
       </div>
 
             {/* Header Cinematic */}
-      <div className={cn("relative z-30 flex-shrink-0 border-b border-[rgba(92,75,54,0.12)] bg-[#fdfbf7]/95 px-8 py-10 pr-28", isPhone && "sticky top-0 px-6 pb-6 pt-[calc(env(safe-area-inset-top)+2rem)] backdrop-blur-2xl")}>
+      <div className={cn("relative z-30 flex-shrink-0 border-b border-[rgba(92,75,54,0.12)] bg-[#fdfbf7]/95 px-8 py-10 pr-28", isPhone && "sticky top-0 px-6 pb-6 pt-[calc(env(safe-area-inset-top)+2rem)] bg-[#fdfbf7] dark:bg-zinc-950 shadow-[0_2px_10px_rgba(0,0,0,0.05)]")}>
         <div className="editorial-kicker mb-6 inline-flex px-3 py-1 bg-black/5 rounded-full text-[11px] font-semibold tracking-widest text-stone-500 uppercase">
           {(() => { 
             const d = fullMemory.unlock_at ? fullMemory.created_at : (fullMemory.memory_date ?? fullMemory.created_at); 

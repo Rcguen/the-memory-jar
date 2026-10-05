@@ -66,7 +66,7 @@ export function CompactKeepsakeShell(props: CompactKeepsakeShellProps) {
   return (
     <>
     <article className={cn(
-      "group relative flex w-full flex-col overflow-visible rounded-2xl border transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:scale-[1.01] hover:shadow-xl",
+      "group relative flex w-full flex-col overflow-visible rounded-2xl border transition duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:scale-[1.01] hover:shadow-xl",
       isForest ? "border-emerald-100/15 bg-[#1b2922] text-stone-100" : "border-[rgba(92,75,54,0.18)] bg-[#fdfbf7] shadow-md text-stone-800 double-bezel dark:border-white/10 dark:bg-[#1c1c1c] dark:text-stone-100",
       (showReactions || showOverflow) && "z-20",
     )}>

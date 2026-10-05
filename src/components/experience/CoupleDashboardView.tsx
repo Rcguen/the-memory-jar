@@ -97,7 +97,7 @@ export function CoupleDashboardView() {
         className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center sm:hidden"
         animate={{ opacity: pullToRefresh.pullDistance > 4 || pullToRefresh.isRefreshing ? 1 : 0, y: Math.min(pullToRefresh.pullDistance, 52) }}
       >
-        <div className="mt-3 rounded-full border border-white/20 bg-zinc-950/65 px-4 py-2 text-[11px] uppercase tracking-[0.18em] text-zinc-100 shadow-lg backdrop-blur-xl">
+        <div className="mt-3 rounded-full border border-white/20 bg-zinc-950/65 px-4 py-2 text-[11px] uppercase tracking-[0.18em] text-zinc-100 shadow-lg sm:backdrop-blur-xl">
           {pullToRefresh.isRefreshing ? "Refreshing" : pullToRefresh.pullDistance > 64 ? "Release to refresh" : "Pull for a softer pulse"}
         </div>
       </motion.div>
@@ -107,7 +107,7 @@ export function CoupleDashboardView() {
           Back to jar
         </Link>
 
-        <section className="mt-4 overflow-hidden rounded-[1.8rem] border border-white/15 bg-zinc-950/55 px-5 py-6 text-zinc-50 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-2xl sm:mt-6 sm:rounded-[2rem] sm:px-8 sm:py-7 relative">
+        <section className="mt-4 overflow-hidden rounded-[1.8rem] border border-white/15 bg-zinc-950/55 px-5 py-6 text-zinc-50 shadow-[0_24px_80px_rgba(0,0,0,0.28)] sm:backdrop-blur-2xl sm:mt-6 sm:rounded-[2rem] sm:px-8 sm:py-7 relative">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.15),transparent_40%),linear-gradient(135deg,rgba(255,255,255,0.08),transparent_55%)] pointer-events-none" />
           <div className="relative">
             <div className="inline-flex items-center gap-2 rounded-full border border-rose-200/15 bg-rose-400/10 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-rose-100/80">
@@ -139,7 +139,7 @@ export function CoupleDashboardView() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.28, delay: index * 0.04 }}
-                className="rounded-[1.4rem] border border-white/12 bg-white/55 p-4 shadow-lg backdrop-blur-xl dark:bg-zinc-950/35 sm:rounded-[1.5rem] sm:p-5"
+                className="rounded-[1.4rem] border border-white/12 bg-white/55 p-4 shadow-lg sm:backdrop-blur-xl dark:bg-zinc-950/35 sm:rounded-[1.5rem] sm:p-5"
               >
                 <div className="flex items-center justify-between">
                   <p className="text-[11px] uppercase tracking-[0.18em] text-zinc-500 sm:text-sm">{metric.label}</p>
@@ -157,7 +157,7 @@ export function CoupleDashboardView() {
         </section>
 
         <section className="mt-6 grid gap-4 lg:grid-cols-2">
-          <div className="rounded-[1.5rem] border border-white/12 bg-white/55 p-5 shadow-lg backdrop-blur-xl dark:bg-zinc-950/35">
+          <div className="rounded-[1.5rem] border border-white/12 bg-white/55 p-5 shadow-lg sm:backdrop-blur-xl dark:bg-zinc-950/35">
             <p className="text-sm uppercase tracking-[0.18em] text-zinc-500">Milestones</p>
             <div className="mt-4 space-y-3">
               <button
@@ -192,7 +192,7 @@ export function CoupleDashboardView() {
             </div>
           </div>
 
-          <div className="rounded-[1.5rem] border border-white/12 bg-white/55 p-5 shadow-lg backdrop-blur-xl dark:bg-zinc-950/35">
+          <div className="rounded-[1.5rem] border border-white/12 bg-white/55 p-5 shadow-lg sm:backdrop-blur-xl dark:bg-zinc-950/35">
             <p className="text-sm uppercase tracking-[0.18em] text-zinc-500">Patterns</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <div className="rounded-[1.2rem] border border-white/10 bg-white/70 px-4 py-4 dark:bg-zinc-950/45">
