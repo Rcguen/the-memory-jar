@@ -261,7 +261,7 @@ export function ViewerAnimation({ memoryId, type, fullMemory, onClose, stage: in
             key="physical-object"
             initial={{ opacity: 1 }}
             exit={{ opacity: 0, scale: 1.5 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
+            transition={{ duration: 0.6, ease: [0.32, 0.72, 0, 1] }}
             className="absolute z-20 flex flex-col items-center justify-center gap-2"
           >
             {renderPhysicalObject()}

@@ -150,7 +150,7 @@ export function TimeCapsuleViewer({ memory, onClose, canPreviewLetter = false, o
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.8, ease: "easeOut" }}
+      transition={{ duration: 0.8, ease: [0.32, 0.72, 0, 1] }}
       className="relative flex flex-col items-center justify-center p-12 max-w-sm w-full mx-4"
     >
       <div className="absolute inset-0 bg-zinc-900/40 backdrop-blur-3xl rounded-3xl border border-zinc-700/30 shadow-[0_0_50px_rgba(0,0,0,0.5)] -z-10" />
@@ -272,12 +272,12 @@ export function TimeCapsuleViewer({ memory, onClose, canPreviewLetter = false, o
                 <motion.div
                   className="absolute inset-0 rounded-full bg-amber-200/20 blur-xl"
                   animate={{ scale: [0.9, 1.12, 0.96], opacity: [0.45, 0.9, 0.55] }}
-                  transition={{ duration: 1.6, repeat: Infinity, ease: "easeInOut" }}
+                  transition={{ duration: 1.6, repeat: Infinity, ease: [0.32, 0.72, 0, 1] }}
                 />
                 <motion.div
                   className="absolute inset-3 rounded-full border border-amber-100/30"
                   animate={{ rotate: ceremonyPhase === "release" ? 12 : 0, scale: ceremonyPhase === "release" ? 1.05 : 1 }}
-                  transition={{ duration: 0.8, ease: "easeOut" }}
+                  transition={{ duration: 0.8, ease: [0.32, 0.72, 0, 1] }}
                 />
                 <AnimatePresence mode="popLayout">
                   <motion.span
@@ -296,17 +296,17 @@ export function TimeCapsuleViewer({ memory, onClose, canPreviewLetter = false, o
                 <motion.div
                   className="h-2 rounded-full bg-rose-300/60"
                   animate={{ width: ceremonyPhase === "release" ? ["100%", "35%"] : "100%", opacity: ceremonyPhase === "release" ? [1, 0.7] : 1 }}
-                  transition={{ duration: 0.9, ease: "easeInOut" }}
+                  transition={{ duration: 0.9, ease: [0.32, 0.72, 0, 1] }}
                 />
                 <motion.div
                   className="mx-auto h-10 w-10 rounded-full bg-red-900/75 shadow-[0_0_22px_rgba(127,29,29,0.4)]"
                   animate={ceremonyPhase === "release" ? { rotate: [0, -14, 10], scale: [1, 0.84, 0.76] } : { scale: 1 }}
-                  transition={{ duration: 0.8, ease: "easeInOut" }}
+                  transition={{ duration: 0.8, ease: [0.32, 0.72, 0, 1] }}
                 />
                 <motion.div
                   className="mx-auto h-px w-28 bg-amber-100/30"
                   animate={ceremonyPhase === "release" ? { scaleX: [1, 1.2, 0.6], opacity: [0.35, 0.9, 0.15] } : { scaleX: 1 }}
-                  transition={{ duration: 0.8, ease: "easeInOut" }}
+                  transition={{ duration: 0.8, ease: [0.32, 0.72, 0, 1] }}
                 />
                 <p className="text-sm text-amber-100/80">
                   {ceremonyPhase === "countdown"

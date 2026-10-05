@@ -195,7 +195,7 @@ export function DynamicMemoryForm({
       className="flex w-full max-w-2xl flex-col pb-8 sm:pb-12"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
+      transition={{ duration: 0.6, delay: 0.2, ease: [0.32, 0.72, 0, 1] }}
     >
       {/* Sticky Header with Close Button */}
       <div className={cn(
