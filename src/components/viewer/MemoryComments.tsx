@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -104,10 +104,10 @@ export function MemoryComments({ memoryId, className }: { memoryId: string; clas
       <h3 className="mb-3 text-sm font-semibold text-zinc-800 dark:text-zinc-200">Comments</h3>
       <div className="min-h-0 flex-1 overflow-y-auto space-y-2 pr-1">
         {isLoading && (
-          <p className="text-xs text-zinc-500">Loading comments...</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">Loading comments...</p>
         )}
         {!isLoading && comments.length === 0 && (
-          <p className="text-xs text-zinc-500">No comments yet.</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400">No comments yet.</p>
         )}
         <AnimatePresence initial={false}>
           {comments.map((comment) => {
@@ -129,7 +129,7 @@ export function MemoryComments({ memoryId, className }: { memoryId: string; clas
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="mb-1 text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                      {authorName} Â· {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
+                      {authorName} · {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
                     </p>
                     {isEditing ? (
                       <textarea
