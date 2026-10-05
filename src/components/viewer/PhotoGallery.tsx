@@ -1,6 +1,7 @@
-﻿/* eslint-disable @next/next/no-img-element */
+/* eslint-disable @next/next/no-img-element */
 import { useCallback, useEffect, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { memoryService } from "@/services/memory";
@@ -14,6 +15,8 @@ interface PhotoGalleryProps {
 
 export function PhotoGallery({ attachments, onFullscreenChange }: PhotoGalleryProps) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const urls = useQueries({
     queries: attachments.map((attachment) => ({
       queryKey: ["signedAttachmentUrl", attachment.id, attachment.url],
@@ -98,6 +101,7 @@ export function PhotoGallery({ attachments, onFullscreenChange }: PhotoGalleryPr
         })}
       </div>
 
+      {mounted && createPortal(
       <AnimatePresence>
         {currentUrl && activeIndex !== null && (
           <motion.div
@@ -105,12 +109,12 @@ export function PhotoGallery({ attachments, onFullscreenChange }: PhotoGalleryPr
             animate={{ opacity: 1, backdropFilter: "blur(14px)" }}
             exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
             transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-0 z-[220] flex items-center justify-center bg-[#10100f] p-4 md:p-12"
+            className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/95 p-4 md:p-12"
             onClick={() => setActiveIndex(null)}
           >
             <button
               type="button"
-              className="absolute right-6 top-6 z-[230] rounded-full bg-white/10 p-3 text-white backdrop-blur-md transition-colors hover:bg-white/20"
+              className="absolute right-6 top-6 z-[99999] rounded-full bg-white/10 p-3 text-white backdrop-blur-md transition-colors hover:bg-white/20"
               onClick={(event) => {
                 event.stopPropagation();
                 setActiveIndex(null);
@@ -124,7 +128,7 @@ export function PhotoGallery({ attachments, onFullscreenChange }: PhotoGalleryPr
               <>
                 <button
                   type="button"
-                  disabled={activeIndex === 0} className="absolute left-4 top-1/2 z-[230] inline-flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-md transition-colors hover:bg-white/20 disabled:opacity-35"
+                  disabled={activeIndex === 0} className="absolute left-4 top-1/2 z-[99999] inline-flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-md transition-colors hover:bg-white/20 disabled:opacity-35"
                   onClick={(event) => {
                     event.stopPropagation();
                     goPrev();
@@ -135,7 +139,7 @@ export function PhotoGallery({ attachments, onFullscreenChange }: PhotoGalleryPr
                 </button>
                 <button
                   type="button"
-                  disabled={activeIndex === loadedUrls.length - 1} className="absolute right-4 top-1/2 z-[230] inline-flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-md transition-colors hover:bg-white/20 disabled:opacity-35"
+                  disabled={activeIndex === loadedUrls.length - 1} className="absolute right-4 top-1/2 z-[99999] inline-flex min-h-11 min-w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-md transition-colors hover:bg-white/20 disabled:opacity-35"
                   onClick={(event) => {
                     event.stopPropagation();
                     goNext();
@@ -148,29 +152,21 @@ export function PhotoGallery({ attachments, onFullscreenChange }: PhotoGalleryPr
             )}
 
             <motion.img
-              key={currentUrl}
+              key={activeIndex}
               src={currentUrl}
-              alt="Memory attachment fullscreen"
-              className="max-h-full max-w-full cursor-grab object-contain active:cursor-grabbing"
-              initial={{ opacity: 0, scale: 0.88, y: 28, filter: "blur(8px)" }}
-              animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
-              exit={{ opacity: 0, scale: 0.82, y: 34, filter: "blur(10px)" }}
-              transition={{ duration: 0.36, ease: [0.22, 1, 0.36, 1] }}
-              drag="x"
-              dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={0.22}
-              onDragEnd={(_, info) => {
-                if (info.offset.x < -80) goNext();
-                if (info.offset.x > 80) goPrev();
-              }}
-              onClick={(event) => event.stopPropagation()}
+              alt="Memory attachment"
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+              className="h-full max-h-[90dvh] w-full max-w-5xl object-contain shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
             />
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 rounded-full bg-white/10 px-3 py-1 text-sm text-white backdrop-blur-md">
-              {activeIndex + 1} / {loadedUrls.length}
-            </div>
           </motion.div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+      document.body
+    )}
     </>
   );
 }
