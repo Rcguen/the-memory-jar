@@ -321,7 +321,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
   };
 
   return (
-    <div className={cn("mt-7 w-full max-w-[min(100%,42rem)] xl:mt-0 xl:max-w-none", className)}>
+    <div className={cn("mt-7 w-full max-w-[min(100%,42rem)] xl:mt-0 xl:max-w-none flex flex-col", className)}>
       <AnimatePresence mode="wait">
         {!isOpen ? (
           <motion.button
@@ -344,7 +344,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
             animate={{ opacity: 1, x: 0, scale: 1 }}
             exit={{ opacity: 0, x: useSimpleMotion ? 0 : -16, scale: useSimpleMotion ? 1 : 0.985 }}
             transition={{ duration: useSimpleMotion ? 0.15 : 0.34, ease: [0.22, 1, 0.36, 1] }}
-            className="relative overflow-hidden rounded-[1.35rem] border border-white/[0.12] bg-[linear-gradient(145deg,rgba(38,33,26,0.98),rgba(18,27,24,0.96))] shadow-2xl sm:backdrop-blur-md sm:bg-[linear-gradient(145deg,rgba(38,33,26,0.92),rgba(18,27,24,0.88))] xl:bg-[linear-gradient(145deg,rgba(38,33,26,0.85),rgba(18,27,24,0.80))]"
+            className="relative overflow-hidden flex flex-col flex-1 min-h-0 h-full rounded-[1.35rem] border border-white/[0.12] bg-[linear-gradient(145deg,rgba(38,33,26,0.98),rgba(18,27,24,0.96))] shadow-2xl sm:backdrop-blur-md sm:bg-[linear-gradient(145deg,rgba(38,33,26,0.92),rgba(18,27,24,0.88))] xl:bg-[linear-gradient(145deg,rgba(38,33,26,0.85),rgba(18,27,24,0.80))]"
           >
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(222,176,106,0.16),transparent_42%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.12),transparent_46%),linear-gradient(180deg,rgba(255,255,255,0.075),transparent_36%)]" />
 
@@ -372,7 +372,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
               </div>
             </div>
 
-            <div className="relative p-4">
+            <div className="relative p-4 flex flex-col flex-1 min-h-0">
               <div className="flex gap-4 border-b border-white/[0.08] px-2">
                 {[
                   { id: "memories" as const, label: "Memories", icon: BookOpen },
@@ -414,7 +414,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: useSimpleMotion ? 0 : -8 }}
                     transition={{ duration: useSimpleMotion ? 0.15 : 0.24, ease: [0.22, 1, 0.36, 1] }}
-                    className="mt-3 sm:mt-4"
+                    className="mt-3 sm:mt-4 flex flex-col flex-1 min-h-0"
                   >
                     <div className="flex gap-2">
                       <label className="relative min-w-0 flex-1">
@@ -466,7 +466,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                       })}
                     </div>
 
-                    <div className="mt-3 max-h-[58vh] space-y-2 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.18)_transparent] sm:mt-4 sm:max-h-[52vh]">
+                    <div className="mt-3 flex-1 min-h-0 space-y-2 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.18)_transparent] sm:mt-4">
                       <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
                         {searchStatus}
                       </div>
@@ -550,7 +550,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: useSimpleMotion ? 0 : -8 }}
                     transition={{ duration: useSimpleMotion ? 0.15 : 0.24, ease: [0.22, 1, 0.36, 1] }}
-                    className="mt-3 max-h-[58vh] space-y-2 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.18)_transparent] sm:mt-4"
+                    className="mt-3 flex-1 min-h-0 space-y-2 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.18)_transparent] sm:mt-4"
                   >
                     {isActivityLoading && activities.length === 0 && (
                       <div className="space-y-2 px-1 py-2" aria-label="Loading activity">
