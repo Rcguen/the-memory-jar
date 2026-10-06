@@ -179,7 +179,7 @@ export class EngineCore {
     const sideInset = this.width * 0.19;
 
     // Keep the older bucket shape, with the floor slightly lower so the pile sits in the glass base.
-    const bottom = Matter.Bodies.rectangle(this.width / 2, this.height * 0.88 + wallThickness / 2, this.width, wallThickness, {
+    const bottom = Matter.Bodies.rectangle(this.width / 2, this.height * 0.86 + wallThickness / 2, this.width, wallThickness, {
       isStatic: true,
       friction: 0.3,
       restitution: 0.2
