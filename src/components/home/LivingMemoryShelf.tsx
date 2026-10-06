@@ -35,7 +35,7 @@ export function LivingMemoryShelf({
         ))}
       </div>
 
-      <div className="relative z-10 flex flex-col flex-1 rounded-3xl transition-shadow duration-300 group-hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
+      <div className="relative z-10 flex flex-col flex-1 min-h-0 rounded-3xl transition-shadow duration-300 group-hover:shadow-[0_8px_30px_rgb(0,0,0,0.12)]">
         {children}
       </div>
     </motion.div>

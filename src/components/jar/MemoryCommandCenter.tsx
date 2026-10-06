@@ -321,7 +321,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
   };
 
   return (
-    <div className={cn("mt-7 w-full max-w-[min(100%,42rem)] xl:mt-0 xl:max-w-none flex flex-col", className)}>
+    <div className={cn("mt-7 w-full max-w-[min(100%,42rem)] xl:mt-0 xl:max-w-none flex flex-col flex-1 min-h-0", className)}>
       <AnimatePresence mode="wait">
         {!isOpen ? (
           <motion.button
@@ -348,7 +348,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
           >
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(222,176,106,0.16),transparent_42%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.12),transparent_46%),linear-gradient(180deg,rgba(255,255,255,0.075),transparent_36%)]" />
 
-            <div className="relative flex items-center justify-between gap-3 border-b border-white/[0.07] px-4 py-4">
+            <div className="relative flex items-center justify-between gap-3 border-b border-white/[0.07] px-4 py-4 shrink-0">
               <div>
                 <p className="font-cormorant text-[1.75rem] leading-none text-zinc-100 sm:text-xl">Memory Shelf</p>
                 <p className="mt-1 text-[11px] tracking-[0.12em] uppercase text-amber-100/55">{totalCount} keepsakes</p>
@@ -373,7 +373,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
             </div>
 
             <div className="relative p-4 flex flex-col flex-1 min-h-0">
-              <div className="flex gap-4 border-b border-white/[0.08] px-2">
+              <div className="flex gap-4 border-b border-white/[0.08] px-2 shrink-0">
                 {[
                   { id: "memories" as const, label: "Memories", icon: BookOpen },
                   { id: "activity" as const, label: "Activity", icon: Flame },
@@ -416,7 +416,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                     transition={{ duration: useSimpleMotion ? 0.15 : 0.24, ease: [0.22, 1, 0.36, 1] }}
                     className="mt-3 sm:mt-4 flex flex-col flex-1 min-h-0"
                   >
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 shrink-0">
                       <label className="relative min-w-0 flex-1">
                         <span className="sr-only">Search memories</span>
                         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" aria-hidden="true" />
@@ -445,7 +445,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                       </button>
                     </div>
 
-                    <div className="mt-4 flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none] sm:flex-wrap sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
+                    <div className="mt-4 flex gap-2 shrink-0 overflow-x-auto pb-2 [scrollbar-width:none] sm:flex-wrap sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
                       {FILTERS.map((item) => {
                         const selected = filter === item.id;
                         return (
