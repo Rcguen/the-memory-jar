@@ -112,7 +112,7 @@ export function GlassJar({
         containerRef.current = node;
         setContainerRef(node);
       }}
-      className={`relative mx-auto h-[min(21rem,50dvh)] w-[min(15.5rem,37dvh)]  cursor-pointer perspective-[1000px] z-20 transition-all duration-700 ease-in-out  sm:h-[min(24rem,55dvh)] sm:w-[min(18rem,41dvh)] md:h-[min(25rem,50dvh)] md:w-[min(18rem,38dvh)] ${isZoomed ? "scale-[1.05] drop-shadow-2xl" : ""}`}
+      className={`relative mx-auto h-[min(20rem,45dvh)] aspect-[15.5/21]   cursor-pointer perspective-[1000px] z-20 transition-all duration-700 ease-in-out   sm:h-[min(24rem,50vh)] md:h-[min(26rem,38vh)] lg:h-[min(28rem,40vh)] ${isZoomed ? "scale-[1.05] drop-shadow-2xl" : ""}`}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onClick={handleJarClick}

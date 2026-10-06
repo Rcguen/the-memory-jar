@@ -396,14 +396,14 @@ export function HomeClientExperience() {
       </header>
 
       {/* 4. Main Content Area */}
-      <div className={`home-center-column relative z-10 flex w-full max-w-[23rem] flex-col items-center px-3 pb-6 pt-16 sm:max-w-2xl sm:px-4 sm:pb-8 lg:pt-8 xl:py-6 shrink-0 xl:mt-auto xl:mb-auto ${isMusicOpen ? "home-center-column--music-open" : ""}`}>
+      <div className={`home-center-column relative z-10 flex w-full max-w-[23rem] flex-col items-center px-3 pb-4 pt-12 sm:max-w-2xl sm:px-4 sm:pb-6 lg:pt-6 xl:py-4 shrink-0 ${isMusicOpen ? "home-center-column--music-open" : ""}`}>
         
         {/* Title / Mood Text */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease: "easeOut" }}
-          className="mb-4 w-full text-center sm:mb-6 lg:mb-4"
+          className="mb-2 w-full text-center sm:mb-4 lg:mb-2"
         >
           <h1 className="font-cormorant text-[2rem] leading-none tracking-[0.18em] text-zinc-800 opacity-80 sm:text-3xl sm:tracking-widest md:text-4xl dark:text-zinc-200">
             The Memory Jar
@@ -446,7 +446,7 @@ export function HomeClientExperience() {
         {relationship?.startDate && (
           <RelationshipCounter 
             startDate={new Date(relationship.startDate)} 
-            className="-mt-4 sm:-mt-6 md:-mt-10 lg:-mt-12 mb-4 sm:mb-6" 
+            className="-mt-4 sm:-mt-6 md:-mt-8 lg:-mt-10 mb-2 sm:mb-4" 
           />
         )}
 
@@ -465,9 +465,9 @@ export function HomeClientExperience() {
       </div>
 
       {/* LEFT PANEL: Memory Shelf (Primary Actions) */}
-      <div className="relative z-10 mt-8 w-full max-w-[23rem] px-3 sm:max-w-3xl sm:px-4 xl:absolute xl:bottom-6 xl:left-6 xl:top-24 xl:mt-0 xl:w-[24rem] xl:max-w-none xl:px-0 xl:pb-0 2xl:w-[34rem] xl:overflow-y-auto xl:[scrollbar-width:none] xl:[&::-webkit-scrollbar]:hidden pointer-events-none">
+      <div className="relative z-10 mt-8 w-full max-w-[23rem] px-3 sm:max-w-3xl sm:px-4 xl:absolute xl:bottom-4 xl:left-6 xl:top-20 xl:mt-0 xl:w-[24rem] xl:max-w-none xl:px-0 xl:pb-0 2xl:w-[34rem] xl:overflow-y-auto xl:[scrollbar-width:thin] pointer-events-none">
         <div className="flex flex-col relative z-10 xl:pr-3 xl:pb-12 min-h-full pointer-events-auto">
-          <LivingMemoryShelf className="home-shelf relative min-h-[500px] flex-1">
+          <LivingMemoryShelf className="home-shelf relative min-h-[400px] flex-1">
             <DeskCat motionActive={ambientMotion.isActive} isPhone={ambientMotion.isPhone} />
             <ErrorBoundary fallbackMessage="Memory tools failed to load.">
               <MemoryCommandCenter className="xl:mt-0 xl:max-w-none h-full" />
@@ -477,7 +477,7 @@ export function HomeClientExperience() {
       </div>
 
       {/* RIGHT PANEL: Storytelling & Ambient Cards */}
-      <div className="home-side-panel home-side-panel--desk relative z-10 mt-4 w-full max-w-[23rem] overflow-x-clip px-3 pb-32 sm:max-w-3xl sm:px-4 xl:absolute xl:bottom-6 xl:right-6 xl:top-24 xl:mt-0 xl:w-[24rem] xl:max-w-none xl:px-0 xl:pb-0 2xl:w-[32rem] xl:overflow-y-auto xl:[scrollbar-width:none] xl:[&::-webkit-scrollbar]:hidden">
+      <div className="home-side-panel home-side-panel--desk relative z-10 mt-4 w-full max-w-[23rem] overflow-x-clip px-3 pb-32 sm:max-w-3xl sm:px-4 xl:absolute xl:bottom-4 xl:right-6 xl:top-20 xl:mt-0 xl:w-[24rem] xl:max-w-none xl:px-0 xl:pb-0 2xl:w-[32rem] xl:overflow-y-auto xl:[scrollbar-width:thin]">
         <CozyDetails motionActive={ambientMotion.isActive} isPhone={ambientMotion.isPhone} />
         <AmbientManager />
         
