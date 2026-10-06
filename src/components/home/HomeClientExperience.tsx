@@ -396,7 +396,7 @@ export function HomeClientExperience() {
       </header>
 
       {/* 4. Main Content Area */}
-      <div className={`home-center-column relative z-10 flex w-full max-w-[23rem] flex-col items-center px-3 pb-4 pt-12 sm:max-w-2xl sm:px-4 sm:pb-6 lg:pt-6 xl:py-4 shrink-0 ${isMusicOpen ? "home-center-column--music-open" : ""}`}>
+      <div className={`home-center-column relative z-10 flex w-full max-w-[23rem] flex-col items-center px-3 pb-4 pt-20 sm:max-w-2xl sm:px-4 sm:pb-6 sm:pt-20 lg:pt-12 xl:pt-4 xl:pb-4 shrink-0 ${isMusicOpen ? "home-center-column--music-open" : ""}`}>
         
         {/* Title / Mood Text */}
         <motion.div
