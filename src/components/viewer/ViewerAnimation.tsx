@@ -1,67 +1,5 @@
-import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MemoryType, Memory } from "@/types/memory";
-
-// Physical Objects
-import { Polaroid } from "../jar/objects/Polaroid";
-import { Cassette } from "../jar/objects/Cassette";
-import { Letter } from "../jar/objects/Letter";
-import { WaxSealDoc } from "../jar/objects/WaxSealDoc";
-import { OrigamiStar } from "../jar/objects/OrigamiStar";
-import { Postcard } from "../jar/objects/Postcard";
-import { GlowingNote } from "../jar/objects/GlowingNote";
-import { TinySlip } from "../jar/objects/TinySlip";
-
-function assertNever(x: never): never {
-  throw new Error("Unexpected object: " + x);
-}
-
-function getTypeReadingVariants(type: MemoryType) {
-  switch (type) {
-    case "letter":
-    case "promise":
-      return {
-        initial: { opacity: 0, y: 34, rotateX: -58, scale: 0.92 },
-        animate: { opacity: 1, y: 0, rotateX: 0, scale: 1 },
-        exit: { opacity: 0, y: 42, rotateX: 64, rotateZ: -3, scale: 0.82 },
-      };
-    case "photo":
-      return {
-        initial: { opacity: 0, y: 28, rotateZ: -4, scale: 0.88 },
-        animate: { opacity: 1, y: 0, rotateZ: 0, scale: 1 },
-        exit: { opacity: 0, y: 30, rotateZ: 6, scale: 0.78 },
-      };
-    case "random_thought":
-    case "wish":
-    case "gratitude":
-      return {
-        initial: { opacity: 0, y: -24, scale: 0.9 },
-        animate: { opacity: 1, y: 0, scale: 1 },
-        exit: { opacity: 0, y: -30, rotateZ: 10, scale: 0.72 },
-      };
-    case "voice":
-    case "video":
-      return {
-        initial: { opacity: 0, y: 22, rotateX: 18, scale: 0.9 },
-        animate: { opacity: 1, y: 0, rotateX: 0, scale: 1 },
-        exit: { opacity: 0, y: 34, rotateX: -28, scale: 0.8 },
-      };
-    case "travel":
-      return {
-        initial: { opacity: 0, x: 38, y: 18, rotateZ: 5, scale: 0.9 },
-        animate: { opacity: 1, x: 0, y: 0, rotateZ: 0, scale: 1 },
-        exit: { opacity: 0, x: -48, y: 22, rotateZ: -7, scale: 0.78 },
-      };
-    default:
-      return {
-        initial: { opacity: 0, scale: 0.92, y: 20 },
-        animate: { opacity: 1, scale: 1, y: 0 },
-        exit: { opacity: 0, scale: 0.8, y: 28 },
-      };
-  }
-}
-
-// Content Components (We will create these next)
 import { ViewerContent } from "./ViewerContent";
 import { MEMORY_THEMES } from "@/lib/memoryThemes";
 
@@ -73,240 +11,39 @@ interface ViewerAnimationProps {
   stage: "opening" | "viewing";
 }
 
-export function ViewerAnimation({ memoryId, type, fullMemory, onClose, stage: initialStage }: ViewerAnimationProps) {
-  // We keep a local stage to progress from opening -> viewing
-  const [stage, setStage] = useState<"floating" | "unveiling" | "reading">(
-    initialStage === "viewing" ? "reading" : "floating"
-  );
-
-  useEffect(() => {
-    if (initialStage === "viewing") {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setStage("reading");
-      return;
-    }
-
-    // Stage 1: Float up and stabilize
-    const floatTimer = setTimeout(() => {
-      setStage("unveiling");
-    }, 300);
-
-    // Stage 2: Play the cinematic opening animation, then transition to reading
-    const unveilTimer = setTimeout(() => {
-      setStage("reading");
-    }, 900); // 300ms float + 600ms unveil
-
-    return () => {
-      clearTimeout(floatTimer);
-      clearTimeout(unveilTimer);
-    };
-  }, [memoryId, initialStage]); // Reset if memory ID changes (e.g. Next/Prev sliding)
-
-  const renderPhysicalObject = () => {
-    // Render the physical SVG object based on memory type.
-    // In "unveiling" stage, we apply specific micro-animations.
-    const isUnveiling = stage === "unveiling";
-
-    const commonProps = {
-      // In viewer, we want them significantly larger than in the jar
-      style: { width: "104px", height: "auto" },
-      velocityY: 0,
-      isSleeping: true
-    };
-
-    switch (type) {
-      case "photo":
-        return (
-          <motion.div
-            animate={isUnveiling ? { rotateY: [0, 14, 0], rotateZ: [-2, 3, 0], scale: [1, 1.12, 1.04] } : { rotateY: 0, rotateZ: 0, scale: 1 }}
-            transition={{ duration: 1.2, ease: [0.32, 0.72, 0, 1] }}
-            style={{ transformStyle: "preserve-3d" }}
-          >
-            <Polaroid {...commonProps} />
-          </motion.div>
-        );
-      case "voice":
-        return (
-          <motion.div
-            animate={isUnveiling ? { rotateX: -20, scale: 1.1 } : { rotateX: 0, scale: 1 }}
-            transition={{ duration: 1.2, ease: [0.32, 0.72, 0, 1] }}
-          >
-            <Cassette {...commonProps} />
-          </motion.div>
-        );
-      case "letter":
-        return (
-          <motion.div
-            animate={isUnveiling ? { rotateX: [0, -34, 0], scaleY: [1, 0.82, 1.12], opacity: [1, 0.86, 1] } : { rotateX: 0, scaleY: 1 }}
-            transition={{ duration: 1.2, ease: [0.32, 0.72, 0, 1] }}
-            style={{ transformOrigin: "50% 100%", transformStyle: "preserve-3d" }}
-          >
-            <Letter {...commonProps} />
-          </motion.div>
-        );
-      case "promise":
-        return (
-          <motion.div
-            animate={isUnveiling ? { scale: 1.1 } : {}}
-            transition={{ duration: 1.2, ease: [0.32, 0.72, 0, 1] }}
-          >
-            <WaxSealDoc {...commonProps} />
-          </motion.div>
-        );
-      case "video":
-        return <Cassette {...commonProps} />;
-      case "wish":
-        return (
-          <motion.div
-            animate={isUnveiling ? { rotate: 180, scale: 1.5, opacity: 0.8 } : {}}
-            transition={{ duration: 1.2, ease: [0.32, 0.72, 0, 1] }}
-          >
-            <OrigamiStar {...commonProps} />
-          </motion.div>
-        );
-      case "travel":
-        return (
-          <motion.div
-            animate={isUnveiling ? { rotateY: -180, scale: 1.2 } : {}}
-            transition={{ duration: 1.2, ease: [0.32, 0.72, 0, 1] }}
-          >
-            <Postcard {...commonProps} />
-          </motion.div>
-        );
-      case "gratitude":
-        return (
-          <motion.div
-            animate={isUnveiling ? { scale: 1.5 } : {}}
-            transition={{ duration: 1.2, ease: [0.32, 0.72, 0, 1] }}
-          >
-            <GlowingNote {...commonProps} />
-          </motion.div>
-        );
-      default:
-        return (
-          <motion.div
-            animate={isUnveiling ? { y: [0, -14, 0], rotate: [0, 8, -2], scale: [1, 1.18, 1.04] } : {}}
-            transition={{ duration: 1.2, ease: [0.32, 0.72, 0, 1] }}
-          >
-            <TinySlip {...commonProps} />
-          </motion.div>
-        );
-    }
-  };
-
+export function ViewerAnimation({ memoryId, type, fullMemory, onClose }: ViewerAnimationProps) {
   const themeName = fullMemory.theme || 'modern';
   const themeConfig = MEMORY_THEMES[themeName] || MEMORY_THEMES.modern;
   const animationPreset = themeConfig.animationPreset;
 
   const getReadingVariants = () => {
-    const themeVariants = (() => {
-      switch (animationPreset) {
+    switch (animationPreset) {
       case "vintage":
-        return {
-          initial: { opacity: 0, rotateX: 90, y: 20 },
-          animate: { opacity: 1, rotateX: 0, y: 0 },
-          exit: { opacity: 0, rotateX: 90, y: 20 }
-        };
+        return { initial: { opacity: 0, rotateX: 20, y: 10 }, animate: { opacity: 1, rotateX: 0, y: 0 } };
       case "romantic":
-        return {
-          initial: { opacity: 0, scale: 1.1 },
-          animate: { opacity: 1, scale: 1 },
-          exit: { opacity: 0, scale: 1.05 }
-        };
+        return { initial: { opacity: 0, scale: 1.05 }, animate: { opacity: 1, scale: 1 } };
       case "dream":
-        return {
-          initial: { opacity: 0, y: -50, scale: 0.95 },
-          animate: { opacity: 1, y: 0, scale: 1 },
-          exit: { opacity: 0, y: -50, scale: 0.95 }
-        };
+        return { initial: { opacity: 0, y: -20, scale: 0.98 }, animate: { opacity: 1, y: 0, scale: 1 } };
       case "nature":
-        return {
-          initial: { opacity: 0, rotateZ: 5, y: 30 },
-          animate: { opacity: 1, rotateZ: 0, y: 0 },
-          exit: { opacity: 0, rotateZ: -5, y: 30 }
-        };
-      case "dark":
-        return {
-          initial: { opacity: 0, scale: 0.9 },
-          animate: { opacity: 1, scale: 1 },
-          exit: { opacity: 0, scale: 0.9 }
-        };
-      case "modern":
-        return {
-          initial: { opacity: 0, scale: 0.95, y: 20 },
-          animate: { opacity: 1, scale: 1, y: 0 },
-          exit: { opacity: 0, scale: 0.9, y: 20 }
-        };
+        return { initial: { opacity: 0, rotateZ: 2, y: 15 }, animate: { opacity: 1, rotateZ: 0, y: 0 } };
       default:
-        assertNever(animationPreset);
-      }
-    })();
-
-    const typeVariants = getTypeReadingVariants(type);
-
-    return {
-      initial: { ...themeVariants.initial, ...typeVariants.initial },
-      animate: { ...themeVariants.animate, ...typeVariants.animate },
-      exit: { ...themeVariants.exit, ...typeVariants.exit },
-    };
+        return { initial: { opacity: 0, scale: 0.98, y: 10 }, animate: { opacity: 1, scale: 1, y: 0 } };
+    }
   };
-
-  const readingVariants = getReadingVariants();
 
   return (
     <div className="relative flex min-h-[60vh] w-full max-w-[70rem] items-center justify-center px-0 sm:px-3">
-      <AnimatePresence mode="wait">
-        {stage !== "reading" ? (
-          <motion.div
-            key="physical-object"
-            initial={{ opacity: 1 }}
-            exit={{ opacity: 0, scale: 1.5 }}
-            transition={{ duration: 1.2, ease: [0.32, 0.72, 0, 1] }}
-            className="absolute z-20 flex flex-col items-center justify-center gap-2"
-          >
-            {renderPhysicalObject()}
-            
-            <AnimatePresence>
-              {stage === "unveiling" && (
-                <motion.p
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="font-cormorant text-sm text-emerald-100/80 italic"
-                >
-                  Unveiling memory...
-                </motion.p>
-              )}
-            </AnimatePresence>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="reading-pane"
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            variants={readingVariants}
-            transition={{ duration: 1.2, ease: [0.32, 0.72, 0, 1] }}
-            onAnimationStart={() => {
-              // Enable will-change only during active transitions
-              document.documentElement.style.setProperty('--reading-will-change', 'transform, opacity');
-            }}
-            onAnimationComplete={() => {
-              // Remove will-change when idle
-              document.documentElement.style.setProperty('--reading-will-change', 'auto');
-            }}
-            className="relative z-30 h-full w-full perspective-1000"
-            style={{ 
-              transformStyle: "preserve-3d",
-              willChange: "var(--reading-will-change, auto)"
-            }}
-          >
-            {/* The actual reading experience */}
-            <ViewerContent memoryId={memoryId} type={type} fullMemory={fullMemory} onClose={onClose} />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <motion.div
+        key={`content-${memoryId}`}
+        initial="initial"
+        animate="animate"
+        exit="initial"
+        variants={getReadingVariants()}
+        transition={{ type: "spring", damping: 25, stiffness: 200, mass: 0.8 }}
+        className="w-full flex justify-center"
+      >
+        <ViewerContent memoryId={memoryId} type={type} fullMemory={fullMemory} onClose={onClose} />
+      </motion.div>
     </div>
   );
 }
-

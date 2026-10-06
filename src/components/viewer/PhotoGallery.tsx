@@ -79,15 +79,7 @@ export function PhotoGallery({ attachments, onFullscreenChange }: PhotoGalleryPr
               )}
             >
               {url ? (
-                <img 
-                  src={url} 
-                  alt="Memory attachment" 
-                  loading="lazy" 
-                  className={cn(
-                    "w-full rounded-xl bg-black/5 dark:bg-white/5",
-                    isSingle ? "h-full max-h-[calc(100dvh-16rem)] w-full object-contain" : "h-48 w-full object-cover lg:h-56"
-                  )} 
-                />
+                <motion.img layoutId={`photo-${attachment.id}`} src={url} alt="Memory attachment" loading="lazy" className={cn("w-full rounded-xl bg-black/5 dark:bg-white/5", isSingle ? "h-full max-h-[calc(100dvh-16rem)] w-full object-contain" : "h-48 w-full object-cover lg:h-56")} />
               ) : (
                 <div className={cn("w-full animate-pulse bg-black/5 dark:bg-white/5 rounded-xl", isSingle ? "h-[min(60dvh,42rem)]" : "h-48 lg:h-56")} />
               )}
@@ -151,17 +143,7 @@ export function PhotoGallery({ attachments, onFullscreenChange }: PhotoGalleryPr
               </>
             )}
 
-            <motion.img
-              key={activeIndex}
-              src={currentUrl}
-              alt="Memory attachment"
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-              className="h-full max-h-[90dvh] w-full max-w-5xl object-contain shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            />
+            <motion.img key={activeIndex} layoutId={`photo-${attachments[activeIndex].id}`} src={currentUrl} alt="Memory attachment" className="h-full max-h-[90dvh] w-full max-w-5xl object-contain shadow-2xl" onClick={(e) => e.stopPropagation()} />
           </motion.div>
         )}
       </AnimatePresence>,
