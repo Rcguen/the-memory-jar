@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 export function StaticHomeShell({ children }: { children: ReactNode }) {
   return (
-    <main className="home-room relative flex min-h-screen w-full flex-col items-center justify-start pb-36 transition-colors duration-700 sm:pb-8 xl:h-[100dvh] xl:justify-center xl:overflow-hidden xl:pb-0">
+    <main className="home-room relative flex min-h-screen w-full flex-col items-center justify-start pb-36 transition-colors duration-700 sm:pb-8 xl:min-h-[100dvh] xl:overflow-y-auto xl:pb-0">
       <div
         className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-teal-100/40 via-emerald-50/20 to-transparent dark:from-teal-900/20 dark:via-emerald-950/30 dark:to-transparent"
         aria-hidden="true"
