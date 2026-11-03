@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Compass, LayoutDashboard, LogOut, User, BookOpen, Loader2, RefreshCw } from "lucide-react";
+import { Compass, LayoutDashboard, LogOut, User, BookOpen, Loader2, RefreshCw, Mail } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { logoutAction } from "@/app/actions/auth";
 import { clearPrivateClientData } from "@/lib/cache-cleanup";
@@ -343,6 +343,16 @@ export function HomeClientExperience() {
             >
               <BookOpen className="h-4 w-4 text-amber-200" />
               Memory Book
+            </MotionLink>
+            <MotionLink
+              href="http://localhost:5173"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-full border border-[var(--divider)] bg-[var(--surface-wood)]/60 px-4 py-2 text-sm text-[var(--text-primary)] shadow-[var(--shadow-2)] backdrop-blur-xl transition-[transform,background-color] duration-150 ease-out hover:bg-[var(--surface-wood)]/80 active:scale-[0.97] focus-ring-premium motion-reduce:transform-none motion-reduce:transition-none"
+              aria-label="Open Letters in motion in a new tab"
+            >
+              <Mail className="h-4 w-4 text-violet-300" />
+              Letters in motion
             </MotionLink>
         </div>
         {profile && (
