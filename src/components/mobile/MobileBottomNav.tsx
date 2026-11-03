@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarHeart, Compass, Heart, LayoutDashboard, BookOpen } from "lucide-react";
+import { CalendarHeart, Compass, Heart, LayoutDashboard, BookOpen, Mail } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +18,7 @@ const ITEMS = [
   { href: "/memory-book", label: "Book", icon: BookOpen, accent: "text-amber-300" },
   { href: "/on-this-day", label: "On This Day", icon: CalendarHeart, accent: "text-purple-300" },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, accent: "text-sky-300" },
+  { href: "/animated-cards", label: "Letters", icon: Mail, accent: "text-violet-300" },
 ] as const;
 
 export function MobileBottomNav() {
@@ -57,7 +58,7 @@ export function MobileBottomNav() {
 
       <nav aria-label="Primary navigation" className="mobile-safe-bottom fixed inset-x-0 bottom-0 z-[80] px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-2 sm:hidden flex justify-center">
         <div className="w-full max-w-md double-bezel shadow-[0_24px_80px_rgba(0,0,0,0.6)] backdrop-blur-3xl">
-          <div className="double-bezel-inner bg-zinc-950/70 p-1.5 grid grid-cols-5 gap-1">
+          <div className="double-bezel-inner bg-zinc-950/70 p-1.5 grid grid-cols-6 gap-1">
           {ITEMS.map((item) => {
             const Icon = item.icon;
             const active = pathname === item.href;
