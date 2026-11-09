@@ -116,7 +116,7 @@ export function TimelineView() {
   const years = groups.map((group) => group.year);
 
   return (
-    <main className="relative h-[100dvh] overflow-y-auto overflow-x-hidden bg-emerald-50/30 px-4 py-8 pb-36 dark:bg-emerald-950/20 sm:pb-8" {...pullToRefresh.bind}>
+    <main className="relative min-h-[100dvh] overflow-y-auto overflow-x-hidden bg-[var(--surface-base)] px-4 py-8 pb-36 sm:pb-8" {...pullToRefresh.bind}>
       {relationship?.relationshipTimezone && (
         <RelationshipAmbientBackdrop timezone={relationship.relationshipTimezone} />
       )}
@@ -131,7 +131,7 @@ export function TimelineView() {
         </div>
       </motion.div>
       <div className="relative z-10 mx-auto flex w-full max-w-7xl gap-6">
-        <aside className="sticky top-6 hidden h-[calc(100vh-3rem)] w-40 shrink-0 rounded-[1.5rem] border border-white/12 bg-zinc-950/48 p-4 backdrop-blur-xl xl:block">
+        <aside className="surface-ink sticky top-6 hidden h-[calc(100dvh-3rem)] w-40 shrink-0 p-4 xl:block">
           <p className="text-[11px] uppercase tracking-[0.18em] text-zinc-400">Jump to year</p>
           <div className="mt-4 space-y-2">
             {years.map((year) => (
@@ -153,12 +153,11 @@ export function TimelineView() {
             Back to jar
           </Link>
 
-          <section className="mt-4 overflow-hidden rounded-[1.8rem] border border-white/15 bg-zinc-950/55 px-5 py-6 text-zinc-50 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-2xl sm:mt-6 sm:rounded-[2rem] sm:px-8 sm:py-7">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.14),transparent_40%),linear-gradient(135deg,rgba(255,255,255,0.08),transparent_55%)]" />
+          <section className="surface-ink mt-4 px-5 py-6 sm:mt-6 sm:px-8 sm:py-7">
             <div className="relative flex flex-col gap-5">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                  <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/15 bg-emerald-400/10 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-emerald-100/80">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/15 bg-[var(--accent-soft)] px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-emerald-100/80">
                     <History className="h-3.5 w-3.5 text-emerald-300" />
                     Timeline
                   </div>

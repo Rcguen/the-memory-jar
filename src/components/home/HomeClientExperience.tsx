@@ -311,9 +311,7 @@ export function HomeClientExperience() {
               onMouseEnter={prefetchTimeline}
               onPointerDown={prefetchTimeline}
               onFocus={prefetchTimeline}
-              whileTap={{ scale: 0.96 }}
-              transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-              className="inline-flex items-center gap-2 rounded-full border border-[var(--divider)] bg-[var(--surface-wood)]/60 px-4 py-2 text-sm text-[var(--text-primary)] shadow-[var(--shadow-2)] backdrop-blur-xl transition-colors hover:bg-[var(--surface-wood)]/80 focus-ring-premium"
+              className="nav-link-premium focus-ring-premium"
             >
             <Compass className="h-4 w-4 text-emerald-400" />
             Timeline
@@ -324,9 +322,7 @@ export function HomeClientExperience() {
               onMouseEnter={prefetchDashboard}
               onPointerDown={prefetchDashboard}
               onFocus={prefetchDashboard}
-              whileTap={{ scale: 0.96 }}
-              transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-              className="inline-flex items-center gap-2 rounded-full border border-[var(--divider)] bg-[var(--surface-wood)]/60 px-4 py-2 text-sm text-[var(--text-primary)] shadow-[var(--shadow-2)] backdrop-blur-xl transition-colors hover:bg-[var(--surface-wood)]/80 focus-ring-premium"
+              className="nav-link-premium focus-ring-premium"
             >
             <LayoutDashboard className="h-4 w-4 text-rose-300" />
             Dashboard
@@ -337,9 +333,7 @@ export function HomeClientExperience() {
               onMouseEnter={prefetchBook}
               onPointerDown={prefetchBook}
               onFocus={prefetchBook}
-              whileTap={{ scale: 0.96 }}
-              transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-              className="inline-flex items-center gap-2 rounded-full border border-[var(--divider)] bg-[var(--surface-wood)]/60 px-4 py-2 text-sm text-[var(--text-primary)] shadow-[var(--shadow-2)] backdrop-blur-xl transition-colors hover:bg-[var(--surface-wood)]/80 focus-ring-premium"
+              className="nav-link-premium focus-ring-premium"
             >
               <BookOpen className="h-4 w-4 text-amber-200" />
               Memory Book
@@ -347,7 +341,7 @@ export function HomeClientExperience() {
             <MotionLink
               href="/animated-cards"
               prefetch={false}
-              className="inline-flex items-center gap-2 rounded-full border border-[var(--divider)] bg-[var(--surface-wood)]/60 px-4 py-2 text-sm text-[var(--text-primary)] shadow-[var(--shadow-2)] backdrop-blur-xl transition-[transform,background-color] duration-150 ease-out hover:bg-[var(--surface-wood)]/80 active:scale-[0.97] focus-ring-premium motion-reduce:transform-none motion-reduce:transition-none"
+              className="nav-link-premium focus-ring-premium"
               aria-label="Open Letters in motion"
             >
               <Mail className="h-4 w-4 text-violet-300" />
@@ -414,10 +408,10 @@ export function HomeClientExperience() {
           transition={{ duration: 1, ease: "easeOut" }}
           className="mb-2 w-full text-center sm:mb-4 lg:mb-2"
         >
-          <h1 className="font-cormorant text-[2rem] leading-none tracking-[0.18em] text-zinc-800 opacity-80 sm:text-3xl sm:tracking-widest md:text-4xl dark:text-zinc-200">
+          <h1 className="font-cormorant text-[2rem] leading-none tracking-[0.12em] text-[var(--text-primary)] opacity-90 sm:text-3xl sm:tracking-[0.16em] md:text-4xl">
             The Memory Jar
           </h1>
-          <p className="mt-2 text-[10px] uppercase tracking-[0.28em] text-zinc-500/90 dark:text-zinc-400/80 sm:hidden">
+          <p className="mt-2 page-kicker text-[var(--text-secondary)] sm:hidden">
             Keep your little moments close
           </p>
         </motion.div>

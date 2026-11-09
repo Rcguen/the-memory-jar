@@ -87,7 +87,7 @@ export function CoupleDashboardView() {
   });
 
   return (
-    <main className="relative h-[100dvh] overflow-y-auto overflow-x-hidden bg-emerald-50/30 px-4 py-8 pb-36 dark:bg-emerald-950/20 sm:pb-8" {...pullToRefresh.bind}>
+    <main className="relative min-h-[100dvh] overflow-y-auto overflow-x-hidden bg-[var(--surface-base)] px-4 py-8 pb-36 sm:pb-8" {...pullToRefresh.bind}>
       {relationship?.relationshipTimezone && (
         <RelationshipAmbientBackdrop timezone={relationship.relationshipTimezone} />
       )}
@@ -107,10 +107,9 @@ export function CoupleDashboardView() {
           Back to jar
         </Link>
 
-        <section className="mt-4 overflow-hidden rounded-[1.8rem] border border-white/15 bg-zinc-950/55 px-5 py-6 text-zinc-50 shadow-[0_24px_80px_rgba(0,0,0,0.28)] sm:backdrop-blur-2xl sm:mt-6 sm:rounded-[2rem] sm:px-8 sm:py-7 relative">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.15),transparent_40%),linear-gradient(135deg,rgba(255,255,255,0.08),transparent_55%)] pointer-events-none" />
+        <section className="surface-ink mt-4 px-5 py-6 sm:mt-6 sm:px-8 sm:py-7">
           <div className="relative">
-            <div className="inline-flex items-center gap-2 rounded-full border border-rose-200/15 bg-rose-400/10 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-rose-100/80">
+            <div className="inline-flex items-center gap-2 rounded-full border border-rose-200/15 bg-[var(--accent-soft)] px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-rose-100/80">
               <Heart className="h-3.5 w-3.5 text-rose-300" />
               Couple Dashboard
             </div>
@@ -139,26 +138,26 @@ export function CoupleDashboardView() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.28, delay: index * 0.04 }}
-                className="rounded-[1.4rem] border border-white/12 bg-white/55 p-4 shadow-lg sm:backdrop-blur-xl dark:bg-zinc-950/35 sm:rounded-[1.5rem] sm:p-5"
+                className="surface-panel p-4 sm:p-5"
               >
                 <div className="flex items-center justify-between">
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-zinc-500 sm:text-sm">{metric.label}</p>
+                  <p className="page-kicker">{metric.label}</p>
                   <div className="rounded-full bg-rose-400/10 p-2 text-rose-500">
                     <Icon className="h-4 w-4" />
                   </div>
                 </div>
-                <div className="mt-3 font-cormorant text-[2.35rem] text-zinc-900 dark:text-zinc-50 sm:mt-4 sm:text-4xl">
+                <div className="mt-3 font-cormorant text-[2.35rem] text-[var(--text-primary)] sm:mt-4 sm:text-4xl">
                   {value}
                 </div>
-                {metric.suffix && <p className="mt-1 text-sm text-zinc-500">{metric.suffix}</p>}
+                {metric.suffix && <p className="mt-1 text-sm text-[var(--text-secondary)]">{metric.suffix}</p>}
               </motion.article>
             );
           })}
         </section>
 
         <section className="mt-6 grid gap-4 lg:grid-cols-2">
-          <div className="rounded-[1.5rem] border border-white/12 bg-white/55 p-5 shadow-lg sm:backdrop-blur-xl dark:bg-zinc-950/35">
-            <p className="text-sm uppercase tracking-[0.18em] text-zinc-500">Milestones</p>
+          <div className="surface-panel p-5">
+            <p className="page-kicker">Milestones</p>
             <div className="mt-4 space-y-3">
               <button
                 type="button"
@@ -192,8 +191,8 @@ export function CoupleDashboardView() {
             </div>
           </div>
 
-          <div className="rounded-[1.5rem] border border-white/12 bg-white/55 p-5 shadow-lg sm:backdrop-blur-xl dark:bg-zinc-950/35">
-            <p className="text-sm uppercase tracking-[0.18em] text-zinc-500">Patterns</p>
+          <div className="surface-panel p-5">
+            <p className="page-kicker">Patterns</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <div className="rounded-[1.2rem] border border-white/10 bg-white/70 px-4 py-4 dark:bg-zinc-950/45">
                 <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">Most common type</p>

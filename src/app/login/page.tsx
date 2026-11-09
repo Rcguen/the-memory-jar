@@ -6,10 +6,10 @@ import { FloatingParticles } from "@/components/jar/FloatingParticles";
 
 export default function LoginPage() {
   return (
-    <main className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden px-4 py-8 sm:px-6 bg-gradient-to-b from-rose-50 to-white dark:from-zinc-950 dark:to-zinc-900 transition-colors duration-500">
+    <main className="auth-page">
       {/* Decorative Background Elements */}
-      <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-rose-200/30 dark:bg-rose-900/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-200/30 dark:bg-purple-900/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="auth-orb left-[10%] top-[18%] h-72 w-72 bg-rose-300/40 dark:bg-rose-700/20" />
+      <div className="auth-orb bottom-[14%] right-[8%] h-96 w-96 bg-emerald-300/30 dark:bg-emerald-700/20" />
       
       {/* Subtle Floating Particles */}
       <FloatingParticles count={15} />
@@ -18,7 +18,7 @@ export default function LoginPage() {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
+          transition={{ duration: 0.34, ease: [0.23, 1, 0.32, 1] }}
           className="text-center space-y-2 mb-8"
         >
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 font-cormorant">
@@ -32,13 +32,10 @@ export default function LoginPage() {
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+          transition={{ duration: 0.34, delay: 0.06, ease: [0.23, 1, 0.32, 1] }}
           className="w-full"
         >
-          <div className="bg-white/40 dark:bg-zinc-900/40 backdrop-blur-xl border border-white/60 dark:border-zinc-800/50 rounded-[1.75rem] shadow-2xl p-5 sm:rounded-3xl sm:p-8 relative overflow-hidden">
-             {/* Inner glow */}
-             <div className="absolute inset-0 bg-gradient-to-t from-rose-100/10 to-transparent dark:from-rose-900/5 pointer-events-none" />
-             
+          <div className="auth-card p-5 sm:p-8">
              <div className="relative z-10">
                <LoginForm />
              </div>

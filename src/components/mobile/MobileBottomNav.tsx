@@ -35,8 +35,8 @@ export function MobileBottomNav() {
       <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] z-[85] flex justify-center px-4 sm:hidden">
         <motion.button
           type="button"
-          whileTap={{ scale: 0.95 }}
-          transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+          whileTap={{ scale: 0.97 }}
+          transition={{ duration: 0.16, ease: [0.23, 1, 0.32, 1] }}
           onClick={() => {
             trigger("light");
             openModal();
@@ -67,8 +67,8 @@ export function MobileBottomNav() {
                 key={item.href}
                 href={item.href}
                 prefetch={false}
-                whileTap={{ scale: 0.96 }}
-                transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+                whileTap={{ scale: 0.97 }}
+                transition={{ duration: 0.14, ease: [0.23, 1, 0.32, 1] }}
                 onPointerDown={() => {
                   if (!active) prefetchRoute(item.href);
                 }}
@@ -77,13 +77,13 @@ export function MobileBottomNav() {
                 }}
                 onClick={() => trigger("light")}
                 className={cn(
-                  "flex min-h-[52px] flex-col items-center justify-center rounded-[1.1rem] px-1 py-2 text-center transition-all focus-ring-premium",
-                  active ? "bg-white/15 text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.25)] scale-[0.98]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5",
+                  "flex min-h-[50px] flex-col items-center justify-center rounded-[0.9rem] px-1 py-1.5 text-center transition-[transform,background-color,color,box-shadow] duration-[180ms] ease-[cubic-bezier(0.23,1,0.32,1)] focus-ring-premium motion-reduce:transform-none motion-reduce:transition-none",
+                  active ? "bg-white/15 text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.25)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 active:scale-[0.97]",
                 )}
                 aria-current={active ? "page" : undefined}
               >
                 <Icon className={cn("h-4.5 w-4.5", active ? item.accent : "text-[var(--text-secondary)]")} />
-                <span className="mt-1 text-[10px] font-medium tracking-[0.01em]">{item.label}</span>
+                <span className="mt-1 text-[9px] font-medium tracking-[0.01em]">{item.label}</span>
               </MotionLink>
             );
           })}
