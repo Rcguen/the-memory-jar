@@ -445,7 +445,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                       </button>
                     </div>
 
-                    <div className="mt-4 flex gap-2 shrink-0 overflow-x-auto pb-2 [scrollbar-width:none] sm:flex-wrap sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden">
+                    <div className="mt-4 flex gap-1.5 shrink-0 overflow-x-auto pb-2 [scrollbar-width:none] sm:flex-wrap sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden" role="group" aria-label="Filter memories">
                       {FILTERS.map((item) => {
                         const selected = filter === item.id;
                         return (
@@ -453,12 +453,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                             key={item.id}
                             onClick={() => { setFilter(item.id); setDisplayState({ key: "", limit: initialDisplayLimit }); }}
                             aria-pressed={selected}
-                            className={cn(
-                              "relative shrink-0 rounded-sm px-2.5 py-1 text-[11px] font-medium tracking-wide transition-colors focus-ring-premium",
-                              selected
-                                ? "bg-[var(--surface-paper)] text-stone-900 shadow-sm"
-                                : "text-zinc-400 hover:bg-white/[0.08] hover:text-zinc-200"
-                            )}
+                            className="filter-chip shrink-0 focus-ring-premium"
                           >
                             {item.label}
                           </button>
