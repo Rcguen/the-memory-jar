@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react';
 import "./animated-cards.css";
 
 type Letter = { id: string; title: string; label: string; color: string; accent: string; stamp: string; stampFile: string; text: string; paragraphs?: string[]; hideSignature?: boolean };
@@ -94,10 +94,15 @@ function EnvelopeFace({ letter, back = false }: { letter: Letter; back?: boolean
 
 export function AnimatedLettersExperience() {
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]); const progress = useRef(0); const targetProgress = useRef<number | null>(null); const velocity = useRef(0); const mouse = useRef({ x: 0, y: 0, tx: 0, ty: 0 }); const frame = useRef(0);
-  const [size, setSize] = useState({ w: 335, h: 212 }); const [reading, setReading] = useState<Letter | null>(null);
+  const [size, setSize] = useState({ w: 335, h: 212 });
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [reading, setReading] = useState<Letter | null>(null);
+  const [isReadingClosing, setIsReadingClosing] = useState(false);
+  const activeIndexRef = useRef(0);
+  const closeTimer = useRef<number | null>(null);
 
   useEffect(() => {
-    const resize = () => { const w = Math.min(350, Math.max(210, Math.round(window.innerWidth * .18 + 125))); setSize({ w, h: Math.round(w / 1.58) }); };
+    const resize = () => { const compact = window.innerWidth <= 700 && window.innerHeight <= 600; const w = compact ? Math.min(270, Math.max(210, Math.round(window.innerHeight * .56))) : window.innerWidth <= 700 ? Math.min(320, Math.max(228, Math.round(window.innerWidth * .74))) : Math.min(350, Math.max(280, Math.round(window.innerWidth * .18 + 125))); setSize({ w, h: Math.round(w / 1.58) }); };
     const move = (e: MouseEvent) => { mouse.current.tx = Math.max(-1, Math.min(1, (e.clientX - innerWidth / 2) / (innerWidth / 2))); mouse.current.ty = Math.max(-1, Math.min(1, (e.clientY - innerHeight / 2) / (innerHeight / 2))); };
     const leave = () => { mouse.current.tx = 0; mouse.current.ty = 0; };
     const wheel = (e: WheelEvent) => { e.preventDefault(); velocity.current = Math.max(-.065, Math.min(.065, velocity.current + e.deltaY * .00045)); };
@@ -110,14 +115,44 @@ export function AnimatedLettersExperience() {
 
   useEffect(() => {
     let last = performance.now();
-    const tick = (now: number) => { const dt = Math.min((now - last) / 1000, .06); last = now; const scale = dt * 60; const target = targetProgress.current; if (target === null) { velocity.current *= Math.pow(.92, scale); progress.current += (.00042 + velocity.current) * scale; } else { const distance = target - progress.current; progress.current += distance * Math.min(1, .025 * scale); velocity.current = 0; if (Math.abs(distance) < .004) { progress.current = target; targetProgress.current = null; } } mouse.current.x += (mouse.current.tx - mouse.current.x) * (1 - Math.pow(.08, scale)); mouse.current.y += (mouse.current.ty - mouse.current.y) * (1 - Math.pow(.08, scale));
-      const active = Math.round(progress.current); const diff = progress.current - active; const virtual = active + Math.sign(diff) * Math.pow(Math.abs(diff) * 2, 4.2) / 2; const half = LETTERS.length / 2;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const tick = (now: number) => { if (document.hidden) { frame.current = 0; return; } const dt = Math.min((now - last) / 1000, .06); last = now; const scale = dt * 60; const target = targetProgress.current; if (target === null) { velocity.current *= Math.pow(.92, scale); if (!reducedMotion) progress.current += (.00042 + velocity.current) * scale; } else if (reducedMotion) { progress.current = target; targetProgress.current = null; velocity.current = 0; } else { const distance = target - progress.current; progress.current += distance * Math.min(1, .025 * scale); velocity.current = 0; if (Math.abs(distance) < .004) { progress.current = target; targetProgress.current = null; } } if (!reducedMotion) { mouse.current.x += (mouse.current.tx - mouse.current.x) * (1 - Math.pow(.08, scale)); mouse.current.y += (mouse.current.ty - mouse.current.y) * (1 - Math.pow(.08, scale)); } else { mouse.current.x = 0; mouse.current.y = 0; }
+      const active = Math.round(progress.current); const normalizedActive = ((active % LETTERS.length) + LETTERS.length) % LETTERS.length; if (normalizedActive !== activeIndexRef.current) { activeIndexRef.current = normalizedActive; setActiveIndex(normalizedActive); } const diff = progress.current - active; const virtual = active + Math.sign(diff) * Math.pow(Math.abs(diff) * 2, 4.2) / 2; const half = LETTERS.length / 2;
       itemRefs.current.forEach((item, i) => { if (!item) return; let offset = i - virtual; while (offset > half) offset -= LETTERS.length; while (offset < -half) offset += LETTERS.length; const a = Math.abs(offset); const sign = Math.sign(offset); if (a > 3) { item.style.visibility = 'hidden'; return; } item.style.visibility = 'visible'; const gap = 34, D = 1350, h = innerHeight; let y = 0, z = 0, rot = 0;
         if (a <= 1) { const t = a * a * (3 - 2 * a); y = -sign * t * (size.h + gap); z = 420 - t * 190; rot = t * 132; } else if (a <= 2) { const t = (a - 1) ** 2 * (3 - 2 * (a - 1)); const end = (h / 2 + 55) / (D / (D + 60)) - size.h / 2; y = -sign * (size.h + gap + t * (end - size.h - gap)); z = 230 - t * 290; rot = 132 + t * 43; } else { const t = Math.min(a - 2, 1); const end1 = (h / 2 + 55) / (D / (D + 60)) - size.h / 2; const end2 = (h / 2 + 110) / (D / (D + 250)) + size.h / 2; y = -sign * (end1 + t * (end2 - end1)); z = -60 - t * 190; rot = 175 + t * 20; }
         const center = Math.max(0, 1 - a); item.style.zIndex = String(Math.round(z)); item.style.transform = `translateY(${y.toFixed(1)}px) translateZ(${z.toFixed(1)}px) rotateX(${(-sign * rot - mouse.current.y * 12 * center).toFixed(1)}deg) rotateY(${(mouse.current.x * 15 * center).toFixed(1)}deg) rotateZ(-3deg)`;
       }); frame.current = requestAnimationFrame(tick); };
-    frame.current = requestAnimationFrame(tick); return () => cancelAnimationFrame(frame.current);
+    const handleVisibility = () => { if (!document.hidden && !frame.current) { last = performance.now(); frame.current = requestAnimationFrame(tick); } };
+    document.addEventListener('visibilitychange', handleVisibility); frame.current = requestAnimationFrame(tick); return () => { document.removeEventListener('visibilitychange', handleVisibility); if (frame.current) cancelAnimationFrame(frame.current); frame.current = 0; };
   }, [size]);
+
+  const closeReading = useCallback(() => {
+    if (!reading || isReadingClosing) return;
+    setIsReadingClosing(true);
+    closeTimer.current = window.setTimeout(() => {
+      setReading(null);
+      setIsReadingClosing(false);
+      closeTimer.current = null;
+    }, 240);
+  }, [isReadingClosing, reading]);
+
+  useEffect(() => () => {
+    if (closeTimer.current !== null) window.clearTimeout(closeTimer.current);
+  }, []);
+
+  useEffect(() => {
+    if (!reading) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeReading();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [closeReading, reading]);
+
+  const moveLetter = (direction: -1 | 1) => {
+    targetProgress.current = Math.round(progress.current) + direction;
+    velocity.current = 0;
+  };
 
   const handleLetterClick = (index: number, letter: Letter) => {
     const current = Math.round(progress.current);
@@ -125,11 +160,39 @@ export function AnimatedLettersExperience() {
     const half = LETTERS.length / 2;
     while (delta > half) delta -= LETTERS.length;
     while (delta < -half) delta += LETTERS.length;
-    if (Math.abs(delta) < 0.5 && targetProgress.current === null) setReading(letter);
+    if (Math.abs(delta) < 0.5 && targetProgress.current === null) { if (closeTimer.current !== null) window.clearTimeout(closeTimer.current); setIsReadingClosing(false); setReading(letter); }
     else targetProgress.current = current + delta;
   };
 
-  return <main className="carousel-page"><Link href="/" className="letters-back" aria-label="Back to home"><ArrowLeft aria-hidden="true" size={17} strokeWidth={1.8} /><span>Back to jar</span></Link><div className="sparkle-field" aria-hidden="true">{SPARKLES.map(([left, top, size, delay], index) => <span key={index} className="sparkle" style={{ left: `${left}%`, top: `${top}%`, width: `${size}px`, height: `${size}px`, animationDelay: `${delay}s` }} />)}</div><div className="carousel-perspective"><div className="carousel-stage" style={{ width: size.w, height: size.h }}>{LETTERS.map((letter, i) => <button key={letter.id} ref={(el) => { itemRefs.current[i] = el; }} className={`carousel-item ${letter.id === '08' ? 'special-envelope' : ''}`} style={{ width: size.w, height: size.h }} onClick={() => handleLetterClick(i, letter)} aria-label={`Open ${letter.title}`}>{letter.id === '08' && <div className="special-glow" aria-hidden="true" />}<div className="envelope-thickness" style={{ '--edge': letter.color } as React.CSSProperties} /> <EnvelopeFace letter={letter} /><EnvelopeFace letter={letter} back /></button>)}</div></div><div className="carousel-hint"><span>Scroll or swipe</span><b aria-hidden="true">·</b><span>Choose a letter</span></div><div className="carousel-title"><small>PRIVATE CORRESPONDENCE · 2026</small><h1>Letters<br /><em>in motion</em></h1></div>{reading && <div className="reading-overlay" onClick={() => setReading(null)}><article className={`reading-letter ${reading.paragraphs ? 'long-letter' : ''}`} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="reading-title" style={{ '--accent': reading.color } as React.CSSProperties}><button onClick={() => setReading(null)} className="reading-close" aria-label="Close letter">×</button><div className="reading-stamp">{reading.id}</div><small>{reading.label} · PRIVATE CORRESPONDENCE</small><h2 id="reading-title">{reading.title}</h2><div className="reading-line" /><div className="reading-body">{(reading.paragraphs ?? [reading.text]).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</div><div className="reading-sign">With love,<br /><em>Phú</em></div></article></div>}</main>;
+  return (
+    <main className="carousel-page">
+      <Link href="/" className="letters-back" aria-label="Back to home"><ArrowLeft aria-hidden="true" size={17} strokeWidth={1.8} /><span>Back to jar</span></Link>
+      <div className="sparkle-field" aria-hidden="true">{SPARKLES.map(([left, top, sparkleSize, delay], index) => <span key={index} className="sparkle" style={{ left: `${left}%`, top: `${top}%`, width: `${sparkleSize}px`, height: `${sparkleSize}px`, animationDelay: `${delay}s` }} />)}</div>
+      <div className="carousel-perspective" aria-label="Letter carousel">
+        <div className="carousel-stage" style={{ width: size.w, height: size.h }}>
+          {LETTERS.map((letter, i) => <button key={letter.id} ref={(el) => { itemRefs.current[i] = el; }} className={`carousel-item ${letter.id === '08' ? 'special-envelope' : ''}`} style={{ width: size.w, height: size.h }} onClick={() => handleLetterClick(i, letter)} aria-label={`Open ${letter.title}`}>
+            {letter.id === '08' && <div className="special-glow" aria-hidden="true" />}
+            <div className="envelope-thickness" style={{ '--edge': letter.color } as React.CSSProperties} />
+            <EnvelopeFace letter={letter} /><EnvelopeFace letter={letter} back />
+          </button>)}
+        </div>
+      </div>
+      <div className="carousel-title"><small>PRIVATE CORRESPONDENCE · 2026</small><h1>Letters<br /><em>in motion</em></h1></div>
+      <div className="carousel-hint"><span>Scroll or swipe</span><b aria-hidden="true">·</b><span>Choose a letter</span></div>
+      <div className="carousel-controls" aria-label="Letter navigation">
+        <button type="button" className="carousel-control" onClick={() => moveLetter(-1)} aria-label="Previous letter"><ChevronUp aria-hidden="true" size={18} strokeWidth={1.8} /></button>
+        <span className="carousel-count" aria-live="polite">{String(activeIndex + 1).padStart(2, '0')} / {String(LETTERS.length).padStart(2, '0')}</span>
+        <button type="button" className="carousel-control" onClick={() => moveLetter(1)} aria-label="Next letter"><ChevronDown aria-hidden="true" size={18} strokeWidth={1.8} /></button>
+      </div>
+      {reading && <div className={`reading-overlay ${isReadingClosing ? 'is-closing' : ''}`} onClick={closeReading}>
+        <article className={`reading-letter ${reading.paragraphs ? 'long-letter' : ''}`} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="reading-title" style={{ '--accent': reading.color } as React.CSSProperties}>
+          <button type="button" onClick={closeReading} className="reading-close" aria-label="Close letter">×</button>
+          <div className="reading-stamp">{reading.id}</div><small>{reading.label} · PRIVATE CORRESPONDENCE</small><h2 id="reading-title">{reading.title}</h2><div className="reading-line" />
+          <div className="reading-body">{(reading.paragraphs ?? [reading.text]).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</div><div className="reading-sign">With love,<br /><em>Phú</em></div>
+        </article>
+      </div>}
+    </main>
+  );
 }
 
 
