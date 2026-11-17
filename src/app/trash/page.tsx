@@ -58,10 +58,9 @@ export default function TrashPage() {
 
   return (
     <main
-      className="relative min-h-screen overflow-hidden bg-emerald-50/30 px-4 py-8 pb-36 dark:bg-emerald-950/20 sm:pb-8"
+      className="relative min-h-screen overflow-hidden bg-[var(--surface-base)] px-4 py-8 pb-36 sm:pb-8"
       {...pullToRefresh.bind}
     >
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-teal-100/40 via-emerald-50/20 to-transparent dark:from-teal-900/20 dark:via-emerald-950/30 dark:to-transparent pointer-events-none" />
       <motion.div
         className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center"
         animate={{ opacity: pullToRefresh.pullDistance > 4 || pullToRefresh.isRefreshing ? 1 : 0, y: Math.min(pullToRefresh.pullDistance, 52) }}
@@ -76,8 +75,8 @@ export default function TrashPage() {
           Back to jar
         </Link>
 
-        <section className="rounded-2xl border border-white/50 dark:border-zinc-800/60 bg-white/50 dark:bg-zinc-950/50 backdrop-blur-xl shadow-xl overflow-hidden">
-          <div className="p-6 border-b border-black/5 dark:border-white/10">
+        <section className="surface-panel overflow-hidden">
+          <div className="border-b border-[var(--divider)] p-6">
             <h1 className="font-cormorant text-4xl text-zinc-800 dark:text-zinc-100">Trash</h1>
             <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">Deleted memories can be restored or permanently removed.</p>
           </div>
@@ -94,7 +93,7 @@ export default function TrashPage() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
-                    className="rounded-xl bg-white/60 dark:bg-zinc-900/60 border border-white/50 dark:border-zinc-800/60 p-4 flex gap-3"
+                    className="surface-paper flex gap-3 p-4"
                   >
                     <button onClick={() => setPreview(memory)} className="min-w-0 flex-1 text-left">
                       <p className="text-xs uppercase tracking-wide text-zinc-400">{memory.type.replace("_", " ")}</p>
@@ -124,7 +123,7 @@ export default function TrashPage() {
               </AnimatePresence>
             </div>
 
-            <aside className="rounded-xl bg-white/45 dark:bg-zinc-900/45 border border-white/50 dark:border-zinc-800/60 p-4 min-h-52">
+            <aside className="surface-paper min-h-52 p-4">
               {preview ? (
                 <div>
                   <div className="flex items-start justify-between gap-3">
@@ -151,13 +150,13 @@ export default function TrashPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm"
           >
             <motion.div
               initial={{ scale: 0.96, y: 12 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.96, y: 12 }}
-              className="w-full max-w-sm rounded-2xl bg-white dark:bg-zinc-950 border border-white/50 dark:border-zinc-800 p-5 shadow-2xl"
+              className="surface-dialog w-full max-w-sm p-5"
             >
               <h2 className="font-cormorant text-2xl text-zinc-900 dark:text-zinc-100">Delete forever?</h2>
               <p className="text-sm text-zinc-500 mt-2">This removes the memory, attachments, and storage objects permanently.</p>

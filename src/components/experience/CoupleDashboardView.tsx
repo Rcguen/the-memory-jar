@@ -26,7 +26,6 @@ import { useMemoryViewer } from "@/providers/memory-viewer-provider";
 import { useRealtimeMemory } from "@/hooks/useRealtimeMemory";
 import { EmojiText } from "@/components/ui/EmojiText";
 import { MemoryType } from "@/types/memory";
-import { AmbientParticles } from "@/components/ui/AmbientParticles";
 import { RelationshipAmbientBackdrop } from "./RelationshipAmbientBackdrop";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -91,13 +90,11 @@ export function CoupleDashboardView() {
       {relationship?.relationshipTimezone && (
         <RelationshipAmbientBackdrop timezone={relationship.relationshipTimezone} />
       )}
-      <AmbientParticles />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(244,114,182,0.14),transparent_48%),radial-gradient(circle_at_bottom,rgba(16,185,129,0.08),transparent_42%)]" />
       <motion.div
         className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center sm:hidden"
         animate={{ opacity: pullToRefresh.pullDistance > 4 || pullToRefresh.isRefreshing ? 1 : 0, y: Math.min(pullToRefresh.pullDistance, 52) }}
       >
-        <div className="mt-3 rounded-full border border-white/20 bg-zinc-950/65 px-4 py-2 text-[11px] uppercase tracking-[0.18em] text-zinc-100 shadow-lg sm:backdrop-blur-xl">
+        <div className="surface-ink mt-3 rounded-full border px-4 py-2 text-[11px] tracking-wide">
           {pullToRefresh.isRefreshing ? "Refreshing" : pullToRefresh.pullDistance > 64 ? "Release to refresh" : "Pull for a softer pulse"}
         </div>
       </motion.div>
@@ -109,8 +106,8 @@ export function CoupleDashboardView() {
 
         <section className="surface-ink mt-4 px-5 py-6 sm:mt-6 sm:px-8 sm:py-7">
           <div className="relative">
-            <div className="inline-flex items-center gap-2 rounded-full border border-rose-200/15 bg-[var(--accent-soft)] px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-rose-100/80">
-              <Heart className="h-3.5 w-3.5 text-rose-300" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] tracking-wide text-[var(--text-muted)]">
+              <Heart className="h-3.5 w-3.5 text-[var(--accent-rose)]" />
               Couple Dashboard
             </div>
             <h1 className="mt-4 font-cormorant text-[2.45rem] leading-none sm:text-5xl">
@@ -120,7 +117,7 @@ export function CoupleDashboardView() {
               Not analytics for productivity. Just a gentle portrait of how your love has been unfolding inside the jar.
             </p>
             <div className="mt-6">
-              <Link href="/memory-book" className="inline-flex items-center gap-2 rounded-full bg-rose-500 hover:bg-rose-600 text-white px-5 py-2.5 text-sm font-medium transition-colors shadow-lg">
+              <Link href="/memory-book" className="inline-flex items-center gap-2 rounded-full bg-[var(--accent-rose)] px-5 py-2.5 text-sm font-medium text-white transition-colors hover:opacity-90">
                 <BookOpen className="h-4 w-4" />
                 Turn these memories into a book
               </Link>
@@ -142,7 +139,7 @@ export function CoupleDashboardView() {
               >
                 <div className="flex items-center justify-between">
                   <p className="page-kicker">{metric.label}</p>
-                  <div className="rounded-full bg-rose-400/10 p-2 text-rose-500">
+                  <div className="rounded-full bg-[var(--accent-rose-soft)] p-2 text-[var(--accent-rose)]">
                     <Icon className="h-4 w-4" />
                   </div>
                 </div>
@@ -163,7 +160,7 @@ export function CoupleDashboardView() {
                 type="button"
                 onClick={() => stats?.newestMemory && openViewer(stats.newestMemory.id)}
                 disabled={!stats?.newestMemory}
-                className="flex w-full items-start justify-between rounded-[1.2rem] border border-white/10 bg-white/70 px-4 py-4 text-left transition-colors hover:bg-white/85 disabled:cursor-default disabled:opacity-70 dark:bg-zinc-950/45 dark:hover:bg-zinc-900/58"
+                className="surface-paper flex w-full items-start justify-between rounded-xl border px-4 py-4 text-left transition-colors hover:border-[var(--accent-rose)] disabled:cursor-default disabled:opacity-70"
               >
                 <div>
                   <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">Newest memory</p>
@@ -178,7 +175,7 @@ export function CoupleDashboardView() {
                 type="button"
                 onClick={() => stats?.oldestMemory && openViewer(stats.oldestMemory.id)}
                 disabled={!stats?.oldestMemory}
-                className="flex w-full items-start justify-between rounded-[1.2rem] border border-white/10 bg-white/70 px-4 py-4 text-left transition-colors hover:bg-white/85 disabled:cursor-default disabled:opacity-70 dark:bg-zinc-950/45 dark:hover:bg-zinc-900/58"
+                className="surface-paper flex w-full items-start justify-between rounded-xl border px-4 py-4 text-left transition-colors hover:border-[var(--accent-rose)] disabled:cursor-default disabled:opacity-70"
               >
                 <div>
                   <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">Oldest memory</p>
@@ -194,19 +191,19 @@ export function CoupleDashboardView() {
           <div className="surface-panel p-5">
             <p className="page-kicker">Patterns</p>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <div className="rounded-[1.2rem] border border-white/10 bg-white/70 px-4 py-4 dark:bg-zinc-950/45">
+              <div className="surface-paper rounded-xl border px-4 py-4">
                 <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">Most common type</p>
                 <p className="mt-3 font-cormorant text-3xl text-zinc-900 capitalize dark:text-zinc-50">
                   {prettyType(stats?.mostCommonMemoryType ?? null)}
                 </p>
               </div>
-              <div className="rounded-[1.2rem] border border-white/10 bg-white/70 px-4 py-4 dark:bg-zinc-950/45">
+              <div className="surface-paper rounded-xl border px-4 py-4">
                 <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">Most active month</p>
                 <p className="mt-3 font-cormorant text-3xl text-zinc-900 dark:text-zinc-50">
                   {prettyMonth(stats?.mostActiveMonth ?? null)}
                 </p>
               </div>
-              <div className="rounded-[1.2rem] border border-white/10 bg-white/70 px-4 py-4 dark:bg-zinc-950/45 sm:col-span-2">
+              <div className="surface-paper rounded-xl border px-4 py-4 sm:col-span-2">
                 <p className="text-xs uppercase tracking-[0.16em] text-zinc-500">Favorite reaction</p>
                 <p className="mt-3 font-cormorant text-4xl text-zinc-900 dark:text-zinc-50">
                   {stats?.favoriteReaction ? <EmojiText text={stats.favoriteReaction} /> : "No favorite yet"}
@@ -217,7 +214,7 @@ export function CoupleDashboardView() {
         </section>
 
         {isLoading && (
-          <div className="mt-6 rounded-full border border-white/10 bg-zinc-950/45 px-4 py-2 text-center text-sm text-zinc-200 backdrop-blur-xl">
+          <div className="surface-ink mt-6 rounded-full border px-4 py-2 text-center text-sm">
             Listening for the shape of your story...
           </div>
         )}

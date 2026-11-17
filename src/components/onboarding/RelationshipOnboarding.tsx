@@ -11,7 +11,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { HeartHandshake, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import { AmbientParticles } from "@/components/ui/AmbientParticles";
 
 export function RelationshipOnboarding() {
   const { profile, refreshProfile } = useAuth();
@@ -69,17 +68,15 @@ export function RelationshipOnboarding() {
   };
 
   return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center p-4 overflow-hidden bg-emerald-50/30 dark:bg-emerald-950/20">
-      <AmbientParticles />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(244,114,182,0.12),transparent_32%),radial-gradient(circle_at_bottom,rgba(16,185,129,0.1),transparent_36%)] pointer-events-none" />
+    <div className="relative min-h-screen flex flex-col items-center justify-center p-4 overflow-hidden bg-[var(--surface-base)]">
 
       <div className="relative z-10 w-full max-w-md">
         <div className="mb-8 text-center">
           <h1 className="font-cormorant text-4xl text-zinc-800 dark:text-zinc-200 tracking-wider">
             The Memory Jar
           </h1>
-          <p className="mt-2 text-zinc-500 text-sm tracking-widest uppercase">
-            Start Your Journey
+          <p className="mt-2 text-[var(--text-muted)] text-sm">
+            Start your journey
           </p>
         </div>
 
@@ -95,30 +92,30 @@ export function RelationshipOnboarding() {
             >
               <button
                 onClick={() => setView("create")}
-                className="w-full text-left p-6 rounded-[1.5rem] border border-white/12 bg-white/40 dark:bg-zinc-950/40 backdrop-blur-xl shadow-xl hover:bg-white/60 dark:hover:bg-zinc-900/60 transition-all group"
+                className="surface-panel w-full text-left p-6 rounded-2xl transition-colors hover:border-[var(--accent-rose)] group"
               >
                 <div className="flex items-center gap-4 mb-2">
                   <div className="p-3 bg-emerald-100 dark:bg-emerald-900/40 rounded-full text-emerald-600 dark:text-emerald-400 group-hover:scale-110 transition-transform">
                     <Sparkles className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-cormorant text-zinc-800 dark:text-zinc-200">Start a New Jar</h3>
-                    <p className="text-sm text-zinc-500">I am setting this up for us.</p>
+                    <h3 className="text-xl font-cormorant text-[var(--text-strong)]">Start a new jar</h3>
+                    <p className="text-sm text-[var(--text-muted)]">I am setting this up for us.</p>
                   </div>
                 </div>
               </button>
 
               <button
                 onClick={() => setView("join")}
-                className="w-full text-left p-6 rounded-[1.5rem] border border-white/12 bg-white/40 dark:bg-zinc-950/40 backdrop-blur-xl shadow-xl hover:bg-white/60 dark:hover:bg-zinc-900/60 transition-all group"
+                className="surface-panel w-full text-left p-6 rounded-2xl transition-colors hover:border-[var(--accent-rose)] group"
               >
                 <div className="flex items-center gap-4 mb-2">
                   <div className="p-3 bg-rose-100 dark:bg-rose-900/40 rounded-full text-rose-600 dark:text-rose-400 group-hover:scale-110 transition-transform">
                     <HeartHandshake className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-cormorant text-zinc-800 dark:text-zinc-200">Join a Partner</h3>
-                    <p className="text-sm text-zinc-500">I have an invite code.</p>
+                    <h3 className="text-xl font-cormorant text-[var(--text-strong)]">Join a partner</h3>
+                    <p className="text-sm text-[var(--text-muted)]">I have an invite code.</p>
                   </div>
                 </div>
               </button>
@@ -132,7 +129,7 @@ export function RelationshipOnboarding() {
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="p-6 rounded-[1.5rem] border border-white/12 bg-white/40 dark:bg-zinc-950/40 backdrop-blur-xl shadow-xl space-y-5"
+              className="surface-panel p-6 rounded-2xl space-y-5"
             >
               <div className="flex items-center gap-2 mb-2">
                 <button onClick={() => setView("choice")} className="text-zinc-400 hover:text-zinc-600 transition-colors">
@@ -147,7 +144,7 @@ export function RelationshipOnboarding() {
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="mt-1 bg-white/50 dark:bg-zinc-900/50"
+                    className="mt-1 bg-[var(--surface-paper)]"
                   />
                 </div>
                 <div>
@@ -156,7 +153,7 @@ export function RelationshipOnboarding() {
                     list="tz-options"
                     value={timezone}
                     onChange={(e) => setTimezone(e.target.value)}
-                    className="mt-1 bg-white/50 dark:bg-zinc-900/50"
+                    className="mt-1 bg-[var(--surface-paper)]"
                   />
                   <datalist id="tz-options">
                     {getSupportedTimezones().map((tz) => (
@@ -169,7 +166,7 @@ export function RelationshipOnboarding() {
                   <select
                     value={anniversaryType}
                     onChange={(e) => setAnniversaryType(e.target.value as "yearly" | "monthly")}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1 bg-white/50 dark:bg-zinc-900/50"
+                    className="mt-1 flex h-10 w-full rounded-md border border-input bg-[var(--surface-paper)] px-3 py-2 text-sm"
                   >
                     <option value="yearly">Yearly</option>
                     <option value="monthly">Monthly</option>
@@ -194,7 +191,7 @@ export function RelationshipOnboarding() {
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="p-6 rounded-[1.5rem] border border-white/12 bg-white/40 dark:bg-zinc-950/40 backdrop-blur-xl shadow-xl space-y-5"
+              className="surface-panel p-6 rounded-2xl space-y-5"
             >
               <div className="flex items-center gap-2 mb-2">
                 <button onClick={() => setView("choice")} className="text-zinc-400 hover:text-zinc-600 transition-colors">
@@ -208,7 +205,7 @@ export function RelationshipOnboarding() {
                   value={inviteCode}
                   onChange={(e) => setInviteCode(e.target.value)}
                   placeholder="JAR-XXXXX"
-                  className="bg-white/50 dark:bg-zinc-900/50 uppercase"
+                  className="bg-[var(--surface-paper)] uppercase"
                 />
                 <p className="text-xs text-zinc-500 mt-1">Ask your partner for the code from their Profile settings.</p>
               </div>

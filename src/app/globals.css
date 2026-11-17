@@ -287,6 +287,245 @@
   }
 }
 
+/* Final visual normalization: these shared surfaces are intentionally flat and
+   token-driven so every route reads as one quiet keepsake archive. */
+.surface-ink,
+.surface-glass,
+.surface-panel,
+.surface-paper,
+.surface-dialog {
+  background-image: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+.surface-ink {
+  background: var(--surface-ink) !important;
+  border-color: var(--divider) !important;
+  box-shadow: var(--shadow-2) !important;
+  color: var(--text-primary) !important;
+}
+.surface-ink::before { display: none !important; }
+.surface-glass,
+.surface-panel {
+  background: var(--surface-raised) !important;
+  border-color: var(--divider) !important;
+  box-shadow: var(--shadow-1) !important;
+  color: var(--text-primary) !important;
+}
+.surface-paper,
+.surface-dialog {
+  background: var(--surface-paper) !important;
+  border-color: var(--divider) !important;
+  color: var(--text-primary) !important;
+}
+.home-room,
+.auth-page {
+  background: var(--surface-base) !important;
+  background-image: none !important;
+}
+.editorial-noise,
+.auth-orb { display: none !important; }
+
+/* Unslop pass: The Memory Jar shared visual language. Keep the story warm, let
+   the memories carry the color, and keep navigation quiet across every route. */
+:root {
+  --jar-ink: #25211c;
+  --jar-paper: #f5f0e7;
+  --jar-forest: #146b5b;
+  --jar-rose: #b65362;
+  --surface-base: #f6f3ed;
+  --surface-raised: #fffdf8;
+  --surface-paper: #f1e9dc;
+  --surface-glass: rgba(255, 253, 248, 0.88);
+  --surface-wood: #302b25;
+  --text-primary: #25211c;
+  --text-secondary: #686158;
+  --text-tertiary: #91897e;
+  --text-caption: #777066;
+  --divider: rgba(58, 49, 39, 0.14);
+  --accent-primary: #b65362;
+  --accent-soft: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+  --focus-color: #177461;
+}
+
+.dark {
+  --surface-base: #1b1a17;
+  --surface-raised: #24221e;
+  --surface-paper: #2c2923;
+  --surface-glass: rgba(36, 34, 30, 0.92);
+  --surface-wood: #171613;
+  --text-primary: #f7f3ea;
+  --text-secondary: #c9c1b5;
+  --text-tertiary: #958f86;
+  --text-caption: #aaa197;
+  --divider: rgba(255, 248, 236, 0.14);
+  --accent-primary: #d07b82;
+  --accent-soft: color-mix(in srgb, var(--accent-primary) 16%, transparent);
+  --focus-color: #4bb59e;
+}
+
+body {
+  background-image: none;
+}
+
+.editorial-noise {
+  display: none;
+}
+
+.surface-ink,
+.surface-glass,
+.surface-panel,
+.surface-paper,
+.surface-dialog {
+  backdrop-filter: none;
+}
+
+.surface-ink {
+  background: var(--surface-wood);
+  border-color: var(--divider);
+  box-shadow: var(--shadow-2);
+}
+
+.surface-ink::before {
+  display: none;
+}
+
+.surface-glass {
+  background: var(--surface-glass);
+  box-shadow: var(--shadow-1);
+}
+
+.surface-panel {
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-1);
+}
+
+.auth-page {
+  background: var(--surface-base);
+}
+
+.auth-orb,
+.auth-page .pointer-events-none {
+  display: none;
+}
+
+.auth-card {
+  background: var(--surface-raised);
+  border-color: var(--divider);
+  box-shadow: var(--shadow-3);
+  backdrop-filter: none;
+}
+
+.auth-card::before {
+  display: none;
+}
+
+.nav-link-premium {
+  border-radius: var(--radius-small);
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.nav-link-premium:hover {
+  background: color-mix(in srgb, var(--surface-raised) 12%, transparent);
+}
+
+.page-kicker,
+.type-meta,
+.editorial-kicker {
+  letter-spacing: 0.08em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-card,
+  .surface-ink,
+  .surface-glass,
+  .surface-panel {
+    transition: none;
+  }
+}
+
+/* Remaining module pass: home, keepsakes, music, storybook and viewer chrome. */
+.home-room,
+.dark .home-room {
+  background: var(--surface-base);
+}
+
+.home-jar-stage::before {
+  display: none;
+}
+
+.home-desk-footer {
+  background: var(--surface-wood);
+  box-shadow: inset 0 -1px var(--divider);
+}
+
+.app-boot-loader__texture {
+  background: none;
+}
+
+.app-boot-loader__panel--right {
+  background: var(--surface-wood);
+}
+
+.app-boot-loader__progress {
+  background: var(--accent-primary);
+}
+
+.keepsake-promise {
+  background: #f5e9e5;
+}
+
+.keepsake-voice,
+.keepsake-video,
+.keepsake-capsule {
+  background: var(--surface-wood);
+}
+
+.music-launcher {
+  border-radius: var(--radius-small);
+  background: var(--surface-paper);
+  box-shadow: var(--shadow-1);
+}
+
+.persistent-music-player {
+  --music-dock-bg: var(--surface-wood);
+  --music-dock-raised: color-mix(in srgb, var(--jar-paper) 9%, transparent);
+  --music-dock-faint: color-mix(in srgb, var(--jar-paper) 16%, transparent);
+  box-shadow: var(--shadow-floating);
+}
+
+.music-source-tabs button[aria-selected="true"],
+.music-discover-modes button[aria-pressed="true"] {
+  background: var(--music-dock-raised);
+}
+
+.page-kicker,
+.type-meta,
+.editorial-kicker,
+.persistent-music-player__eyebrow,
+.track-metadata__state {
+  text-transform: none;
+  letter-spacing: 0.06em;
+}
+
+.reading-measure,
+.memory-content,
+.viewer-content {
+  max-width: 72ch;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vinyl-record,
+  .track-orbit-card,
+  .music-orbit,
+  .music-launcher {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
 @media (hover: none) {
   .custom-scrollbar::-webkit-scrollbar {
     width: 0;
@@ -1847,3 +2086,41 @@
     transition-timing-function: linear;
   }
 }
+
+/* Final visual normalization: one quiet, token-driven surface language across every route. */
+.surface-ink,
+.surface-glass,
+.surface-panel,
+.surface-paper,
+.surface-dialog {
+  background-image: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+.surface-ink {
+  background: var(--surface-ink) !important;
+  border-color: var(--divider) !important;
+  box-shadow: var(--shadow-2) !important;
+  color: var(--text-primary) !important;
+}
+.surface-ink::before { display: none !important; }
+.surface-glass,
+.surface-panel {
+  background: var(--surface-raised) !important;
+  border-color: var(--divider) !important;
+  box-shadow: var(--shadow-1) !important;
+  color: var(--text-primary) !important;
+}
+.surface-paper,
+.surface-dialog {
+  background: var(--surface-paper) !important;
+  border-color: var(--divider) !important;
+  color: var(--text-primary) !important;
+}
+.home-room,
+.auth-page {
+  background: var(--surface-base) !important;
+  background-image: none !important;
+}
+.editorial-noise,
+.auth-orb { display: none !important; }

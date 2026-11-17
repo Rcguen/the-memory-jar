@@ -119,7 +119,7 @@ export function MemoryTypeSelector({ onSelect, onCancel }: MemoryTypeSelectorPro
             onClick={() => onSelect(type.id)}
             whileHover={isPhone || shouldReduceMotion ? undefined : { y: -2 }}
             whileTap={{ scale: 0.98 }}
-            className="group relative flex min-h-[120px] flex-col items-center justify-center overflow-hidden rounded-xl border border-[rgba(58,49,39,0.08)] bg-white/70 p-4 text-center transition-all hover:bg-white/95 hover:border-[rgba(58,49,39,0.15)] hover:shadow-sm dark:border-white/10 dark:bg-zinc-900/60 dark:hover:bg-zinc-800/80 md:min-h-[140px] md:p-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-color)]"
+            className="surface-paper group relative flex min-h-[120px] flex-col items-center justify-center overflow-hidden rounded-xl border p-4 text-center transition-colors hover:border-[var(--accent-rose)] md:min-h-[140px] md:p-6 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-color)]"
             aria-label={`Select ${type.label}`}
           >
             <type.icon className="mb-3 h-7 w-7 text-stone-500 transition-colors duration-300 group-hover:text-rose-600 dark:text-stone-400 dark:group-hover:text-rose-400 md:mb-4 md:h-8 md:w-8" />

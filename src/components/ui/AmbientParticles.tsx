@@ -34,7 +34,7 @@ export function AmbientParticles() {
     morning: "bg-orange-300/30",
     day: "bg-emerald-200/30",
     evening: "bg-amber-400/30",
-    night: "bg-yellow-200/45 shadow-[0_0_6px_rgba(253,224,71,0.45)]",
+    night: "bg-yellow-200/35",
   };
 
   return (

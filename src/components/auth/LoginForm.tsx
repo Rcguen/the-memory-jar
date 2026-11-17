@@ -54,11 +54,11 @@ export function LoginForm() {
           name="username"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-zinc-600 dark:text-zinc-400 font-inter">Name</FormLabel>
+              <FormLabel className="font-inter text-sm text-[var(--text-secondary)]">Name</FormLabel>
               <FormControl>
                 <Input
                   {...field}
-                  className="bg-white/50 dark:bg-zinc-800/50 backdrop-blur-sm border-white/60 dark:border-zinc-700/50 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus-visible:ring-rose-500/30"
+                  className="border-[var(--divider)] bg-transparent text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus-visible:border-[var(--accent-primary)] focus-visible:ring-[var(--accent-primary)]/20"
                   autoComplete="username"
                   placeholder="Your name"
                 />
@@ -73,18 +73,18 @@ export function LoginForm() {
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-zinc-600 dark:text-zinc-400 font-inter">Key</FormLabel>
+              <FormLabel className="font-inter text-sm text-[var(--text-secondary)]">Key</FormLabel>
               <FormControl>
                 <Input
                   type="password"
                   {...field}
-                  className="bg-white/50 dark:bg-zinc-800/50 backdrop-blur-sm border-white/60 dark:border-zinc-700/50 text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus-visible:ring-rose-500/30"
+                  className="border-[var(--divider)] bg-transparent text-[var(--text-primary)] placeholder:text-[var(--text-tertiary)] focus-visible:border-[var(--accent-primary)] focus-visible:ring-[var(--accent-primary)]/20"
                   autoComplete="current-password"
                   placeholder="••••••••"
                 />
               </FormControl>
               <div className="flex justify-end mt-1">
-                <Link href="/reset-password" className="text-sm font-medium text-rose-500 hover:text-rose-400 font-inter">
+                <Link href="/reset-password" className="font-inter text-sm font-medium text-[var(--accent-primary)] hover:underline">
                   Forgot password?
                 </Link>
               </div>
@@ -99,7 +99,7 @@ export function LoginForm() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="text-sm font-medium text-rose-500 text-center font-inter"
+              className="font-inter text-center text-sm font-medium text-[var(--state-danger)]"
             >
               {state.error}
             </motion.div>
@@ -109,7 +109,7 @@ export function LoginForm() {
         <Button
           type="submit"
           disabled={isPending}
-          className="w-full bg-rose-500 hover:bg-rose-600 text-white rounded-full py-6 text-lg font-medium shadow-lg shadow-rose-500/20 transition-all hover:shadow-rose-500/40 font-inter group"
+          className="w-full rounded-[var(--radius-small)] bg-[var(--accent-primary)] py-6 font-inter text-base font-medium text-white shadow-none transition-colors hover:bg-[color-mix(in_srgb,var(--accent-primary)_88%,black)]"
         >
           {isPending ? (
             <Loader2 className="w-5 h-5 animate-spin" />

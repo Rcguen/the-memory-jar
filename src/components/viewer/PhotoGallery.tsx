@@ -16,7 +16,10 @@ interface PhotoGalleryProps {
 export function PhotoGallery({ attachments, onFullscreenChange }: PhotoGalleryProps) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => setMounted(true));
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
   const urls = useQueries({
     queries: attachments.map((attachment) => ({
       queryKey: ["signedAttachmentUrl", attachment.id, attachment.url],

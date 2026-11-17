@@ -41,24 +41,22 @@ export function MobileBottomNav() {
             trigger("light");
             openModal();
           }}
-          className="pointer-events-auto relative inline-flex min-h-12 items-center gap-2 rounded-full border border-white/25 bg-[linear-gradient(135deg,rgba(16,185,129,0.96),rgba(5,150,105,0.92))] px-4 py-2.5 text-left text-white shadow-[0_16px_48px_rgba(5,150,105,0.35)] backdrop-blur-xl transition-colors focus-ring-premium"
+          className="pointer-events-auto relative inline-flex min-h-12 items-center gap-2 rounded-[var(--radius-small)] border border-[var(--divider)] bg-[var(--surface-wood)] px-4 py-2.5 text-left text-[var(--jar-paper)] shadow-[var(--shadow-2)] transition-colors hover:bg-[color-mix(in_srgb,var(--surface-wood)_88%,white)] focus-ring-premium"
           aria-label="Drop a Memory"
         >
-          <span className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.32),transparent_48%)]" />
-          <span className="pointer-events-none absolute -inset-3 rounded-full bg-emerald-400/30 blur-2xl" />
-          <span className="relative flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white/10">
-            <Heart className="h-4.5 w-4.5 fill-white text-white" />
+          <span className="relative flex h-9 w-9 items-center justify-center rounded-[var(--radius-tiny)] border border-white/15 bg-white/10">
+            <Heart className="h-4.5 w-4.5 fill-[var(--jar-paper)] text-[var(--jar-paper)]" />
           </span>
           <span className="relative flex flex-col leading-none">
             <span className="font-cormorant text-lg">Drop a Memory</span>
-            <span className="text-[11px] uppercase tracking-[0.18em] text-emerald-50/75">Keep this moment</span>
+            <span className="text-[11px] text-white/65">Keep this moment</span>
           </span>
         </motion.button>
       </div>
 
       <nav aria-label="Primary navigation" className="mobile-safe-bottom fixed inset-x-0 bottom-0 z-[80] px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-2 sm:hidden flex justify-center">
-        <div className="w-full max-w-md double-bezel shadow-[0_24px_80px_rgba(0,0,0,0.6)] backdrop-blur-3xl">
-          <div className="double-bezel-inner bg-zinc-950/70 p-1.5 grid grid-cols-6 gap-1">
+        <div className="w-full max-w-md rounded-[var(--radius-medium)] border border-[var(--divider)] bg-[var(--surface-wood)] p-1.5 shadow-[var(--shadow-3)]">
+          <div className="grid grid-cols-6 gap-1">
           {ITEMS.map((item) => {
             const Icon = item.icon;
             const active = pathname === item.href;
@@ -78,7 +76,7 @@ export function MobileBottomNav() {
                 onClick={() => trigger("light")}
                 className={cn(
                   "flex min-h-[50px] flex-col items-center justify-center rounded-[0.9rem] px-1 py-1.5 text-center transition-[transform,background-color,color,box-shadow] duration-[180ms] ease-[cubic-bezier(0.23,1,0.32,1)] focus-ring-premium motion-reduce:transform-none motion-reduce:transition-none",
-                  active ? "bg-white/15 text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.25)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 active:scale-[0.97]",
+                  active ? "bg-white/12 text-[var(--jar-paper)]" : "text-white/60 hover:bg-white/6 hover:text-[var(--jar-paper)] active:scale-[0.97]",
                 )}
                 aria-current={active ? "page" : undefined}
               >

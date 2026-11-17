@@ -23,10 +23,10 @@ function ThemeCard({ theme, isSelected, onClick }: { theme: MemoryThemeDefinitio
       onClick={onClick}
       className={cn(
         "relative flex-shrink-0 w-36 h-44 rounded-2xl overflow-hidden snap-center outline-none transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
-        "border focus-visible:ring-2 focus-visible:ring-emerald-500",
+        "border focus-visible:ring-2 focus-visible:ring-[var(--focus-color)]",
         isSelected 
-          ? "border-emerald-500/40 shadow-[0_8px_30px_rgb(16,185,129,0.15)] ring-1 ring-emerald-500/50 scale-[1.02]" 
-          : "border-black/5 dark:border-white/5 opacity-80 hover:opacity-100 hover:scale-[1.02] hover:shadow-xl"
+          ? "border-[var(--accent-rose)] ring-1 ring-[var(--accent-rose)] scale-[1.02]" 
+          : "border-[var(--border-soft)] opacity-80 hover:opacity-100 hover:scale-[1.02]"
       )}
     >
       {theme.previewThumbnail && !imgError ? (
@@ -54,17 +54,17 @@ function ThemeCard({ theme, isSelected, onClick }: { theme: MemoryThemeDefinitio
         </>
       )}
 
-      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-100" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent opacity-100" />
       
       <div className="absolute bottom-2 inset-x-0 flex items-center justify-center gap-2">
-        <span className="text-white text-xs font-medium tracking-wide drop-shadow-md">
+        <span className="text-white text-xs font-medium tracking-wide">
           {theme.label}
         </span>
         {isSelected && (
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            className="w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center"
+            className="w-4 h-4 rounded-full bg-[var(--accent-rose)] flex items-center justify-center"
           >
             <Check className="w-3 h-3 text-white" />
           </motion.div>

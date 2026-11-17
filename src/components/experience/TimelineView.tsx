@@ -121,7 +121,6 @@ export function TimelineView() {
         <RelationshipAmbientBackdrop timezone={relationship.relationshipTimezone} />
       )}
       <AmbientParticles />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(59,130,246,0.12),transparent_45%),radial-gradient(circle_at_bottom,rgba(16,185,129,0.08),transparent_40%)]" />
       <motion.div
         className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center sm:hidden"
         animate={{ opacity: pullToRefresh.pullDistance > 4 || pullToRefresh.isRefreshing ? 1 : 0, y: Math.min(pullToRefresh.pullDistance, 52) }}

@@ -43,16 +43,15 @@ export function OnThisDayView() {
   });
 
   return (
-    <main className="relative h-[100dvh] overflow-y-auto overflow-x-hidden bg-emerald-50/30 px-4 py-8 pb-36 dark:bg-emerald-950/20 sm:pb-8" {...pullToRefresh.bind}>
+    <main className="relative h-[100dvh] overflow-y-auto overflow-x-hidden bg-[var(--surface-base)] px-4 py-8 pb-36 sm:pb-8" {...pullToRefresh.bind}>
       {relationship?.relationshipTimezone && (
         <RelationshipAmbientBackdrop timezone={relationship.relationshipTimezone} />
       )}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(251,191,36,0.16),transparent_48%),radial-gradient(circle_at_bottom,rgba(16,185,129,0.08),transparent_42%)]" />
       <motion.div
         className="pointer-events-none absolute inset-x-0 top-0 z-20 flex justify-center sm:hidden"
         animate={{ opacity: pullToRefresh.pullDistance > 4 || pullToRefresh.isRefreshing ? 1 : 0, y: Math.min(pullToRefresh.pullDistance, 52) }}
       >
-        <div className="mt-3 rounded-full border border-white/20 bg-zinc-950/65 px-4 py-2 text-[11px] uppercase tracking-[0.18em] text-zinc-100 shadow-lg backdrop-blur-xl">
+        <div className="surface-ink mt-3 rounded-full border px-4 py-2 text-[11px] tracking-wide">
           {pullToRefresh.isRefreshing ? "Refreshing" : pullToRefresh.pullDistance > 64 ? "Release to refresh" : "Pull to revisit"}
         </div>
       </motion.div>
@@ -62,13 +61,12 @@ export function OnThisDayView() {
           Back to jar
         </Link>
 
-        <section className="mt-4 overflow-hidden rounded-[1.8rem] border border-white/15 bg-zinc-950/55 px-5 py-6 text-zinc-50 shadow-[0_24px_80px_rgba(0,0,0,0.28)] backdrop-blur-2xl sm:mt-6 sm:rounded-[2rem] sm:px-8 sm:py-7">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.16),transparent_40%),linear-gradient(135deg,rgba(255,255,255,0.08),transparent_55%)]" />
+        <section className="surface-ink relative mt-4 overflow-hidden rounded-2xl px-5 py-6 sm:mt-6 sm:px-8 sm:py-7">
           <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-rose-200/15 bg-rose-400/10 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-rose-100/80">
-                <CalendarHeart className="h-3.5 w-3.5 text-rose-300" />
-                On This Day
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] tracking-wide text-[var(--text-muted)]">
+                <CalendarHeart className="h-3.5 w-3.5 text-[var(--accent-rose)]" />
+                On this day
               </div>
               <h1 className="mt-4 font-cormorant text-[2.5rem] leading-none sm:text-5xl">
                 {relationship ? formatCurrentLabel(relationship.relationshipTimezone) : "Today"}
@@ -79,7 +77,7 @@ export function OnThisDayView() {
             </div>
 
             {memories.length > 0 && (
-              <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-zinc-200">
+              <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-[var(--text-muted)]">
                 {memories.length} {memories.length === 1 ? "memory" : "memories"} waiting
               </div>
             )}
@@ -88,13 +86,13 @@ export function OnThisDayView() {
 
         <section className="mt-6 space-y-4">
           {isLoading && (
-            <div className="rounded-[1.5rem] border border-white/10 bg-white/50 px-5 py-8 text-center text-zinc-500 backdrop-blur-xl dark:bg-zinc-950/40">
+            <div className="surface-panel rounded-2xl px-5 py-8 text-center text-[var(--text-muted)]">
               Gathering your daybook...
             </div>
           )}
 
           {!isLoading && memories.length === 0 && (
-            <div className="rounded-[1.5rem] border border-white/10 bg-white/50 px-5 py-8 text-center text-zinc-500 backdrop-blur-xl dark:bg-zinc-950/40">
+            <div className="surface-panel rounded-2xl px-5 py-8 text-center text-[var(--text-muted)]">
               Nothing was tucked into this date yet. Future you will love filling it.
             </div>
           )}
@@ -107,12 +105,11 @@ export function OnThisDayView() {
               transition={{ duration: 0.28, delay: index * 0.05 }}
               type="button"
               onClick={() => openViewer(memory.id)}
-              className="group relative flex w-full flex-col gap-4 overflow-hidden rounded-[1.5rem] border border-white/10 bg-white/55 px-5 py-5 text-left shadow-lg backdrop-blur-xl transition-colors hover:bg-white/68 dark:bg-zinc-950/45 dark:hover:bg-zinc-900/55 sm:flex-row sm:items-center sm:justify-between"
+              className="surface-panel group relative flex w-full flex-col gap-4 overflow-hidden rounded-2xl px-5 py-5 text-left transition-colors hover:border-[var(--accent-rose)] sm:flex-row sm:items-center sm:justify-between"
             >
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(251,191,36,0.12),transparent_30%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
               <div className="relative">
-                <div className="mb-2 flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-zinc-500">
-                  <Sparkles className="h-3.5 w-3.5 text-rose-400" />
+                <div className="mb-2 flex items-center gap-2 text-[11px] tracking-wide text-[var(--text-muted)]">
+                  <Sparkles className="h-3.5 w-3.5 text-[var(--accent-rose)]" />
                   {formatInTimezone(`${memory.memory_date}T00:00:00.000Z`, relationship?.relationshipTimezone ?? "UTC", {
                     year: "numeric",
                     month: "long",

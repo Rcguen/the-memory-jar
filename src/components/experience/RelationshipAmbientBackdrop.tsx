@@ -61,30 +61,14 @@ export function RelationshipAmbientBackdrop({
     return createAmbientParticles(count, isPhone ? 2.4 : 3, isPhone ? 4.8 : 6);
   }, [isConstrainedDevice, isPhone, reduceMotion]);
 
-  const glowClass = useMemo(() => {
-    if (period === "morning") {
-      return "from-amber-100/40 via-white/10 to-transparent dark:from-amber-300/10";
-    }
-    if (period === "day") {
-      return "from-emerald-100/20 via-white/5 to-transparent dark:from-emerald-300/10";
-    }
-    if (period === "evening") {
-      return "from-rose-200/20 via-amber-100/10 to-transparent dark:from-rose-400/10";
-    }
-    return "from-sky-200/10 via-transparent to-transparent dark:from-sky-400/10";
-  }, [period]);
-
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      <div
-        className={`absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_50%)] opacity-80`}
-      />
-      <div className={`absolute inset-0 bg-gradient-to-b ${glowClass}`} />
+      <div className="absolute inset-0 bg-gradient-to-b from-white/5 via-transparent to-transparent opacity-70 dark:from-white/[0.03]" />
 
       {period === "morning" && (
         <motion.div
           aria-hidden="true"
-          className="absolute left-1/2 top-[-5.5rem] h-64 w-64 -translate-x-1/2 rounded-full bg-amber-100/35 blur-3xl dark:bg-amber-300/10 sm:-top-24 sm:h-72 sm:w-72"
+          className="absolute left-1/2 top-[-5.5rem] h-64 w-64 -translate-x-1/2 rounded-full bg-amber-100/18 dark:bg-amber-300/[0.06] sm:-top-24 sm:h-72 sm:w-72"
           animate={shouldAnimate ? { scale: [1, 1.04, 1], opacity: [0.5, 0.72, 0.5] } : { scale: 1, opacity: 0.6 }}
           transition={shouldAnimate ? { duration: 9, repeat: Infinity, ease: "easeInOut" } : { duration: 0.2 }}
         />
@@ -96,7 +80,7 @@ export function RelationshipAmbientBackdrop({
             <motion.span
               key={star.id}
               aria-hidden="true"
-              className="absolute rounded-full bg-white/80 shadow-[0_0_12px_rgba(255,255,255,0.45)]"
+              className="absolute rounded-full bg-white/55"
               style={{
                 left: `${star.left}%`,
                 top: `${star.top}%`,
@@ -111,7 +95,7 @@ export function RelationshipAmbientBackdrop({
             <motion.span
               key={fly.id}
               aria-hidden="true"
-              className="absolute rounded-full bg-emerald-200/70 blur-[1px] shadow-[0_0_18px_rgba(110,231,183,0.55)]"
+              className="absolute rounded-full bg-emerald-200/45"
               style={{
                 left: `${fly.left}%`,
                 top: `${fly.top}%`,
@@ -122,7 +106,7 @@ export function RelationshipAmbientBackdrop({
               transition={{ duration: 0.2 }}
             />
           ))}
-          <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-emerald-950/12 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-black/[0.05] to-transparent dark:from-black/10" />
         </>
       )}
     </div>
