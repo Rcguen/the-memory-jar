@@ -326,6 +326,26 @@
 .editorial-noise,
 .auth-orb { display: none !important; }
 
+/* Aliases used by the form/editorial surfaces. */
+:root,
+.dark {
+  --text-strong: var(--text-primary);
+  --text-muted: var(--text-secondary);
+  --accent-rose: var(--accent-primary);
+  --accent-rose-soft: var(--accent-soft);
+}
+
+.memory-form label { line-height: 1.25; }
+.memory-form input::placeholder,
+.memory-form textarea::placeholder { opacity: 1; }
+.memory-form button:focus-visible,
+.memory-form input:focus-visible,
+.memory-form textarea:focus-visible,
+.memory-form select:focus-visible {
+  outline: 2px solid var(--focus-color);
+  outline-offset: 2px;
+}
+
 /* Unslop pass: The Memory Jar shared visual language. Keep the story warm, let
    the memories carry the color, and keep navigation quiet across every route. */
 :root {

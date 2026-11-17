@@ -200,7 +200,7 @@ export function MemoryModal() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35, ease: "easeOut" }}
-            className="absolute inset-0 bg-stone-900/80 dark:bg-black/85 pointer-events-none"
+            className="pointer-events-none absolute inset-0 bg-black/70 dark:bg-black/78"
           />
 
           {/* Modal Content Container */}
@@ -209,7 +209,7 @@ export function MemoryModal() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: shouldReduceMotion ? 0 : 18, scale: shouldReduceMotion ? 1 : 0.985 }}
             transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
-            className={isPhone ? "relative z-10 flex h-full w-full overflow-y-auto custom-scrollbar p-0" : "relative z-10 flex h-full w-full overflow-y-auto custom-scrollbar p-3 sm:p-8"}
+            className={isPhone ? "relative z-10 flex h-full w-full overflow-y-auto custom-scrollbar p-0" : "relative z-10 flex h-full w-full overflow-y-auto custom-scrollbar p-4 sm:p-8"}
           >
             <AnimatePresence mode="wait">
               {step === "select_type" && (
@@ -223,7 +223,7 @@ export function MemoryModal() {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: shouldReduceMotion ? 1 : 0.95, y: shouldReduceMotion ? 0 : 20 }}
                   transition={{ duration: 0.6, ease: "easeOut" }}
-                  className={isPhone ? "m-auto min-h-full w-full rounded-none bg-[var(--surface-paper)] p-4 pb-0 shadow-2xl dark:bg-[var(--surface-paper)]" : "m-auto w-full max-w-2xl rounded-3xl border border-[rgba(58,49,39,0.08)] bg-[var(--surface-paper)] p-5 shadow-[var(--shadow-modal)] dark:border-white/5 dark:bg-[var(--surface-paper)] md:p-10"}
+                  className={isPhone ? "m-auto min-h-full w-full rounded-none bg-[var(--surface-paper)] p-4 pb-0" : "m-auto w-full max-w-4xl rounded-2xl border border-[var(--divider)] bg-[var(--surface-paper)] p-5 shadow-[var(--shadow-modal)] md:p-8"}
                 >
                   <DynamicMemoryForm 
                     type={selectedType} 

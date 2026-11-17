@@ -2,9 +2,24 @@
 
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Check } from "lucide-react";
+import { Bandage, Check, Circle, Coffee, Flower2, Heart, Leaf, Ribbon, Sparkles, Stamp } from "lucide-react";
 import { DECORATIONS } from "@/lib/memoryThemes";
 import { DecorationID } from "@/types/memory";
+
+const DECORATION_ICONS: Record<DecorationID, typeof Heart> = {
+  rose: Flower2,
+  heart: Heart,
+  stamp: Stamp,
+  wax_seal: Circle,
+  flower: Flower2,
+  butterfly: Sparkles,
+  sparkle: Sparkles,
+  ribbon: Ribbon,
+  postmark: Circle,
+  polaroid_tape: Bandage,
+  leaf: Leaf,
+  coffee_stain: Coffee,
+};
 
 interface DecorationPickerProps {
   selectedDecorations: DecorationID[];
@@ -25,13 +40,13 @@ export function DecorationPicker({ selectedDecorations, onChange }: DecorationPi
   return (
     <div className="w-full">
       <div className="flex justify-between items-center mb-2">
-        <label className="font-inter text-[11px] font-semibold uppercase tracking-wider text-stone-500">Decorations (Optional)</label>
-        <span className="text-xs text-zinc-500">
+        <label className="font-inter text-xs font-medium text-[var(--text-secondary)]">Decorations <span className="font-normal text-[var(--text-tertiary)]">Optional</span></label>
+        <span className="text-xs tabular-nums text-[var(--text-tertiary)]">
           {selectedDecorations.length}/4 selected
         </span>
       </div>
       
-            <div className="flex flex-wrap gap-3 mt-4">
+      <div className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
         {DECORATIONS.map((deco) => {
           const isSelected = selectedDecorations.includes(deco.id);
           const isDisabled = !isSelected && selectedDecorations.length >= 4;
@@ -43,15 +58,20 @@ export function DecorationPicker({ selectedDecorations, onChange }: DecorationPi
               onClick={() => toggleDecoration(deco.id)}
               disabled={isDisabled}
               className={cn(
-                "relative flex h-24 w-20 flex-col items-center justify-center gap-3 rounded-2xl border transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                "relative flex min-h-20 w-full flex-col items-center justify-center gap-2 rounded-xl border p-2 transition-[border-color,background-color,transform] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-color)]",
                 isSelected
-                  ? "border-emerald-500/40 bg-emerald-50/50 shadow-[0_0_0_1px_rgba(16,185,129,0.2)] dark:bg-emerald-950/20"
-                  : "border-[rgba(0,0,0,0.05)] bg-white/60 hover:bg-white hover:scale-105 hover:shadow-lg dark:border-white/10 dark:bg-zinc-900/50 dark:hover:bg-zinc-800",
-                isDisabled && "cursor-not-allowed opacity-40 hover:scale-100 hover:shadow-none"
+                  ? "border-[var(--accent-primary)] bg-[var(--accent-soft)]"
+                  : "border-[var(--divider)] bg-[var(--surface-base)] hover:border-[var(--accent-primary)] hover:bg-[var(--surface-raised)]",
+                isDisabled && "cursor-not-allowed opacity-40"
               )}
             >
-              <div className="relative text-3xl">{deco.svg}</div>
-              <span className={cn("text-[10px] font-medium tracking-wide uppercase", isSelected ? "text-emerald-700 dark:text-emerald-400" : "text-stone-500")}>
+              <div className={cn("relative", isSelected ? "text-[var(--accent-primary)]" : "text-[var(--text-secondary)]")}>
+                {(() => {
+                  const Icon = DECORATION_ICONS[deco.id];
+                  return <Icon className="h-5 w-5" strokeWidth={1.7} aria-hidden="true" />;
+                })()}
+              </div>
+              <span className={cn("text-[11px] font-medium", isSelected ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]")}>
                 {deco.label}
               </span>
               
@@ -60,7 +80,7 @@ export function DecorationPicker({ selectedDecorations, onChange }: DecorationPi
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                  className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-white shadow-sm"
+                  className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--accent-primary)] text-white"
                 >
                   <Check className="h-3 w-3" />
                 </motion.div>

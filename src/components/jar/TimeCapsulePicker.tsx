@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { Clock, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
@@ -144,8 +143,8 @@ export function TimeCapsulePicker({ value, onChange }: TimeCapsulePickerProps) {
             type="button"
             disabled={!isTimezoneReady}
             className={cn(
-              "flex h-12 w-full items-center justify-start rounded-xl border border-[rgba(92,75,54,0.18)] bg-white/60 px-4 font-inter text-sm font-medium shadow-inner transition-all duration-300 hover:bg-white focus-visible:border-stone-400 focus-visible:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-400/20 dark:border-white/10 dark:bg-zinc-900/60 dark:text-stone-300",
-              !value ? "text-stone-500" : "text-stone-700"
+              "flex h-12 w-full items-center justify-start rounded-lg border border-[var(--divider)] bg-[var(--surface-raised)] px-4 font-inter text-sm font-medium transition-colors hover:border-[var(--accent-primary)] focus-visible:border-[var(--focus-color)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-color)]/25",
+              !value ? "text-[var(--text-tertiary)]" : "text-[var(--text-primary)]"
             )}
           />
         }>
@@ -154,18 +153,18 @@ export function TimeCapsulePicker({ value, onChange }: TimeCapsulePickerProps) {
         </PopoverTrigger>
         <PopoverContent className="w-80 p-0" align="start">
           <div className="p-2 space-y-1">
-            <p className="text-xs font-semibold text-zinc-500 uppercase px-2 py-1">Time Capsule</p>
+            <p className="text-xs font-medium text-[var(--text-secondary)] px-2 py-1">Time capsule</p>
             {presets.map((preset) => (
               <button
                 key={preset.label}
                 type="button"
                 disabled={!isTimezoneReady}
                 onClick={() => handleSelect(preset.value)}
-                className="w-full flex items-center justify-between px-2 py-2 text-sm rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full flex items-center justify-between px-2 py-2 text-sm rounded-lg hover:bg-[var(--surface-raised)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <div className="flex flex-col text-left">
                   <span className="font-medium">{preset.label}</span>
-                  <span className="text-xs text-zinc-500">{preset.desc}</span>
+                  <span className="text-xs text-[var(--text-tertiary)]">{preset.desc}</span>
                 </div>
                 {((!value && !preset.value) || (preset.dateOnly && preset.dateOnly === selectedDateOnly)) && (
                   <Check className="h-4 w-4 text-rose-500" />
@@ -173,8 +172,8 @@ export function TimeCapsulePicker({ value, onChange }: TimeCapsulePickerProps) {
               </button>
             ))}
 
-            <div className="border-t border-zinc-100 dark:border-zinc-800 my-1 pt-1">
-              <p className="text-xs font-semibold text-zinc-500 uppercase px-2 py-1">Custom Date</p>
+            <div className="border-t border-[var(--divider)] my-1 pt-1">
+              <p className="text-xs font-medium text-[var(--text-secondary)] px-2 py-1">Custom date</p>
               <div className="px-2 pb-2">
                 <Input
                   type="date"
@@ -186,14 +185,14 @@ export function TimeCapsulePicker({ value, onChange }: TimeCapsulePickerProps) {
                   }}
                   min={relationshipToday}
                   disabled={!isTimezoneReady}
-                  className="h-8 text-sm bg-transparent"
+                  className="h-9 text-sm bg-[var(--surface-base)]"
                 />
               </div>
             </div>
           </div>
         </PopoverContent>
       </Popover>
-      <p className="px-2 text-[11px] leading-snug text-zinc-500 dark:text-zinc-400">
+      <p className="px-1 text-[11px] leading-snug text-[var(--text-tertiary)]">
         {isTimezoneReady
           ? `Opens at 00:00 of the selected date using your relationship timezone (${relationshipTimezone}).`
           : "Loading your relationship timezone..."}

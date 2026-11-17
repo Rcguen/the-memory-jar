@@ -192,22 +192,22 @@ export function DynamicMemoryForm({
   return (
     <motion.form 
       onSubmit={form.handleSubmit(onSubmit, onInvalid)}
-      className="flex w-full max-w-2xl flex-col pb-8 sm:pb-12"
+      className="memory-form flex w-full max-w-4xl flex-col pb-8 sm:pb-10"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, delay: 0.2, ease: [0.32, 0.72, 0, 1] }}
     >
       {/* Sticky Header with Close Button */}
       <div className={cn(
-        "relative flex items-center justify-between border-b border-[rgba(92,75,54,0.18)] pb-4 mb-4",
-        isPhone ? "pt-[calc(env(safe-area-inset-top)+1rem)] -mx-4 px-4" : "px-2 mb-6"
+        "relative flex items-center justify-between border-b border-[var(--divider)] pb-4",
+        isPhone ? "pt-[calc(env(safe-area-inset-top)+1rem)] -mx-4 px-4 mb-5" : "px-1 mb-7"
       )}>
-        <div className="flex flex-col" aria-hidden="true">
-          <span className="font-inter text-xs font-semibold uppercase tracking-wider text-stone-500">
+        <div className="flex flex-col gap-1">
+          <span className="font-inter text-sm font-medium capitalize text-[var(--text-primary)]">
             {type.replace("_", " ")}
           </span>
           {isLoaded && isDraftSaved && draft && draft.type === type && (
-            <span className="font-inter text-[10px] text-stone-400">Draft saved locally</span>
+            <span className="font-inter text-xs text-[var(--text-tertiary)]">Draft saved locally</span>
           )}
         </div>
         <Button
@@ -216,22 +216,22 @@ export function DynamicMemoryForm({
           size="icon"
           onClick={handleCancel}
           disabled={isSubmitting}
-          className="h-11 w-11 rounded-full text-stone-500 hover:bg-stone-100 hover:text-stone-900 focus-visible:ring-2 focus-visible:ring-rose-500 dark:hover:bg-stone-800 dark:hover:text-stone-100"
+          className="h-11 w-11 rounded-lg text-[var(--text-secondary)] hover:bg-[var(--surface-raised)] hover:text-[var(--text-primary)] focus-visible:ring-2 focus-visible:ring-[var(--focus-color)]"
           aria-label="Close memory form"
         >
           <X className="h-5 w-5" />
         </Button>
       </div>
 
-      <div className={cn("flex flex-col gap-6", isPhone ? "px-0 pt-4" : "px-2")}>
+      <div className={cn("flex flex-col gap-7", isPhone ? "px-0 pt-2" : "px-1")}>
         {/* Title Field */}
-        <div className="space-y-1">
-          <Label htmlFor="title" className="sr-only">Title</Label>
+        <div className="space-y-2">
+          <Label htmlFor="title" className="text-xs font-medium text-[var(--text-secondary)]">Title</Label>
           <Input 
             id="title"
             {...form.register("title")} 
-            placeholder="Give this memory a title..." 
-            className="h-auto rounded-none border-b border-stone-200 bg-transparent px-2 py-4 font-cormorant text-4xl font-medium leading-tight text-stone-900 shadow-none transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-stone-300 hover:border-stone-400 focus-visible:border-stone-800 focus-visible:bg-transparent focus-visible:ring-0 dark:border-white/10 dark:text-stone-100 dark:placeholder:text-stone-600 dark:hover:border-white/30 dark:focus-visible:border-white/60"
+            placeholder="Give this memory a title"
+            className="h-14 rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] px-4 font-cormorant text-3xl font-medium leading-tight text-[var(--text-primary)] shadow-none transition-colors placeholder:text-[var(--text-tertiary)] hover:border-[var(--accent-primary)] focus-visible:border-[var(--focus-color)] focus-visible:bg-[var(--surface-raised)] focus-visible:ring-2 focus-visible:ring-[var(--focus-color)]/25"
           />
           {form.formState.errors.title && (
             <p className="text-red-500 text-xs mt-1 px-2">{form.formState.errors.title.message}</p>
@@ -241,12 +241,12 @@ export function DynamicMemoryForm({
         {/* Content Field */}
         {showContent && (
           <div className="space-y-4">
-            <Label htmlFor="content" className="sr-only">Letter Content</Label>
+            <Label htmlFor="content" className="text-xs font-medium text-[var(--text-secondary)]">Letter content</Label>
             <Textarea 
               id="content"
               {...form.register("content")} 
-              placeholder="Pour your heart out here..." 
-              className="min-h-[160px] max-h-[50vh] resize-y rounded-2xl border border-[rgba(92,75,54,0.18)] bg-white/50 px-6 py-6 font-cormorant text-[22px] leading-9 text-stone-800 shadow-inner transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:border-stone-400 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-stone-400/20 dark:border-white/10 dark:bg-zinc-900/50 dark:text-stone-200 sm:min-h-[280px]"
+              placeholder="Write what you want to remember"
+              className="min-h-[220px] max-h-[50vh] resize-y rounded-xl border border-[var(--divider)] bg-[var(--surface-base)] px-5 py-5 font-cormorant text-[22px] leading-8 text-[var(--text-primary)] shadow-none transition-colors placeholder:text-[var(--text-tertiary)] focus-visible:border-[var(--focus-color)] focus-visible:ring-2 focus-visible:ring-[var(--focus-color)]/25 sm:min-h-[260px]"
             />
             
             <ThemePicker 
@@ -326,22 +326,22 @@ export function DynamicMemoryForm({
         </div>
 
         {/* Date */}
-        <div className={cn("flex items-center justify-between pt-2 border-t border-stone-100 dark:border-stone-800/50 mt-4", isPhone && "flex-col gap-4 items-start")}>
+        <div className={cn("flex items-center justify-between gap-5 border-t border-[var(--divider)] pt-6", isPhone && "flex-col gap-5 items-start")}>
           <div className={cn("flex w-1/2 flex-col gap-1.5 pr-2", isPhone && "w-full pr-0")}>
-            <label htmlFor="memory_date" className="font-inter text-[11px] font-semibold uppercase tracking-wider text-stone-500">Date</label>
+            <label htmlFor="memory_date" className="font-inter text-xs font-medium text-[var(--text-secondary)]">Date</label>
             <div className="relative w-full">
                 <Calendar className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 opacity-50 z-10 pointer-events-none text-stone-700 dark:text-stone-300" />
                 <Input 
                   id="memory_date"
                   type="date" 
                   {...form.register("memory_date")} 
-                  className="relative z-0 h-12 w-full rounded-xl border border-[rgba(92,75,54,0.18)] bg-white/60 pl-10 pr-4 font-inter text-sm font-medium text-stone-700 shadow-inner transition-all duration-300 hover:bg-white focus-visible:border-stone-400 focus-visible:bg-white focus-visible:ring-2 focus-visible:ring-stone-400/20 dark:border-white/10 dark:bg-zinc-900/60 dark:text-stone-300 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
+                  className="relative z-0 h-12 w-full rounded-lg border border-[var(--divider)] bg-[var(--surface-raised)] pl-10 pr-4 font-inter text-sm font-medium text-[var(--text-primary)] transition-colors hover:border-[var(--accent-primary)] focus-visible:border-[var(--focus-color)] focus-visible:ring-2 focus-visible:ring-[var(--focus-color)]/25 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0"
                 />
               </div>
           </div>
           
           <div className={cn("flex w-1/2 flex-col gap-1.5 pl-4 sm:border-l sm:border-stone-200 sm:dark:border-stone-800", isPhone && "w-full pl-0")}>
-            <label className="font-inter text-[11px] font-semibold uppercase tracking-wider text-stone-500">Time Capsule</label>
+            <label className="font-inter text-xs font-medium text-[var(--text-secondary)]">Time capsule</label>
             <TimeCapsulePicker 
               value={form.watch("unlock_at") ?? undefined} 
               onChange={(val) => form.setValue("unlock_at", val, { shouldValidate: true })} 
@@ -385,14 +385,14 @@ export function DynamicMemoryForm({
       {/* Actions */}
       <div className={cn(
         "mt-8 flex items-center justify-end",
-        isPhone ? "relative mt-8 pt-4 pb-8" : "border-t border-[rgba(92,75,54,0.18)] pt-6"
+        isPhone ? "relative mt-8 pt-4 pb-8" : "border-t border-[var(--divider)] pt-6"
       )}>
         <Button 
           type="submit" 
           disabled={isSubmitting}
-          className="min-h-[44px] w-full rounded-full bg-rose-600 px-8 font-inter font-medium text-white shadow-sm transition-colors hover:bg-rose-700 focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 motion-reduce:transition-none sm:w-auto"
+          className="min-h-12 w-full rounded-lg bg-[var(--accent-primary)] px-8 font-inter font-medium text-white shadow-sm transition-colors hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[var(--focus-color)] focus-visible:ring-offset-2 motion-reduce:transition-none sm:w-auto"
         >
-          {isSubmitting ? "Carefully placing your memory..." : "Save Memory"}
+          {isSubmitting ? "Saving memory" : "Save memory"}
         </Button>
       </div>
     </motion.form>

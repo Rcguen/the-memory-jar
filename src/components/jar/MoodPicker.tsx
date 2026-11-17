@@ -1,9 +1,18 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { MemoryMood } from "@/types/memory";
 import { cn } from "@/lib/utils";
-import { Check } from "lucide-react";
+import { Check, Droplets, Flower2, Heart, Laugh, Moon, Sparkles, Sun } from "lucide-react";
+
+const MOOD_ICONS = {
+  love: Heart,
+  emotional: Droplets,
+  joy: Laugh,
+  peace: Flower2,
+  magic: Sparkles,
+  night: Moon,
+  day: Sun,
+} as const;
 
 interface MoodPickerProps {
   selectedMoodId: string | null;
@@ -24,8 +33,8 @@ export const PREDEFINED_MOODS: MemoryMood[] = [
 export function MoodPicker({ selectedMoodId, onSelect }: MoodPickerProps) {
   return (
     <div className="w-full flex flex-col gap-3">
-      <label className="font-inter text-sm text-zinc-500 dark:text-zinc-400 font-medium px-2">
-        How does this memory feel?
+      <label className="font-inter text-xs text-[var(--text-secondary)] font-medium">
+        Mood
       </label>
       <div
         className="flex flex-wrap gap-2 md:gap-3"
@@ -43,24 +52,22 @@ export function MoodPicker({ selectedMoodId, onSelect }: MoodPickerProps) {
               aria-pressed={isSelected}
               aria-label={mood.name}
               className={cn(
-                "relative flex h-12 w-12 items-center justify-center rounded-xl border transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 motion-reduce:transition-none md:h-14 md:w-14",
+                "relative flex h-11 w-11 items-center justify-center rounded-lg border transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-color)] focus-visible:ring-offset-2 motion-reduce:transition-none md:h-12 md:w-12",
                 isSelected 
-                  ? "border-stone-300 bg-stone-100 shadow-sm dark:border-stone-600 dark:bg-stone-800" 
-                  : "border-stone-200/50 bg-stone-50/50 hover:border-stone-300 hover:bg-stone-100 dark:border-stone-800/50 dark:bg-stone-900/50 dark:hover:border-stone-700 dark:hover:bg-stone-800"
+                  ? "border-[var(--accent-primary)] bg-[var(--accent-soft)]" 
+                  : "border-[var(--divider)] bg-[var(--surface-base)] hover:border-[var(--accent-primary)] hover:bg-[var(--surface-raised)]"
               )}
             >
               {isSelected && (
-                <div className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-stone-900 shadow-sm dark:bg-stone-100">
-                  <Check className="h-2.5 w-2.5 text-white dark:text-stone-900" strokeWidth={3} />
+                <div className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[var(--accent-primary)]">
+                  <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />
                 </div>
               )}
               
-              <span className={cn(
-                "text-2xl transition-transform duration-200 motion-reduce:transition-none md:text-3xl", 
-                isSelected ? "scale-110 drop-shadow-sm" : "opacity-70 grayscale-[30%]"
-              )}>
-                {mood.emoji}
-              </span>
+              {(() => {
+                const Icon = MOOD_ICONS[mood.id as keyof typeof MOOD_ICONS] ?? Heart;
+                return <Icon className={cn("h-5 w-5 transition-transform duration-200 motion-reduce:transition-none", isSelected ? "text-[var(--accent-primary)]" : "text-[var(--text-secondary)]")} strokeWidth={1.7} aria-hidden="true" />;
+              })()}
             </button>
           );
         })}

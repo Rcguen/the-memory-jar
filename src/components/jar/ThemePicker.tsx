@@ -22,7 +22,7 @@ function ThemeCard({ theme, isSelected, onClick }: { theme: MemoryThemeDefinitio
       type="button"
       onClick={onClick}
       className={cn(
-        "relative flex-shrink-0 w-36 h-44 rounded-2xl overflow-hidden snap-center outline-none transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]",
+        "relative flex-shrink-0 w-32 h-36 rounded-xl overflow-hidden snap-center outline-none transition-[border-color,transform,opacity] duration-200",
         "border focus-visible:ring-2 focus-visible:ring-[var(--focus-color)]",
         isSelected 
           ? "border-[var(--accent-rose)] ring-1 ring-[var(--accent-rose)] scale-[1.02]" 
@@ -54,7 +54,7 @@ function ThemeCard({ theme, isSelected, onClick }: { theme: MemoryThemeDefinitio
         </>
       )}
 
-      <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent opacity-100" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent opacity-100" />
       
       <div className="absolute bottom-2 inset-x-0 flex items-center justify-center gap-2">
         <span className="text-white text-xs font-medium tracking-wide">
@@ -79,11 +79,11 @@ export function ThemePicker({ selectedTheme, onChange }: ThemePickerProps) {
 
   return (
     <div className="w-full">
-      <label className="text-sm font-medium leading-none mb-1 block">
-        Letter Theme
+      <label className="text-xs font-medium leading-none mb-1 block text-[var(--text-secondary)]">
+        Letter style
       </label>
       
-      <div className="flex overflow-x-auto items-center min-h-[190px] py-4 gap-4 snap-x hide-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
+      <div className="flex overflow-x-auto items-center min-h-[160px] py-3 gap-3 snap-x hide-scrollbar -mx-1 px-1 sm:mx-0 sm:px-0">
         {themes.map((theme) => {
           const isSelected = selectedTheme === theme.id;
           
