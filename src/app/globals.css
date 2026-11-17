@@ -326,6 +326,54 @@
 .editorial-noise,
 .auth-orb { display: none !important; }
 
+/* Shared motion language for every route: quiet fades, quick feedback, no layout reflow. */
+:root {
+  --motion-fast: 150ms;
+  --motion-base: 220ms;
+  --motion-enter: 280ms;
+  --motion-ease: cubic-bezier(.22, 1, .36, 1);
+  --motion-ease-in: cubic-bezier(.4, 0, 1, 1);
+}
+
+.app-page-transition {
+  min-width: 0;
+  will-change: opacity;
+}
+
+:where(a, button, [role="button"]):focus-visible {
+  outline: 2px solid var(--focus-color);
+  outline-offset: 3px;
+}
+
+:where(button:not(:disabled), [role="button"]:not([aria-disabled="true"])) {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: var(--motion-fast);
+  transition-timing-function: var(--motion-ease);
+}
+
+:where(button:not(:disabled), [role="button"]:not([aria-disabled="true"])):active {
+  transform: scale(.985);
+}
+
+:where(a:not([aria-disabled="true"])) {
+  transition-property: color, background-color, border-color, opacity;
+  transition-duration: var(--motion-fast);
+  transition-timing-function: var(--motion-ease);
+}
+
+:where(.surface-ink, .surface-glass, .surface-panel, .surface-paper, .surface-dialog, .auth-card) {
+  transition-property: background-color, border-color, box-shadow, opacity;
+  transition-duration: var(--motion-base);
+  transition-timing-function: var(--motion-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-page-transition { will-change: auto; }
+  :where(a, button, [role="button"], .surface-ink, .surface-glass, .surface-panel, .surface-paper, .surface-dialog, .auth-card) {
+    transition: none !important;
+  }
+}
+
 /* Aliases used by the form/editorial surfaces. */
 :root,
 .dark {
