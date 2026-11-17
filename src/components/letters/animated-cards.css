@@ -68,3 +68,55 @@
 .reading-sign { color: #a14b5c; font: 12px/1.4 Manrope, sans-serif; }
 .reading-sign em { font: 400 24px 'DM Serif Display', serif; }
 @media (max-width: 700px) { .carousel-title { top: 7vh; bottom: auto; } .carousel-hint { bottom: 6vh; } .reading-letter { width: 100%; max-height: 92dvh; padding: 42px 30px 40px; } .reading-stamp { width: 50px; height: 50px; } .reading-letter h2 { font-size: 36px; } .reading-letter p { font-size: 16px; line-height: 1.8; } }
+
+/* The letters screen uses a quieter, ink-on-night-paper canvas so the envelopes stay the focus. */
+.carousel-page {
+  isolation: isolate;
+  background: #1c1b18;
+  color: #f1ebe3;
+  background-image: linear-gradient(115deg, rgba(255,255,255,.025), transparent 42%), linear-gradient(180deg, rgba(0,0,0,.08), transparent 38%);
+}
+.carousel-page::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: .22;
+  background: repeating-linear-gradient(0deg, rgba(255,255,255,.025) 0 1px, transparent 1px 5px);
+}
+.letters-back {
+  position: absolute;
+  top: 24px;
+  left: clamp(24px, 6vw, 90px);
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 0 14px 0 11px;
+  border: 1px solid rgba(241,235,227,.18);
+  border-radius: 999px;
+  color: #e2d8cd;
+  background: rgba(255,255,255,.045);
+  box-shadow: 0 8px 20px rgba(0,0,0,.14);
+  font: 500 12px/1 Manrope, sans-serif;
+  text-decoration: none;
+  transition: background-color .2s ease, border-color .2s ease, color .2s ease, transform .2s ease;
+}
+.letters-back:hover { border-color: rgba(241,235,227,.34); color: #fffaf3; background: rgba(255,255,255,.09); transform: translateX(-2px); }
+.letters-back:focus-visible { outline: 2px solid #d29b86; outline-offset: 3px; }
+.carousel-title { top: clamp(112px, 16vh, 170px); bottom: auto; }
+.carousel-title small { color: #b4a69a; }
+.carousel-title h1 { color: #f1ebe3; }
+.carousel-title h1 em { color: #c38a78; }
+.carousel-hint { color: #b7aaa0; }
+.carousel-hint b { color: #c38a78; }
+.sparkle-field { display: block; opacity: .7; }
+.sparkle { opacity: .22; background: #e5cbb2; filter: none; }
+.special-glow { border-color: rgba(210,155,134,.26); }
+.envelope-face { box-shadow: inset 0 1px 1px rgba(255,255,255,.34), inset 0 -1px 2px rgba(87,59,43,.2), 0 18px 40px rgba(0,0,0,.28); }
+@media (max-width: 700px) {
+  .letters-back { top: 18px; left: 18px; }
+  .carousel-title { top: 92px; }
+}
