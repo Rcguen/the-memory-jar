@@ -326,6 +326,79 @@
 .editorial-noise,
 .auth-orb { display: none !important; }
 
+/* Seasonal ASCII Christmas experience. It follows the full-screen pygame-style renderer. */
+.christmas-season-trigger {
+  position: fixed;
+  right: 18px;
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  z-index: 120;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid rgba(231, 189, 88, .42);
+  border-radius: 999px;
+  color: #f9e6ae;
+  background: rgba(7, 11, 22, .92);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, .28);
+  cursor: pointer;
+  font: 600 12px/1 var(--font-inter), sans-serif;
+  transition: transform .2s ease, background-color .2s ease, border-color .2s ease;
+}
+.christmas-season-trigger:hover { border-color: rgba(231, 189, 88, .8); background: #0d1724; transform: translateY(-2px); }
+.christmas-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 130;
+  display: grid;
+  place-items: stretch;
+  padding: 0;
+  background: #050810;
+  animation: christmas-overlay-in .3s ease both;
+}
+.christmas-shell {
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  background: #050810;
+  animation: christmas-shell-in .42s cubic-bezier(.22, 1, .36, 1) both;
+}
+.christmas-stage { position: absolute; inset: 0; width: 100%; height: 100%; }
+.christmas-canvas { display: block; width: 100%; height: 100%; }
+.christmas-actions {
+  position: absolute;
+  top: max(18px, env(safe-area-inset-top));
+  right: max(18px, env(safe-area-inset-right));
+  z-index: 2;
+  display: flex;
+  gap: 8px;
+}
+.christmas-actions button {
+  min-width: 64px;
+  min-height: 40px;
+  padding: 0 13px;
+  border: 1px solid rgba(220, 230, 239, .24);
+  border-radius: 999px;
+  color: #dfe8ee;
+  background: rgba(5, 8, 15, .74);
+  cursor: pointer;
+  font: 600 12px/1 var(--font-inter), sans-serif;
+  transition: transform .18s ease, background-color .18s ease, border-color .18s ease;
+}
+.christmas-actions button:hover { border-color: rgba(231, 189, 88, .7); background: rgba(231, 189, 88, .12); transform: translateY(-1px); }
+.christmas-actions button:focus-visible,
+.christmas-season-trigger:focus-visible { outline: 2px solid #f4d27b; outline-offset: 3px; }
+.christmas-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+@keyframes christmas-overlay-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes christmas-shell-in { from { opacity: 0; transform: scale(.985); } to { opacity: 1; transform: scale(1); } }
+@media (max-width: 640px) {
+  .christmas-actions { top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); gap: 6px; }
+  .christmas-actions button { min-width: 54px; min-height: 40px; padding: 0 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .christmas-overlay, .christmas-shell { animation: none; }
+  .christmas-season-trigger, .christmas-actions button { transition: none; }
+}
+
 /* Shared motion language for every route: quiet fades, quick feedback, no layout reflow. */
 :root {
   --motion-fast: 150ms;

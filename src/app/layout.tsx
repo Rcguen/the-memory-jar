@@ -15,6 +15,7 @@ import { PwaManager } from "@/components/ui/PwaManager";
 import { PwaEventCatcher } from "@/components/ui/PwaEventCatcher";
 import { AppBootLoader } from "@/components/app/AppBootLoader";
 import { PageTransition } from "@/components/app/PageTransition";
+import { ChristmasExperience } from "@/components/seasonal/ChristmasExperience";
 import "./globals.css";
 
 const cormorantGaramond = Cormorant_Garamond({
@@ -80,6 +81,7 @@ export default async function RootLayout({
                         <JarHeartbeat />
                         <PwaEventCatcher />
                         <PwaManager />
+                        <ChristmasExperience />
                         <PageTransition>{children}</PageTransition>
                       </MemoryViewerProvider>
                     </UnlockSchedulerProvider>
