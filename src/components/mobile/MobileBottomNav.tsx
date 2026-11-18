@@ -21,7 +21,7 @@ const ITEMS = [
   { href: "/animated-cards", label: "Letters", icon: Mail, accent: "text-violet-300" },
 ] as const;
 
-export function MobileBottomNav({ hideDropMemory = false }: { hideDropMemory?: boolean }) {
+export function MobileBottomNav({ memoryShelfOpen = false }: { memoryShelfOpen?: boolean }) {
   const pathname = usePathname();
   const { openModal } = useMemoryModal();
   const { trigger } = useHaptics();
@@ -32,7 +32,7 @@ export function MobileBottomNav({ hideDropMemory = false }: { hideDropMemory?: b
 
   return (
     <>
-      {!hideDropMemory && <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] z-[85] flex justify-center px-4 sm:hidden">
+      <div className={cn("pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] z-[85] flex px-4 sm:hidden", memoryShelfOpen ? "justify-end pr-5" : "justify-center")}>
         <motion.button
           type="button"
           whileTap={{ scale: 0.97 }}
@@ -41,18 +41,22 @@ export function MobileBottomNav({ hideDropMemory = false }: { hideDropMemory?: b
             trigger("light");
             openModal();
           }}
-          className="pointer-events-auto relative inline-flex min-h-12 items-center gap-2 rounded-[var(--radius-small)] border border-[var(--divider)] bg-[var(--surface-wood)] px-4 py-2.5 text-left text-[var(--jar-paper)] shadow-[var(--shadow-2)] transition-colors hover:bg-[color-mix(in_srgb,var(--surface-wood)_88%,white)] focus-ring-premium"
+          className={cn(
+            "pointer-events-auto relative inline-flex items-center border border-[var(--divider)] bg-[var(--surface-wood)] text-left text-[var(--jar-paper)] shadow-[var(--shadow-2)] transition-[background-color,transform] hover:bg-[color-mix(in_srgb,var(--surface-wood)_88%,white)] focus-ring-premium",
+            memoryShelfOpen ? "h-12 w-12 justify-center rounded-full p-1.5" : "min-h-12 gap-2 rounded-[var(--radius-small)] px-4 py-2.5",
+          )}
           aria-label="Drop a Memory"
+          title="Drop a Memory"
         >
-          <span className="relative flex h-9 w-9 items-center justify-center rounded-[var(--radius-tiny)] border border-white/15 bg-white/10">
+          <span className={cn("relative flex h-9 w-9 items-center justify-center rounded-[var(--radius-tiny)] border border-white/15 bg-white/10", memoryShelfOpen && "rounded-full")}>
             <Heart className="h-4.5 w-4.5 fill-[var(--jar-paper)] text-[var(--jar-paper)]" />
           </span>
-          <span className="relative flex flex-col leading-none">
+          <span className={cn("relative flex flex-col leading-none", memoryShelfOpen && "sr-only")}>
             <span className="font-cormorant text-lg">Drop a Memory</span>
             <span className="text-[11px] text-white/65">Keep this moment</span>
           </span>
         </motion.button>
-      </div>}
+      </div>
 
       <nav aria-label="Primary navigation" className="mobile-safe-bottom fixed inset-x-0 bottom-0 z-[80] px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-2 sm:hidden flex justify-center">
         <div className="w-full max-w-md rounded-[var(--radius-medium)] border border-[var(--divider)] bg-[var(--surface-wood)] p-1.5 shadow-[var(--shadow-3)]">

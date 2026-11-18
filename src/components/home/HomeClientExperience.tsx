@@ -507,7 +507,7 @@ export function HomeClientExperience() {
         </div>
       </div>
 
-      <MobileBottomNav hideDropMemory={isMemoryShelfOpen} />
+      <MobileBottomNav memoryShelfOpen={isMemoryShelfOpen} />
 
       {/* Global overlays stay unmounted until their lightweight providers signal an open state. */}
       {isMemoryModalOpen && (
