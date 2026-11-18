@@ -71,7 +71,7 @@ export function CompactKeepsakeShell(props: CompactKeepsakeShellProps) {
       (showReactions || showOverflow) && "z-20",
     )}>
       <button type="button" onClick={onOpen} className="relative z-0 flex w-full flex-col items-start rounded-t-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 hover:bg-stone-500/5 transition-colors" aria-label={`Open ${memory.type} memory: ${metadata.title}`}>
-        <div className="relative flex w-full p-3 gap-3 sm:p-4 sm:gap-4 pointer-events-none">
+        <div className="relative flex w-full p-3 gap-3 sm:p-4 sm:gap-4">
           <div className={cn("w-16 h-16 sm:w-20 sm:h-20 shrink-0 overflow-hidden rounded-[var(--radius-small)] border", isForest ? "border-white/10 bg-[#101712]" : "border-[rgba(104,83,54,0.18)] bg-[#fffaf0]")}>{preview}</div>
           <div className="min-w-0 flex-1 flex flex-col justify-center">
             <div className={cn("flex items-center gap-1.5 text-[11px] font-medium tracking-wide", isForest ? "text-emerald-100/65" : "text-stone-500")}>
