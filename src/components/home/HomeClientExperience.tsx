@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Compass, LayoutDashboard, LogOut, User, BookOpen, Loader2, RefreshCw, Mail } from "lucide-react";
+import { Camera, Compass, LayoutDashboard, LogOut, User, BookOpen, Loader2, RefreshCw, Mail } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { logoutAction } from "@/app/actions/auth";
 import { clearPrivateClientData } from "@/lib/cache-cleanup";
@@ -348,6 +348,17 @@ export function HomeClientExperience() {
               <Mail className="h-4 w-4 text-violet-300" />
               Letters in motion
             </MotionLink>
+            <motion.a
+              href="https://photobooth-nine-lyart.vercel.app/"
+              target="_blank"
+              rel="noreferrer"
+              whileTap={{ scale: 0.97 }}
+              className="nav-link-premium focus-ring-premium"
+              aria-label="Open Photobooth"
+            >
+              <Camera className="h-4 w-4 text-sky-300" aria-hidden="true" />
+              <span className="hidden lg:inline">Photobooth</span>
+            </motion.a>
         </div>
         {profile && (
           <div className="pointer-events-auto ml-auto flex items-center gap-2 rounded-full border border-[var(--divider)] bg-[var(--surface-wood)]/50 px-1.5 py-1 shadow-[var(--shadow-2)] backdrop-blur-xl sm:gap-3 sm:bg-transparent sm:px-0 sm:py-0 sm:shadow-none sm:border-transparent">
