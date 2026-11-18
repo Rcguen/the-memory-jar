@@ -9,9 +9,9 @@ type PageTransitionProps = {
 };
 
 const pageVariants = {
-  initial: { opacity: 0 },
-  enter: { opacity: 1 },
-  exit: { opacity: 0 },
+  initial: { opacity: 0, y: 10 },
+  enter: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -6 },
 };
 
 export function PageTransition({ children }: PageTransitionProps) {
@@ -27,7 +27,18 @@ export function PageTransition({ children }: PageTransitionProps) {
         animate="enter"
         exit="exit"
         variants={pageVariants}
-        transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+        transformTemplate={({ y }) => {
+          if (y === undefined || y === 0 || y === "0" || y === "0px") return "none";
+          return `translateY(${typeof y === "number" ? `${y}px` : y})`;
+        }}
+        transition={
+          shouldReduceMotion
+            ? { duration: 0 }
+            : {
+                opacity: { duration: 0.2, ease: [0.4, 0, 1, 1] },
+                y: { duration: 0.32, ease: [0.22, 1, 0.36, 1] },
+              }
+        }
       >
         {children}
       </motion.div>
