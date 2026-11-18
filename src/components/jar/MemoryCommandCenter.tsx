@@ -332,7 +332,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
             whileHover={{ x: 4 }}
             whileTap={{ scale: 0.96 }}
             onClick={() => setIsOpen(true)}
-            className="hidden xl:inline-flex items-center gap-2 rounded-full border border-white/10 bg-zinc-950/35 px-4 py-2 text-sm text-zinc-300 shadow-2xl backdrop-blur-xl"
+            className="hidden xl:inline-flex items-center gap-2 rounded-full border border-white/10 bg-zinc-950/35 px-4 py-2 text-sm text-zinc-300 backdrop-blur-xl"
           >
             <BookOpen className="w-4 h-4 text-emerald-400" />
             Memories
