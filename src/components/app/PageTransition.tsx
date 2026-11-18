@@ -10,8 +10,14 @@ type PageTransitionProps = {
 
 const pageVariants = {
   initial: { opacity: 0 },
-  enter: { opacity: 1 },
-  exit: { opacity: 0 },
+  enter: {
+    opacity: 1,
+    transition: { opacity: { duration: 0.3, ease: [0.22, 1, 0.36, 1] as const } },
+  },
+  exit: {
+    opacity: 0,
+    transition: { opacity: { duration: 0.18, ease: [0.4, 0, 1, 1] as const } },
+  },
 };
 
 export function PageTransition({ children }: PageTransitionProps) {
@@ -19,7 +25,7 @@ export function PageTransition({ children }: PageTransitionProps) {
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <AnimatePresence mode="wait" initial={false}>
+    <AnimatePresence mode="sync" initial={false} presenceAffectsLayout={false}>
       <motion.div
         key={pathname}
         className="app-page-transition flex min-h-0 flex-1 flex-col"
@@ -27,13 +33,7 @@ export function PageTransition({ children }: PageTransitionProps) {
         animate="enter"
         exit="exit"
         variants={pageVariants}
-        transition={
-          shouldReduceMotion
-            ? { duration: 0 }
-            : {
-                opacity: { duration: 0.24, ease: [0.22, 1, 0.36, 1] },
-              }
-        }
+        transition={shouldReduceMotion ? { duration: 0 } : undefined}
       >
         {children}
       </motion.div>
