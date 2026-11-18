@@ -14,13 +14,13 @@ function ReelThumbnail({ memory, onClick }: { memory: Memory; onClick: () => voi
   return (
     <div ref={containerRef} className="h-16 w-16 shrink-0 snap-start sm:h-20 sm:w-20">
       <motion.button
-        whileHover={{ y: -4, scale: 1.05 }}
+        whileHover={{ y: -2 }}
         whileTap={{ scale: 0.95 }}
         onClick={onClick}
-        className="group relative h-full w-full overflow-hidden rounded-xl border border-white/10 bg-zinc-900/60 shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
+        className="group relative isolate h-full w-full overflow-hidden rounded-xl border border-white/10 bg-zinc-900/60 shadow-md transition-[box-shadow,border-color] duration-300 hover:border-white/20 hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
         aria-label={`Open memory: ${memory.title || "Photo"}`}
       >
-        {url ? <img src={url} alt="" className="h-full w-full scale-110 object-cover blur-[14px] transition-[filter,transform] duration-500 group-hover:scale-100 group-hover:blur-none" loading="lazy" decoding="async" onError={retryImage} /> : <span className="absolute inset-0 bg-white/[0.08]" aria-hidden="true" />}
+        {url ? <img src={url} alt="" className="h-full w-full rounded-[inherit] scale-110 object-cover blur-[14px] transition-[filter,transform] duration-500 group-hover:scale-100 group-hover:blur-none" loading="lazy" decoding="async" onError={retryImage} /> : <span className="absolute inset-0 bg-white/[0.08]" aria-hidden="true" />}
         {url && <span className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/25 text-[9px] font-medium text-white/90 transition-opacity duration-300 group-hover:opacity-0"><Eye className="h-3.5 w-3.5" aria-hidden="true" />Hover to reveal</span>}
         <div className="absolute inset-0 flex items-end bg-black/10 p-1.5 opacity-0 transition-opacity duration-200 group-hover:bg-black/45 group-hover:opacity-100">
           <span className="text-[9px] font-medium leading-tight text-white drop-shadow-md line-clamp-2"><EmojiText text={memory.title || "Photo"} /></span>

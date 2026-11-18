@@ -72,7 +72,7 @@ export function TodayCard({ className }: { className?: string }) {
       transition={{ duration: 0.8, ease: [0.32, 0.72, 0, 1] }}
       className={cn("double-bezel group cursor-default", className)}
     >
-      <div className="double-bezel-inner paper-surface p-8 h-full flex flex-col justify-center transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-[0.98]">
+      <div className="double-bezel-inner paper-surface p-8 h-full flex flex-col justify-center transition-[box-shadow,background-color] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:shadow-inner">
         <span className="editorial-kicker text-zinc-500 mb-4 inline-flex px-3 py-1 bg-black/5 dark:bg-white/5 rounded-full w-max">
           Today
         </span>

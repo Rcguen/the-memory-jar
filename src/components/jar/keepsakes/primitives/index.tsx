@@ -66,13 +66,13 @@ export function CompactKeepsakeShell(props: CompactKeepsakeShellProps) {
   return (
     <>
     <article className={cn(
-      "group relative flex w-full flex-col overflow-visible rounded-2xl border transition duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] hover:scale-[1.01] hover:shadow-xl",
+      "group relative flex w-full flex-col overflow-visible rounded-2xl border transition-[box-shadow,border-color,background-color] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:shadow-xl",
       isForest ? "border-emerald-100/15 bg-[#1b2922] text-stone-100" : "border-[rgba(92,75,54,0.18)] bg-[#fdfbf7] shadow-md text-stone-800 double-bezel dark:border-white/10 dark:bg-[#1c1c1c] dark:text-stone-100",
       (showReactions || showOverflow) && "z-20",
     )}>
       <button type="button" onClick={onOpen} className="relative z-0 flex w-full flex-col items-start rounded-t-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 hover:bg-stone-500/5 transition-colors" aria-label={`Open ${memory.type} memory: ${metadata.title}`}>
         <div className="relative flex w-full p-3 gap-3 sm:p-4 sm:gap-4">
-          <div className={cn("w-16 h-16 sm:w-20 sm:h-20 shrink-0 overflow-hidden rounded-[var(--radius-small)] border", isForest ? "border-white/10 bg-[#101712]" : "border-[rgba(104,83,54,0.18)] bg-[#fffaf0]")}>{preview}</div>
+          <div className={cn("isolate w-16 h-16 sm:w-20 sm:h-20 shrink-0 overflow-hidden rounded-[var(--radius-small)] border", isForest ? "border-white/10 bg-[#101712]" : "border-[rgba(104,83,54,0.18)] bg-[#fffaf0]")}>{preview}</div>
           <div className="min-w-0 flex-1 flex flex-col justify-center">
             <div className={cn("flex items-center gap-1.5 text-[11px] font-medium tracking-wide", isForest ? "text-emerald-100/65" : "text-stone-500")}>
               {icon}<span>{label}</span><span aria-hidden="true">·</span><span>{metadata.dateLabel}</span>
@@ -90,7 +90,7 @@ export function CompactKeepsakeShell(props: CompactKeepsakeShellProps) {
            {onPin && <button onClick={(e) => { stop(e); onPin(); }} className={actionClass} aria-label={isPinned ? "Unpin memory" : "Pin memory"}><Pin className={isPinned ? "h-3.5 w-3.5 fill-emerald-700 text-emerald-700" : "h-3.5 w-3.5"} /></button>}
            <button onClick={(e) => { stop(e); onFavorite(); }} className={actionClass} aria-label={isFavorite ? "Remove memory from favorites" : "Favorite memory"}><Star className={isFavorite ? "h-3.5 w-3.5 fill-rose-500 text-rose-500" : "h-3.5 w-3.5"} /></button>
            
-           <button ref={reactionTriggerRef} type="button" onClick={toggleReactionMenu} className={cn("ml-1.5 inline-flex h-8 items-center gap-2 rounded-full border px-3 text-[11px] font-semibold transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 hover:scale-[1.05]", isForest ? "border-white/15 bg-white/5 text-stone-100 hover:bg-white/12" : "border-black/5 bg-white shadow-sm text-stone-800 hover:shadow-md dark:border-white/10 dark:bg-zinc-800 dark:text-stone-200 dark:hover:bg-zinc-700", showReactions && (isForest ? "bg-emerald-100/15 text-emerald-50" : "border-emerald-700/35 bg-emerald-50 text-emerald-800 scale-105"))} aria-expanded={showReactions} aria-label="Choose a reaction">
+           <button ref={reactionTriggerRef} type="button" onClick={toggleReactionMenu} className={cn("ml-1.5 inline-flex h-8 items-center gap-2 rounded-full border px-3 text-[11px] font-semibold transition-[background-color,border-color,box-shadow,color] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600", isForest ? "border-white/15 bg-white/5 text-stone-100 hover:bg-white/12" : "border-black/5 bg-white shadow-sm text-stone-800 hover:shadow-md dark:border-white/10 dark:bg-zinc-800 dark:text-stone-200 dark:hover:bg-zinc-700", showReactions && (isForest ? "bg-emerald-100/15 text-emerald-50" : "border-emerald-700/35 bg-emerald-50 text-emerald-800"))} aria-expanded={showReactions} aria-label="Choose a reaction">
              {activeReaction ? <EmojiText text={activeReaction} /> : <SmilePlus className="h-3.5 w-3.5" aria-hidden="true" />}<span className="hidden sm:inline-block">{activeReaction ? `Reacted (${visibleReactionCount})` : "React"}</span>
            </button>
          </div>

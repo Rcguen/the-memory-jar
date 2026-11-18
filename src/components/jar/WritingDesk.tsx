@@ -108,7 +108,7 @@ export function WritingDesk() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
-                className="double-bezel bg-white/40 p-6 flex flex-col gap-4 transition-all ease-[cubic-bezier(0.32,0.72,0,1)] duration-700 hover:scale-[1.02]"
+                className="double-bezel bg-white/40 p-6 flex flex-col gap-4 transition-[box-shadow,border-color,background-color] ease-[cubic-bezier(0.32,0.72,0,1)] duration-500 hover:shadow-lg"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
@@ -132,7 +132,7 @@ export function WritingDesk() {
                   {!isCreator && (
                     <button
                       onClick={() => handleSeal(memory)}
-                      className="flex items-center gap-1.5 text-xs font-semibold bg-white/80 hover:bg-white text-stone-700 px-4 py-2 rounded-full transition-all ease-[cubic-bezier(0.32,0.72,0,1)] duration-500 hover:scale-[0.95] shadow-sm"
+                      className="flex items-center gap-1.5 text-xs font-semibold bg-white/80 hover:bg-white text-stone-700 px-4 py-2 rounded-full transition-[background-color,box-shadow] ease-[cubic-bezier(0.32,0.72,0,1)] duration-300 hover:shadow-md"
                     >
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       Seal Together

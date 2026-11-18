@@ -72,10 +72,10 @@ export function PhotoGallery({ attachments, onFullscreenChange }: PhotoGalleryPr
               initial={{ opacity: 0, y: 14, scale: 0.98, filter: "blur(6px)" }}
               animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
               transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-              whileHover={{ scale: 1.018, filter: "brightness(1.04)" }}
+              whileHover={{ filter: "brightness(1.04)" }}
               onClick={() => url && setActiveIndex(index)}
               className={cn(
-                "relative overflow-hidden rounded-xl text-left",
+                "relative isolate overflow-hidden rounded-xl text-left transition-[border-color,box-shadow] duration-300 hover:border-black/20 hover:shadow-md dark:hover:border-white/20",
                 isSingle 
                   ? "w-full border border-black/5 shadow-sm" 
                   : "w-full border border-black/10 bg-black/5 dark:border-white/10 dark:bg-white/5"

@@ -31,9 +31,9 @@ export function OnThisDayCard({ className }: { className?: string }) {
   return (
     <Link href="/on-this-day" prefetch={false} className={cn("block w-full max-w-2xl", className)}>
       <motion.article
-        whileHover={{ y: -2, scale: 1.01 }}
+        whileHover={{ y: -2 }}
         whileTap={{ scale: 0.99 }}
-        className="relative overflow-hidden rounded-[1.6rem] border border-white/15 bg-zinc-950/55 px-5 py-5 text-left shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-xl"
+        className="relative overflow-hidden rounded-[1.6rem] border border-white/15 bg-zinc-950/55 px-5 py-5 text-left shadow-[0_18px_60px_rgba(0,0,0,0.28)] backdrop-blur-xl transition-[border-color,box-shadow] duration-300 hover:border-white/25 hover:shadow-[0_22px_70px_rgba(0,0,0,0.34)]"
       >
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(244,114,182,0.14),transparent_38%),linear-gradient(135deg,rgba(255,255,255,0.08),transparent_55%)]" />
         <div className="relative flex items-start justify-between gap-4">
