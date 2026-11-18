@@ -130,9 +130,10 @@ function isPendingTimeCapsule(memory: Memory) {
 
 interface MemoryCommandCenterProps {
   className?: string;
+  onOpenChange?: (isOpen: boolean) => void;
 }
 
-export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
+export function MemoryCommandCenter({ className, onOpenChange }: MemoryCommandCenterProps) {
   const queryClient = useQueryClient();
   const { profile } = useAuth();
   const { openViewer } = useMemoryViewer();
@@ -150,6 +151,10 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
   const initialDisplayLimit = isCompact ? MAX_RENDERED_MOBILE_MEMORIES : MAX_RENDERED_MEMORIES;
   const [displayState, setDisplayState] = useState({ key: "", limit: initialDisplayLimit });
   const deleteTimers = useRef<Map<string, number>>(new Map());
+
+  useEffect(() => {
+    onOpenChange?.(isOpen);
+  }, [isOpen, onOpenChange]);
 
   const {
     data: memories = [],
@@ -461,7 +466,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                       })}
                     </div>
 
-                    <div className="mt-3 flex-1 min-h-0 space-y-2 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.18)_transparent] sm:mt-4">
+                    <div className="mt-3 flex-1 min-h-0 space-y-2 overflow-y-auto pb-24 pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.18)_transparent] sm:mt-4 sm:pb-0">
                       <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
                         {searchStatus}
                       </div>
@@ -545,7 +550,7 @@ export function MemoryCommandCenter({ className }: MemoryCommandCenterProps) {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: useSimpleMotion ? 0 : -8 }}
                     transition={{ duration: useSimpleMotion ? 0.15 : 0.24, ease: [0.22, 1, 0.36, 1] }}
-                    className="mt-3 flex-1 min-h-0 space-y-2 overflow-y-auto pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.18)_transparent] sm:mt-4"
+                    className="mt-3 flex-1 min-h-0 space-y-2 overflow-y-auto pb-24 pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.18)_transparent] sm:mt-4 sm:pb-0"
                   >
                     {isActivityLoading && activities.length === 0 && (
                       <div className="space-y-2 px-1 py-2" aria-label="Loading activity">

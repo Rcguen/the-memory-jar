@@ -175,6 +175,7 @@ export function HomeClientExperience() {
   const [jarLoadState, setJarLoadState] = useState<JarLoadState>("pending");
   const [jarLoadAttempt, setJarLoadAttempt] = useState(0);
   const [isMusicOpen, setIsMusicOpen] = useState(false);
+  const [isMemoryShelfOpen, setIsMemoryShelfOpen] = useState(true);
   const [isPending, startTransition] = useTransition();
   const ambientMotion = useHomeAmbientMotion();
 
@@ -473,7 +474,7 @@ export function HomeClientExperience() {
           <LivingMemoryShelf className="home-shelf relative min-h-0 flex-1">
             <DeskCat motionActive={ambientMotion.isActive} isPhone={ambientMotion.isPhone} />
             <ErrorBoundary fallbackMessage="Memory tools failed to load.">
-              <MemoryCommandCenter className="xl:mt-0 xl:max-w-none h-full" />
+              <MemoryCommandCenter className="xl:mt-0 xl:max-w-none h-full" onOpenChange={setIsMemoryShelfOpen} />
             </ErrorBoundary>
           </LivingMemoryShelf>
         </div>
@@ -506,7 +507,7 @@ export function HomeClientExperience() {
         </div>
       </div>
 
-      <MobileBottomNav />
+      <MobileBottomNav hideDropMemory={isMemoryShelfOpen} />
 
       {/* Global overlays stay unmounted until their lightweight providers signal an open state. */}
       {isMemoryModalOpen && (

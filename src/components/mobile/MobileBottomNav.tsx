@@ -21,7 +21,7 @@ const ITEMS = [
   { href: "/animated-cards", label: "Letters", icon: Mail, accent: "text-violet-300" },
 ] as const;
 
-export function MobileBottomNav() {
+export function MobileBottomNav({ hideDropMemory = false }: { hideDropMemory?: boolean }) {
   const pathname = usePathname();
   const { openModal } = useMemoryModal();
   const { trigger } = useHaptics();
@@ -32,7 +32,7 @@ export function MobileBottomNav() {
 
   return (
     <>
-      <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] z-[85] flex justify-center px-4 sm:hidden">
+      {!hideDropMemory && <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] z-[85] flex justify-center px-4 sm:hidden">
         <motion.button
           type="button"
           whileTap={{ scale: 0.97 }}
@@ -52,7 +52,7 @@ export function MobileBottomNav() {
             <span className="text-[11px] text-white/65">Keep this moment</span>
           </span>
         </motion.button>
-      </div>
+      </div>}
 
       <nav aria-label="Primary navigation" className="mobile-safe-bottom fixed inset-x-0 bottom-0 z-[80] px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-2 sm:hidden flex justify-center">
         <div className="w-full max-w-md rounded-[var(--radius-medium)] border border-[var(--divider)] bg-[var(--surface-wood)] p-1.5 shadow-[var(--shadow-3)]">
