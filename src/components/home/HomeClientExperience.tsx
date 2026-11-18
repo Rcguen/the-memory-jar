@@ -470,8 +470,8 @@ export function HomeClientExperience() {
 
       {/* LEFT PANEL: Memory Shelf (Primary Actions) */}
       <div className="relative z-10 mt-8 w-full max-w-[23rem] px-3 sm:max-w-3xl sm:px-4 xl:absolute xl:bottom-4 xl:left-6 xl:top-20 xl:mt-0 xl:w-[24rem] xl:max-w-none xl:px-0 xl:pb-0 2xl:w-[34rem] xl:overflow-hidden pointer-events-none">
-        <div className="flex flex-col relative z-10 xl:pr-3 xl:pb-6 h-full pointer-events-auto">
-          <LivingMemoryShelf className="home-shelf relative min-h-0 flex-1">
+        <div className="flex flex-col relative z-10 xl:pr-3 xl:pb-6 h-auto xl:h-full pointer-events-auto">
+          <LivingMemoryShelf className="home-shelf relative min-h-0 flex-none xl:flex-1">
             <DeskCat motionActive={ambientMotion.isActive} isPhone={ambientMotion.isPhone} />
             <ErrorBoundary fallbackMessage="Memory tools failed to load.">
               <MemoryCommandCenter className="xl:mt-0 xl:max-w-none h-full" onOpenChange={setIsMemoryShelfOpen} />
@@ -481,7 +481,7 @@ export function HomeClientExperience() {
       </div>
 
       {/* RIGHT PANEL: Storytelling & Ambient Cards */}
-      <div className="home-side-panel home-side-panel--desk relative z-10 mt-4 w-full max-w-[23rem] overflow-x-clip px-3 pb-32 sm:max-w-3xl sm:px-4 xl:absolute xl:bottom-4 xl:right-6 xl:top-20 xl:mt-0 xl:w-[24rem] xl:max-w-none xl:px-0 xl:pb-0 2xl:w-[32rem] xl:overflow-y-auto xl:[scrollbar-width:thin]">
+      <div className="home-side-panel home-side-panel--desk relative z-10 mt-4 w-full max-w-[23rem] overflow-x-clip px-3 pb-8 sm:max-w-3xl sm:px-4 sm:pb-32 xl:absolute xl:bottom-4 xl:right-6 xl:top-20 xl:mt-0 xl:w-[24rem] xl:max-w-none xl:px-0 xl:pb-0 2xl:w-[32rem] xl:overflow-y-auto xl:[scrollbar-width:thin]">
         <CozyDetails motionActive={ambientMotion.isActive} isPhone={ambientMotion.isPhone} />
         <AmbientManager />
         
