@@ -350,8 +350,6 @@ export function HomeClientExperience() {
             </MotionLink>
             <motion.a
               href="https://photobooth-nine-lyart.vercel.app/"
-              target="_blank"
-              rel="noreferrer"
               whileTap={{ scale: 0.97 }}
               className="nav-link-premium focus-ring-premium"
               aria-label="Open Photobooth"

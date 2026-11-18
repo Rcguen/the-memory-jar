@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarHeart, Compass, Heart, LayoutDashboard, BookOpen, Mail } from "lucide-react";
+import { Camera, CalendarHeart, Compass, Heart, LayoutDashboard, BookOpen, Mail } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -83,7 +83,7 @@ export function MobileBottomNav({ memoryShelfOpen = false }: { memoryShelfOpen?:
 
       <nav aria-label="Primary navigation" className="mobile-safe-bottom fixed inset-x-0 bottom-0 z-[80] px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-2 sm:hidden flex justify-center">
         <div className="w-full max-w-md rounded-[var(--radius-medium)] border border-[var(--divider)] bg-[var(--surface-wood)] p-1.5 shadow-[var(--shadow-3)]">
-          <div className="grid grid-cols-6 gap-1">
+          <div className="grid grid-cols-7 gap-1">
           {ITEMS.map((item) => {
             const Icon = item.icon;
             const active = pathname === item.href;
@@ -112,6 +112,17 @@ export function MobileBottomNav({ memoryShelfOpen = false }: { memoryShelfOpen?:
               </MotionLink>
             );
           })}
+          <motion.a
+            href="https://photobooth-nine-lyart.vercel.app/"
+            whileTap={{ scale: 0.97 }}
+            transition={{ duration: 0.14, ease: [0.23, 1, 0.32, 1] }}
+            onClick={() => trigger("light")}
+            className="flex min-h-[50px] flex-col items-center justify-center rounded-[0.9rem] px-1 py-1.5 text-center text-white/60 transition-[transform,background-color,color,box-shadow] duration-[180ms] ease-[cubic-bezier(0.23,1,0.32,1)] hover:bg-white/6 hover:text-[var(--jar-paper)] focus-ring-premium motion-reduce:transform-none motion-reduce:transition-none"
+            aria-label="Open Photobooth"
+          >
+            <Camera className="h-4.5 w-4.5 text-sky-300" aria-hidden="true" />
+            <span className="mt-1 text-[9px] font-medium tracking-[0.01em]">Photo</span>
+          </motion.a>
           </div>
         </div>
       </nav>
