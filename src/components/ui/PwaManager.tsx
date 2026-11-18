@@ -60,14 +60,8 @@ export function PwaManager() {
 
     if ("serviceWorker" in navigator && "serwist" in window) {
       const handleSerwistInstalled = (event: Event) => {
-        if ((event as unknown as { isUpdate: boolean }).isUpdate) {
-          toast.success("App updated. Restart when you're ready.", {
-            action: {
-              label: "Restart",
-              onClick: () => window.location.reload(),
-            },
-            duration: Infinity,
-          });
+        if ((event as unknown as { isUpdate: boolean }).isUpdate && process.env.NODE_ENV === "development") {
+          console.debug("[pwa] update ready; keeping the current experience uninterrupted");
         }
       };
 
@@ -83,13 +77,9 @@ export function PwaManager() {
 
     if ("serviceWorker" in navigator) {
       const handleControllerChange = () => {
-        toast("App updated. Restart when you're ready.", {
-          action: {
-            label: "Restart",
-            onClick: () => window.location.reload(),
-          },
-          duration: Infinity,
-        });
+        if (process.env.NODE_ENV === "development") {
+          console.debug("[pwa] controller changed; keeping the current experience uninterrupted");
+        }
       };
 
       navigator.serviceWorker.addEventListener("controllerchange", handleControllerChange);
