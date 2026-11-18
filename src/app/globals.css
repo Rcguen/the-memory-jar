@@ -413,6 +413,13 @@
   will-change: opacity;
 }
 
+.reveal-copy-touch { display: none; }
+
+@media (hover: none), (pointer: coarse) {
+  .reveal-copy-hover { display: none; }
+  .reveal-copy-touch { display: inline; }
+}
+
 .route-loading-indicator {
   position: fixed;
   inset: 0 0 auto;
