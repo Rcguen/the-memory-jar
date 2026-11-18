@@ -410,7 +410,7 @@
 
 .app-page-transition {
   min-width: 0;
-  will-change: opacity, transform;
+  will-change: opacity;
 }
 
 :where(a, button, [role="button"]):focus-visible {
