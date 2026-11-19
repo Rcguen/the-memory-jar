@@ -38,7 +38,6 @@ import { createClient } from "@/lib/supabase/client";
 import { MemoryType } from "@/types/memory";
 import { useRelationshipContext } from "@/hooks/useRelationshipContext";
 import { useAvatarUrl } from "@/hooks/useAvatarUrl";
-import { useIntentRoutePrefetch } from "@/hooks/useRoutePrefetch";
 import { useHomeAmbientMotion } from "@/hooks/useHomeAmbientMotion";
 import { RelationshipAmbientBackdrop } from "@/components/experience/RelationshipAmbientBackdrop";
 import { OnThisDayCard } from "@/components/experience/OnThisDayCard";
@@ -170,7 +169,6 @@ export function HomeClientExperience() {
   const { isOpen: isMemoryModalOpen } = useMemoryModal();
   const { viewingMemoryId } = useMemoryViewer();
   const router = useRouter();
-  const prefetchRoute = useIntentRoutePrefetch();
   const [memoryCount, setMemoryCount] = useState<number | null>(null);
   const [jarLoadState, setJarLoadState] = useState<JarLoadState>("pending");
   const [jarLoadAttempt, setJarLoadAttempt] = useState(0);
@@ -280,10 +278,6 @@ export function HomeClientExperience() {
     // This query owns a deliberate one-shot physics hydration per retry attempt.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [jarLoadAttempt]);
-  const prefetchTimeline = () => prefetchRoute("/timeline");
-  const prefetchDashboard = () => prefetchRoute("/dashboard");
-  const prefetchBook = () => prefetchRoute("/memory-book");
-
   if (profile && !profile.active_relationship_id) {
     return <RelationshipOnboarding />;
   }
@@ -308,10 +302,6 @@ export function HomeClientExperience() {
         <div className="pointer-events-auto hidden items-center gap-2 md:flex">
             <MotionLink
               href="/timeline"
-              prefetch={false}
-              onMouseEnter={prefetchTimeline}
-              onPointerDown={prefetchTimeline}
-              onFocus={prefetchTimeline}
               className="nav-link-premium focus-ring-premium"
             >
             <Compass className="h-4 w-4 text-emerald-400" />
@@ -319,10 +309,6 @@ export function HomeClientExperience() {
           </MotionLink>
             <MotionLink
               href="/dashboard"
-              prefetch={false}
-              onMouseEnter={prefetchDashboard}
-              onPointerDown={prefetchDashboard}
-              onFocus={prefetchDashboard}
               className="nav-link-premium focus-ring-premium"
             >
             <LayoutDashboard className="h-4 w-4 text-rose-300" />
@@ -330,10 +316,6 @@ export function HomeClientExperience() {
           </MotionLink>
             <MotionLink
               href="/memory-book"
-              prefetch={false}
-              onMouseEnter={prefetchBook}
-              onPointerDown={prefetchBook}
-              onFocus={prefetchBook}
               className="nav-link-premium focus-ring-premium"
             >
               <BookOpen className="h-4 w-4 text-amber-200" />
@@ -341,7 +323,6 @@ export function HomeClientExperience() {
             </MotionLink>
             <MotionLink
               href="/animated-cards"
-              prefetch={false}
               className="nav-link-premium focus-ring-premium"
               aria-label="Open Letters in motion"
             >

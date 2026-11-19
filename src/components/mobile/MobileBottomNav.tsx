@@ -10,7 +10,6 @@ const MotionLink = motion.create(Link);
 import { useMemoryModal } from "@/providers/memory-modal-provider";
 import { useHaptics } from "@/hooks/useHaptics";
 import { useIsPhone } from "@/hooks/useIsPhone";
-import { useIntentRoutePrefetch } from "@/hooks/useRoutePrefetch";
 
 const ITEMS = [
   { href: "/", label: "Jar", icon: Heart, accent: "text-rose-300" },
@@ -26,7 +25,6 @@ export function MobileBottomNav({ memoryShelfOpen = false }: { memoryShelfOpen?:
   const { openModal } = useMemoryModal();
   const { trigger } = useHaptics();
   const isPhone = useIsPhone();
-  const prefetchRoute = useIntentRoutePrefetch();
   const shouldReduceMotion = useReducedMotion();
 
   if (!isPhone) return null;
@@ -91,15 +89,8 @@ export function MobileBottomNav({ memoryShelfOpen = false }: { memoryShelfOpen?:
               <MotionLink
                 key={item.href}
                 href={item.href}
-                prefetch={false}
                 whileTap={{ scale: 0.97 }}
                 transition={{ duration: 0.14, ease: [0.23, 1, 0.32, 1] }}
-                onPointerDown={() => {
-                  if (!active) prefetchRoute(item.href);
-                }}
-                onFocus={() => {
-                  if (!active) prefetchRoute(item.href);
-                }}
                 onClick={() => trigger("light")}
                 className={cn(
                   "flex min-h-[50px] flex-col items-center justify-center rounded-[0.9rem] px-1 py-1.5 text-center transition-[transform,background-color,color,box-shadow] duration-[180ms] ease-[cubic-bezier(0.23,1,0.32,1)] focus-ring-premium motion-reduce:transform-none motion-reduce:transition-none",

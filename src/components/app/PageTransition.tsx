@@ -13,11 +13,11 @@ const pageVariants = {
   initial: { opacity: 0 },
   enter: {
     opacity: 1,
-    transition: { opacity: { duration: 0.3, ease: [0.22, 1, 0.36, 1] as const } },
+    transition: { opacity: { duration: 0.24, ease: [0.22, 1, 0.36, 1] as const } },
   },
   exit: {
     opacity: 0,
-    transition: { opacity: { duration: 0.18, ease: [0.4, 0, 1, 1] as const } },
+    transition: { opacity: { duration: 0.12, ease: [0.4, 0, 1, 1] as const } },
   },
 };
 
@@ -27,16 +27,16 @@ const phonePageVariants = {
     opacity: 1,
     clipPath: "inset(0 0 0 0%)",
     transition: {
-      opacity: { duration: 0.22, ease: [0.22, 1, 0.36, 1] as const },
-      clipPath: { duration: 0.36, ease: [0.22, 1, 0.36, 1] as const },
+      opacity: { duration: 0.18, ease: [0.22, 1, 0.36, 1] as const },
+      clipPath: { duration: 0.28, ease: [0.22, 1, 0.36, 1] as const },
     },
   },
   exit: {
     opacity: 0,
     clipPath: "inset(0 100% 0 0%)",
     transition: {
-      opacity: { duration: 0.14, ease: [0.4, 0, 1, 1] as const },
-      clipPath: { duration: 0.26, ease: [0.4, 0, 1, 1] as const },
+      opacity: { duration: 0.1, ease: [0.4, 0, 1, 1] as const },
+      clipPath: { duration: 0.2, ease: [0.4, 0, 1, 1] as const },
     },
   },
 };
