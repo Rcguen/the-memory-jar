@@ -27,6 +27,7 @@ interface GooeyMobileFab460Props {
 interface ActionItem {
   id: MemoryType;
   label: string;
+  sublabel: string;
   description: string;
   icon: React.ElementType;
   angle: number;
@@ -54,97 +55,119 @@ export function GooeyMobileFab460({ className }: GooeyMobileFab460Props) {
   const actionButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const gooTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 9 memory types matching the application's memory creation options
-  // Arranged in a 2-tier blossom arc (Outer R=124px, Inner R=74px)
+  // 9 memory types perfectly spaced in a balanced dual-tier crown arc
+  // Outer tier (R=122px, 5 items), Inner tier (R=84px, 4 items)
   const actions: ActionItem[] = [
     {
       id: "promise",
       label: "Promise",
+      sublabel: "Lời thề ước",
       description: "A vow to keep forever.",
       icon: HeartHandshake,
-      angle: -160,
-      radius: 124,
+      angle: -162,
+      radius: 122,
     },
     {
       id: "letter",
       label: "Letter",
+      sublabel: "Bức thư",
       description: "Words meant for the soul.",
       icon: Mail,
-      angle: -142.5,
-      radius: 74,
+      angle: -144,
+      radius: 84,
     },
     {
       id: "photo",
       label: "Photo",
+      sublabel: "Hình ảnh",
       description: "A captured moment in time.",
       icon: ImageIcon,
-      angle: -125,
-      radius: 124,
+      angle: -126,
+      radius: 122,
     },
     {
       id: "voice",
       label: "Voice",
+      sublabel: "Giọng nói",
       description: "The warmth of spoken words.",
       icon: Mic,
-      angle: -107.5,
-      radius: 74,
+      angle: -108,
+      radius: 84,
     },
     {
       id: "video",
       label: "Video",
+      sublabel: "Thước phim",
       description: "Living, breathing memories.",
       icon: Video,
       angle: -90,
-      radius: 124,
+      radius: 122,
     },
     {
       id: "travel",
       label: "Travel",
+      sublabel: "Chuyến đi",
       description: "Adventures shared together.",
       icon: Plane,
-      angle: -72.5,
-      radius: 74,
+      angle: -72,
+      radius: 84,
     },
     {
       id: "wish",
       label: "Wish",
+      sublabel: "Điều ước",
       description: "Hopes for the future.",
       icon: Star,
-      angle: -55,
-      radius: 124,
+      angle: -54,
+      radius: 122,
     },
     {
       id: "gratitude",
       label: "Gratitude",
+      sublabel: "Lòng biết ơn",
       description: "Thankful for the little things.",
       icon: Heart,
-      angle: -37.5,
-      radius: 74,
+      angle: -36,
+      radius: 84,
     },
     {
       id: "random_thought",
       label: "Thought",
+      sublabel: "Suy nghĩ",
       description: "Just something on my mind.",
       icon: MessageCircleQuestion,
-      angle: -20,
-      radius: 124,
+      angle: -18,
+      radius: 122,
     },
   ];
 
-  // Dynamic SVG Gooey filter toggle directly on DOM for 60fps GPU performance
+  // Smart Gooey cutoff:
+  // Gooey filter is active strictly during shoot-out and collapse transitions.
+  // When at rest, filter is turned OFF so bubbles remain 100% crisp, separated spheres!
   useEffect(() => {
     if (gooTimeoutRef.current) clearTimeout(gooTimeoutRef.current);
     const goo = gooRef.current;
     if (!goo) return;
 
     if (isOpen) {
+      // Turn ON filter for the fluid stretch emergence
       goo.style.filter = `url(#${filterId})`;
-    } else {
+      // Turn OFF after stretch completes to eliminate caterpillar fusion
       gooTimeoutRef.current = setTimeout(
         () => {
           if (goo) goo.style.filter = "";
         },
-        shouldReduceMotion ? 0 : 850
+        shouldReduceMotion ? 0 : 380
+      );
+    } else {
+      // Turn ON filter immediately so collapsing bubbles melt together
+      goo.style.filter = `url(#${filterId})`;
+      // Turn OFF after collapse completes
+      gooTimeoutRef.current = setTimeout(
+        () => {
+          if (goo) goo.style.filter = "";
+        },
+        shouldReduceMotion ? 0 : 480
       );
     }
 
@@ -164,7 +187,7 @@ export function GooeyMobileFab460({ className }: GooeyMobileFab460Props) {
           { transform: "scale(1.06)", offset: 0.65 },
           { transform: "scale(1)" },
         ],
-        { duration: 560, easing: "ease-out" }
+        { duration: 520, easing: "ease-out" }
       );
     },
     [shouldReduceMotion]
@@ -192,7 +215,7 @@ export function GooeyMobileFab460({ className }: GooeyMobileFab460Props) {
           { transform: `translate(${tx}, ${ty}) scale(1.28)` },
           { transform: `translate(${tx}, ${ty}) scale(1)` },
         ],
-        { duration: 260, easing: "ease-out" }
+        { duration: 240, easing: "ease-out" }
       );
     }
 
@@ -201,7 +224,7 @@ export function GooeyMobileFab460({ className }: GooeyMobileFab460Props) {
         setIsOpen(false);
         openModal(memoryType);
       },
-      shouldReduceMotion ? 0 : 180
+      shouldReduceMotion ? 0 : 160
     );
   };
 
@@ -255,57 +278,135 @@ export function GooeyMobileFab460({ className }: GooeyMobileFab460Props) {
   const hoveredAction = hoveredIndex !== null ? actions[hoveredIndex] : null;
 
   return (
-    <div
-      ref={rootRef}
-      className={cn("ux u460", isOpen && "is-open", className)}
-      onKeyDown={handleKeyDown}
-    >
-      {/* SVG gooey filter definition */}
-      <svg className="u460-defs" aria-hidden="true" focusable="false">
-        <filter
-          id={filterId}
-          className="u460-f"
-          x="-30%"
-          y="-30%"
-          width="160%"
-          height="160%"
-          colorInterpolationFilters="sRGB"
-        >
-          <feGaussianBlur in="SourceGraphic" stdDeviation="9" result="b" />
-          <feColorMatrix
-            in="b"
-            type="matrix"
-            values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 24 -11"
-            result="g"
-          />
-          <feComposite in="SourceGraphic" in2="g" operator="atop" />
-        </filter>
-      </svg>
+    <>
+      {/* Soft dimming backdrop */}
+      <div
+        className={cn("u460-backdrop", isOpen && "is-open")}
+        onClick={() => {
+          setIsOpen(false);
+          squish(0.9);
+        }}
+        aria-hidden="true"
+      />
 
-      <div className="u460-st">
-        {/* Tooltip pill label displaying active type name */}
-        <div
-          className={cn("u460-pill", hoveredAction && "is-visible")}
-          aria-live="polite"
-        >
-          {hoveredAction?.label}
-        </div>
+      <div
+        ref={rootRef}
+        className={cn("ux u460", isOpen && "is-open", className)}
+        onKeyDown={handleKeyDown}
+      >
+        {/* SVG gooey filter definition */}
+        <svg className="u460-defs" aria-hidden="true" focusable="false">
+          <filter
+            id={filterId}
+            className="u460-f"
+            x="-30%"
+            y="-30%"
+            width="160%"
+            height="160%"
+            colorInterpolationFilters="sRGB"
+          >
+            <feGaussianBlur in="SourceGraphic" stdDeviation="9" result="b" />
+            <feColorMatrix
+              in="b"
+              type="matrix"
+              values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 24 -11"
+              result="g"
+            />
+            <feComposite in="SourceGraphic" in2="g" operator="atop" />
+          </filter>
+        </svg>
 
-        {/* Gooey blobs stage */}
-        <div className="u460-sh" aria-hidden="true">
-          <div ref={gooRef} className="u460-goo">
+        <div className="u460-st">
+          {/* Refined Tooltip Pill Badge */}
+          <div
+            className={cn("u460-pill", hoveredAction && "is-visible")}
+            aria-live="polite"
+          >
+            <span className="u460-pill-dot" />
+            <span>{hoveredAction?.label}</span>
+            {hoveredAction?.sublabel && (
+              <span className="u460-pill-desc">{hoveredAction.sublabel}</span>
+            )}
+          </div>
+
+          {/* Gooey fluid blobs stage */}
+          <div className="u460-sh" aria-hidden="true">
+            <div ref={gooRef} className="u460-goo">
+              {actions.map((act, index) => {
+                const rad = (act.angle * Math.PI) / 180;
+                const tx = (Math.cos(rad) * act.radius).toFixed(1) + "px";
+                const ty = (Math.sin(rad) * act.radius).toFixed(1) + "px";
+
+                return (
+                  <i
+                    key={act.id}
+                    ref={(el) => {
+                      actionBlobRefs.current[index] = el;
+                    }}
+                    className={cn("u460-bb", hoveredIndex === index && "is-hov")}
+                    style={
+                      {
+                        "--u460-i": index,
+                        "--u460-tx": isOpen ? tx : "0px",
+                        "--u460-ty": isOpen ? ty : "0px",
+                      } as React.CSSProperties
+                    }
+                  />
+                );
+              })}
+              <i
+                ref={fabBlobRef}
+                className="u460-bb is-fab"
+              />
+            </div>
+          </div>
+
+          {/* Center Trigger FAB */}
+          <button
+            ref={fabRef}
+            type="button"
+            className="u460-fab"
+            aria-label={isOpen ? "Đóng menu lưu niệm" : "Lưu kỷ niệm mới"}
+            aria-haspopup="true"
+            aria-expanded={isOpen}
+            aria-controls={menuId}
+            onClick={toggleOpen}
+          >
+            <span className="u460-fab-icon">
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                className="h-6 w-6 fill-none stroke-current stroke-[2.4] stroke-linecap-round stroke-linejoin-round"
+              >
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </span>
+          </button>
+
+          {/* Radial Action Buttons */}
+          <div
+            id={menuId}
+            className="u460-ic"
+            role="group"
+            aria-label="Tùy chọn tạo kỷ niệm"
+          >
             {actions.map((act, index) => {
+              const Icon = act.icon;
               const rad = (act.angle * Math.PI) / 180;
               const tx = (Math.cos(rad) * act.radius).toFixed(1) + "px";
               const ty = (Math.sin(rad) * act.radius).toFixed(1) + "px";
 
               return (
-                <i
+                <button
                   key={act.id}
                   ref={(el) => {
-                    actionBlobRefs.current[index] = el;
+                    actionButtonRefs.current[index] = el;
                   }}
-                  className={cn("u460-bb", hoveredIndex === index && "is-hov")}
+                  type="button"
+                  className={cn("u460-a", hoveredIndex === index && "is-active")}
+                  aria-label={`${act.label}: ${act.description}`}
+                  tabIndex={isOpen ? 0 : -1}
+                  aria-hidden={!isOpen}
                   style={
                     {
                       "--u460-i": index,
@@ -313,81 +414,19 @@ export function GooeyMobileFab460({ className }: GooeyMobileFab460Props) {
                       "--u460-ty": isOpen ? ty : "0px",
                     } as React.CSSProperties
                   }
-                />
+                  onPointerEnter={() => setHoveredIndex(index)}
+                  onPointerLeave={() => setHoveredIndex(null)}
+                  onFocus={() => setHoveredIndex(index)}
+                  onBlur={() => setHoveredIndex(null)}
+                  onClick={() => handleActionClick(index, act.id)}
+                >
+                  <Icon aria-hidden="true" />
+                </button>
               );
             })}
-            <i
-              ref={fabBlobRef}
-              className="u460-bb is-fab"
-            />
           </div>
         </div>
-
-        {/* Center Trigger FAB */}
-        <button
-          ref={fabRef}
-          type="button"
-          className="u460-fab"
-          aria-label={isOpen ? "Đóng menu lưu niệm" : "Lưu kỷ niệm mới"}
-          aria-haspopup="true"
-          aria-expanded={isOpen}
-          aria-controls={menuId}
-          onClick={toggleOpen}
-        >
-          <span className="u460-fab-icon">
-            <svg
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-              className="h-6 w-6 fill-none stroke-current stroke-[2.4] stroke-linecap-round stroke-linejoin-round"
-            >
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-          </span>
-        </button>
-
-        {/* Radial Action Buttons */}
-        <div
-          id={menuId}
-          className="u460-ic"
-          role="group"
-          aria-label="Tùy chọn tạo kỷ niệm"
-        >
-          {actions.map((act, index) => {
-            const Icon = act.icon;
-            const rad = (act.angle * Math.PI) / 180;
-            const tx = (Math.cos(rad) * act.radius).toFixed(1) + "px";
-            const ty = (Math.sin(rad) * act.radius).toFixed(1) + "px";
-
-            return (
-              <button
-                key={act.id}
-                ref={(el) => {
-                  actionButtonRefs.current[index] = el;
-                }}
-                type="button"
-                className="u460-a"
-                aria-label={`${act.label}: ${act.description}`}
-                tabIndex={isOpen ? 0 : -1}
-                aria-hidden={!isOpen}
-                style={
-                  {
-                    "--u460-i": index,
-                    "--u460-tx": isOpen ? tx : "0px",
-                    "--u460-ty": isOpen ? ty : "0px",
-                  } as React.CSSProperties
-                }
-                onPointerEnter={() => setHoveredIndex(index)}
-                onPointerLeave={() => setHoveredIndex(null)}
-                onFocus={() => setHoveredIndex(index)}
-                onBlur={() => setHoveredIndex(null)}
-                onClick={() => handleActionClick(index, act.id)}
-              >
-                <Icon className="h-5 w-5" aria-hidden="true" />
-              </button>
-            );
-          })}
-        </div>
       </div>
-    </div>
+    </>
   );
 }

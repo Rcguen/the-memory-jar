@@ -10,19 +10,36 @@
   --ux-page: var(--surface-base, #1b1a17);
   --ux-surface: var(--surface-wood, #24221e);
   --ux-accent: var(--accent-primary, #b65362);
-  --ux-accent-2: #38bdf8;
-  --ux-accent-soft: var(--accent-soft, rgba(182, 83, 98, 0.16));
-  --ux-accent-ink: #ffffff;
-  --ux-shadow: rgba(0, 0, 0, 0.45);
+  --ux-accent-glow: rgba(182, 83, 98, 0.35);
+  --ux-accent-ink: #fff8f0;
+  --ux-shadow: rgba(0, 0, 0, 0.55);
   --ux-ease: cubic-bezier(.2, .8, .2, 1);
   --ux-spring: cubic-bezier(.34, 1.45, .64, 1);
 }
 
 :root[class~="dark"] .u460,
 .dark .u460 {
-  --ux-accent: var(--accent-primary, #d07b82);
-  --ux-accent-soft: var(--accent-soft, rgba(208, 123, 130, 0.2));
-  --ux-shadow: rgba(0, 0, 0, 0.65);
+  --ux-accent: var(--accent-primary, #c45b6c);
+  --ux-accent-glow: rgba(196, 91, 108, 0.45);
+  --ux-shadow: rgba(0, 0, 0, 0.7);
+}
+
+/* Invisible screen backdrop when open to dismiss with click outside */
+.u460-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: rgba(10, 8, 7, 0.45);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s var(--ux-ease);
+}
+
+.u460.is-open .u460-backdrop {
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .u460-defs {
@@ -40,6 +57,7 @@
   justify-content: center;
   width: 56px;
   height: 56px;
+  z-index: 20;
 }
 
 .u460-sh {
@@ -57,39 +75,42 @@
 .u460-goo {
   position: absolute;
   inset: 0;
+  pointer-events: none;
 }
 
+/* Fluid gooey blobs (underlying fluid layer) */
 .u460-bb {
   position: absolute;
   left: 160px;
   top: 160px;
-  width: 44px;
-  height: 44px;
-  margin: -22px;
+  width: 40px;
+  height: 40px;
+  margin: -20px;
   border-radius: 50%;
   background: var(--ux-accent);
-  transform: translate(var(--u460-tx, 0px), var(--u460-ty, 0px)) scale(var(--u460-sc, 0.5));
-  transition: transform .5s cubic-bezier(.55, -.35, .4, 1);
-  transition-delay: calc((8 - var(--u460-i, 0)) * 24ms);
+  transform: translate(var(--u460-tx, 0px), var(--u460-ty, 0px)) scale(var(--u460-sc, 0.4));
+  transition: transform .48s cubic-bezier(.55, -.35, .4, 1);
+  transition-delay: calc((8 - var(--u460-i, 0)) * 20ms);
 }
 
 .u460-bb.is-fab {
-  width: 56px;
-  height: 56px;
-  margin: -28px;
+  width: 54px;
+  height: 54px;
+  margin: -27px;
   transform: none;
   transition: transform .3s ease-out;
+  background: var(--ux-accent);
 }
 
 .u460.is-open .u460-bb:not(.is-fab) {
   --u460-sc: 1;
-  transition: transform .7s cubic-bezier(.3, 1.45, .45, 1);
-  transition-delay: calc(var(--u460-i, 0) * 32ms);
+  transition: transform .65s cubic-bezier(.3, 1.45, .45, 1);
+  transition-delay: calc(var(--u460-i, 0) * 28ms);
 }
 
 .u460.is-open .u460-bb.is-hov {
   --u460-sc: 1.15;
-  transition: transform .45s cubic-bezier(.34, 1.6, .5, 1);
+  transition: transform .35s cubic-bezier(.34, 1.6, .5, 1);
 }
 
 .u460-ic {
@@ -101,51 +122,75 @@
   pointer-events: none;
 }
 
+/* Action bubbles: Luxury Dark Glass spherical gems */
 .u460-a {
   position: absolute;
-  left: -22px;
-  top: -22px;
-  width: 44px;
-  height: 44px;
+  left: -20px;
+  top: -20px;
+  width: 40px;
+  height: 40px;
   padding: 0;
-  border: 0;
+  border: 1px solid rgba(255, 245, 235, 0.22);
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: none;
-  color: var(--ux-accent-ink);
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.18), transparent 55%),
+              linear-gradient(145deg, #332b26, #1c1816);
+  color: #fffaf0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5),
+              0 0 10px rgba(196, 91, 108, 0.2),
+              inset 0 1px 1px rgba(255, 255, 255, 0.35);
   opacity: 0;
   visibility: hidden;
-  transform: translate(var(--u460-tx, 0px), var(--u460-ty, 0px)) scale(.5);
-  transition: transform .5s cubic-bezier(.55, -.35, .4, 1),
+  transform: translate(var(--u460-tx, 0px), var(--u460-ty, 0px)) scale(.45);
+  transition: transform .48s cubic-bezier(.55, -.35, .4, 1),
               opacity .14s var(--ux-ease),
-              visibility 0s linear .5s;
-  transition-delay: calc((8 - var(--u460-i, 0)) * 24ms), 0s, 0s;
+              box-shadow .2s var(--ux-ease),
+              border-color .2s var(--ux-ease),
+              visibility 0s linear .48s;
+  transition-delay: calc((8 - var(--u460-i, 0)) * 20ms), 0s, 0s, 0s, 0s;
   pointer-events: none;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .u460.is-open .u460-a {
   opacity: 1;
   visibility: visible;
-  transform: translate(var(--u460-tx, 0px), var(--u460-ty, 0px));
-  transition: transform .7s cubic-bezier(.3, 1.45, .45, 1),
-              opacity .25s var(--ux-ease),
+  transform: translate(var(--u460-tx, 0px), var(--u460-ty, 0px)) scale(1);
+  transition: transform .65s cubic-bezier(.3, 1.45, .45, 1),
+              opacity .22s var(--ux-ease),
+              box-shadow .2s var(--ux-ease),
+              border-color .2s var(--ux-ease),
               visibility 0s;
-  transition-delay: calc(var(--u460-i, 0) * 32ms),
-                    calc(var(--u460-i, 0) * 32ms + .12s),
-                    0s;
+  transition-delay: calc(var(--u460-i, 0) * 28ms),
+                    calc(var(--u460-i, 0) * 28ms + .1s),
+                    0s, 0s, 0s;
   pointer-events: auto;
 }
 
+.u460-a:active {
+  transform: translate(var(--u460-tx, 0px), var(--u460-ty, 0px)) scale(0.92);
+}
+
+.u460.is-open .u460-a.is-active,
+.u460.is-open .u460-a:focus-visible {
+  border-color: rgba(253, 224, 71, 0.7);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6),
+              0 0 16px rgba(196, 91, 108, 0.5),
+              inset 0 1px 2px rgba(255, 255, 255, 0.5);
+  transform: translate(var(--u460-tx, 0px), var(--u460-ty, 0px)) scale(1.12);
+  outline: none;
+}
+
 .u460-a svg {
-  width: 20px;
-  height: 20px;
-  fill: none;
+  width: 19px;
+  height: 19px;
   stroke: currentColor;
-  stroke-width: 2;
+  stroke-width: 2.1;
   stroke-linecap: round;
   stroke-linejoin: round;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
   transition: transform .25s var(--ux-spring);
 }
 
@@ -153,27 +198,37 @@
   transform: scale(0.9);
 }
 
-.u460 .u460-a:focus-visible,
-.u460 .u460-fab:focus-visible {
-  outline: 2px solid #ffffff;
-  outline-offset: 4px;
-}
-
+/* Center FAB Button: Polished Rose-Gold & Wood Sphere */
 .u460-fab {
   position: relative;
-  z-index: 10;
-  width: 56px;
-  height: 56px;
+  z-index: 25;
+  width: 54px;
+  height: 54px;
   padding: 0;
-  border: 0;
+  border: 1.5px solid rgba(255, 255, 255, 0.32);
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: none;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.28), transparent 60%),
+              linear-gradient(145deg, #c45b6c, #852a39);
   color: var(--ux-accent-ink);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55),
+              0 0 16px var(--ux-accent-glow),
+              inset 0 1px 2px rgba(255, 255, 255, 0.45);
   cursor: pointer;
   outline: none;
   user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: box-shadow 0.25s var(--ux-ease), transform 0.2s var(--ux-ease);
+}
+
+.u460-fab:active {
+  transform: scale(0.95);
+}
+
+.u460 .u460-fab:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 4px;
 }
 
 .u460-fab-icon {
@@ -186,31 +241,50 @@
 }
 
 .u460.is-open .u460-fab-icon {
-  transform: rotate(135deg) scale(1.08);
+  transform: rotate(135deg) scale(1.06);
 }
 
-/* Tooltip pill label displaying active memory type */
+/* Refined Tooltip Pill Badge */
 .u460-pill {
   position: absolute;
-  bottom: 66px;
+  bottom: 68px;
   left: 50%;
-  transform: translateX(-50%) translateY(6px);
-  padding: 5px 14px;
+  transform: translateX(-50%) translateY(8px);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
   border-radius: 9999px;
-  background: rgba(36, 34, 30, 0.94);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  backdrop-filter: blur(8px);
+  background: rgba(26, 22, 19, 0.94);
+  border: 1px solid rgba(255, 245, 235, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   color: #ffffff;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
   white-space: nowrap;
   pointer-events: none;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5), 0 0 10px rgba(182, 83, 98, 0.25);
   opacity: 0;
-  transition: opacity 0.22s cubic-bezier(.2, .8, .2, 1),
-              transform 0.22s cubic-bezier(.2, .8, .2, 1);
-  z-index: 25;
+  transition: opacity 0.22s var(--ux-ease),
+              transform 0.22s var(--ux-ease);
+  z-index: 30;
+}
+
+.u460-pill-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fcd34d;
+  box-shadow: 0 0 6px rgba(252, 211, 77, 0.7);
+}
+
+.u460-pill-desc {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.6);
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+  padding-left: 6px;
 }
 
 .u460.is-open .u460-pill.is-visible {
@@ -222,7 +296,8 @@
   .u460-bb,
   .u460-a,
   .u460-fab-icon,
-  .u460-pill {
+  .u460-pill,
+  .u460-backdrop {
     transition: none !important;
   }
 }

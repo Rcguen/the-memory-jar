@@ -20,7 +20,8 @@ const ITEMS = [
   { href: "/animated-cards", label: "Letters", icon: Mail, accent: "text-violet-300" },
 ] as const;
 
-export function MobileBottomNav(_props: { memoryShelfOpen?: boolean }) {
+export function MobileBottomNav({ memoryShelfOpen }: { memoryShelfOpen?: boolean }) {
+  void memoryShelfOpen;
   const pathname = usePathname();
   const { trigger } = useHaptics();
   const isPhone = useIsPhone();
