@@ -35,6 +35,7 @@ import { ActivityLog, HomeMemoryPage, Memory, MemoryFilter, MemorySort, Reaction
 import { cn } from "@/lib/utils";
 import { EmojiText } from "@/components/ui/EmojiText";
 import { MemoryKeepsake } from "@/components/jar/keepsakes/MemoryKeepsake";
+import { MemoryShelfTabs416 } from "@/components/jar/MemoryShelfTabs416";
 
 const FILTERS: { id: MemoryFilter; label: string }[] = [
   { id: "all", label: "All" },
@@ -377,47 +378,22 @@ export function MemoryCommandCenter({ className, onOpenChange }: MemoryCommandCe
             </div>
 
             <div className="relative p-4 flex flex-col flex-1 min-h-0">
-              <div className="flex gap-4 border-b border-white/[0.08] px-2 shrink-0">
-                {[
-                  { id: "memories" as const, label: "Memories", icon: BookOpen },
-                  { id: "activity" as const, label: "Activity", icon: Flame },
-                ].map((item) => {
-                  const Icon = item.icon;
-                  const selected = activeView === item.id;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => setActiveView(item.id)}
-                      aria-pressed={selected}
-                      className={cn(
-                        "relative pb-2.5 pt-1 text-[13px] font-medium tracking-wide transition-colors focus-ring-premium",
-                        selected ? "text-emerald-400" : "text-zinc-400 hover:text-zinc-200"
-                      )}
-                    >
-                      {selected && (
-                        <motion.span
-                          layoutId="memory-shelf-tab"
-                          className="absolute inset-x-0 bottom-[-1px] h-[2px] bg-emerald-400"
-                          transition={useSimpleMotion ? { duration: 0.15 } : { type: "spring", stiffness: 300, damping: 30 }}
-                        />
-                      )}
-                      <span className="relative inline-flex items-center gap-1.5">
-                        <Icon className="h-3.5 w-3.5" />
-                        {item.label}
-                      </span>
-                    </button>
-                  );
-                })}
+              <div className="shrink-0 mb-1">
+                <MemoryShelfTabs416
+                  activeView={activeView}
+                  onViewChange={setActiveView}
+                  memoriesCount={totalCount}
+                />
               </div>
 
               <AnimatePresence mode="wait">
                 {activeView === "memories" ? (
                   <motion.div
                     key="memory-shelf-memories"
-                    initial={{ opacity: 0, y: useSimpleMotion ? 0 : 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: useSimpleMotion ? 0 : -8 }}
-                    transition={{ duration: useSimpleMotion ? 0.15 : 0.24, ease: [0.22, 1, 0.36, 1] }}
+                    initial={{ opacity: 0, x: useSimpleMotion ? 0 : -14, filter: useSimpleMotion ? "none" : "blur(2px)" }}
+                    animate={{ opacity: 1, x: 0, filter: "none" }}
+                    exit={{ opacity: 0, x: useSimpleMotion ? 0 : -14, filter: useSimpleMotion ? "none" : "blur(2px)" }}
+                    transition={{ duration: useSimpleMotion ? 0.15 : 0.35, ease: [0.3, 1.25, 0.45, 1] }}
                     className="mt-3 sm:mt-4 flex flex-col flex-none xl:flex-1 xl:min-h-0"
                   >
                     <div className="flex gap-2 shrink-0">
@@ -545,10 +521,10 @@ export function MemoryCommandCenter({ className, onOpenChange }: MemoryCommandCe
                 ) : (
                   <motion.div
                     key="memory-shelf-activity"
-                    initial={{ opacity: 0, y: useSimpleMotion ? 0 : 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: useSimpleMotion ? 0 : -8 }}
-                    transition={{ duration: useSimpleMotion ? 0.15 : 0.24, ease: [0.22, 1, 0.36, 1] }}
+                    initial={{ opacity: 0, x: useSimpleMotion ? 0 : 14, filter: useSimpleMotion ? "none" : "blur(2px)" }}
+                    animate={{ opacity: 1, x: 0, filter: "none" }}
+                    exit={{ opacity: 0, x: useSimpleMotion ? 0 : 14, filter: useSimpleMotion ? "none" : "blur(2px)" }}
+                    transition={{ duration: useSimpleMotion ? 0.15 : 0.35, ease: [0.3, 1.25, 0.45, 1] }}
                     className="mt-3 flex-none space-y-2 overflow-y-visible pb-8 pr-1 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.18)_transparent] sm:mt-4 sm:pb-0 xl:flex-1 xl:min-h-0 xl:overflow-y-auto"
                   >
                     {isActivityLoading && activities.length === 0 && (
