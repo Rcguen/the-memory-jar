@@ -66,11 +66,7 @@ export default function NotFound() {
     <div className="relative flex h-screen w-full select-none flex-col overflow-hidden bg-[var(--surface-base)] text-[var(--text-primary)] font-sans transition-colors duration-300">
       {/* AMBIENT JAR LIGHTING & WARM GLOW */}
       <div
-        className="pointer-events-none absolute inset-0 z-0"
-        style={{
-          background:
-            "radial-gradient(ellipse 65% 48% at 50% 36%, rgba(245, 230, 184, 0.32), transparent 72%), linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, transparent 45%)",
-        }}
+        className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(ellipse_65%_48%_at_50%_36%,rgba(245,230,184,0.30),transparent_72%)] [background-image:radial-gradient(ellipse_65%_48%_at_50%_36%,rgba(245,230,184,0.30),transparent_72%),linear-gradient(180deg,rgba(255,255,255,0.25)_0%,transparent_45%)] dark:[background-image:radial-gradient(ellipse_65%_48%_at_50%_36%,rgba(232,192,116,0.12),transparent_72%),linear-gradient(180deg,rgba(255,255,255,0.035)_0%,transparent_45%)]"
         aria-hidden="true"
       />
 
@@ -148,7 +144,7 @@ export default function NotFound() {
               repeat: Infinity,
               ease: "easeInOut",
             }}
-            className="absolute h-[24vh] rounded-full border border-[var(--divider)] bg-white/90 shadow-[0_20px_50px_-15px_rgba(215,185,140,0.35)] backdrop-blur-sm sm:h-[28vh] md:h-[48vh] dark:bg-[#201e19]/90 dark:shadow-[0_20px_50px_-15px_rgba(0,0,0,0.5)]"
+            className="absolute h-[24vh] rounded-full border border-[var(--divider)] bg-white/90 shadow-[0_20px_50px_-15px_rgba(215,185,140,0.35)] backdrop-blur-sm sm:h-[28vh] md:h-[48vh] dark:border-amber-400/10 dark:bg-[#201e19]/90 dark:shadow-[0_0_50px_-10px_rgba(232,192,116,0.12)]"
             style={{
               width: "clamp(130px, 21vw, 400px)",
               transform: `scaleY(${scaleY * 1.4})`,
@@ -251,10 +247,12 @@ export default function NotFound() {
             loop
             muted
             playsInline
-            poster="/cat-poster.jpg"
-            className="pointer-events-none h-full w-full object-contain mix-blend-darken dark:mix-blend-normal"
-            src="/cat.mp4"
-          />
+            poster="/cat-poster.png"
+            className="pointer-events-none h-full w-full object-contain"
+          >
+            <source src="/cat.webm" type="video/webm" />
+            <source src="/cat.mp4" type="video/mp4" />
+          </video>
         </div>
       </motion.div>
 
@@ -276,9 +274,11 @@ export default function NotFound() {
           initial={shouldReduceMotion ? false : { opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ ...springTransition, delay: 0.2 }}
-          className="mb-2 max-w-md font-serif text-2xl font-bold tracking-tight text-[var(--text-primary)] sm:max-w-xl sm:text-3xl md:text-4xl"
+          className="mb-2 max-w-lg font-serif text-2xl font-bold tracking-normal text-[var(--text-primary)] sm:max-w-2xl sm:text-3xl md:text-4xl"
+          style={{ textWrap: "balance" }}
         >
-          Trang ký ức này chưa từng được viết...
+          Trang ký ức này chưa từng{" "}
+          <span className="inline-block whitespace-nowrap">được viết...</span>
         </motion.h1>
 
         {/* Subtitle description */}
