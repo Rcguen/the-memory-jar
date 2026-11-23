@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Camera, CalendarHeart, Compass, Heart, LayoutDashboard, BookOpen, Mail } from "lucide-react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 const MotionLink = motion.create(Link);
-import { useMemoryModal } from "@/providers/memory-modal-provider";
 import { useHaptics } from "@/hooks/useHaptics";
 import { useIsPhone } from "@/hooks/useIsPhone";
+import { GooeyMobileFab460 } from "./GooeyMobileFab460";
 
 const ITEMS = [
   { href: "/", label: "Jar", icon: Heart, accent: "text-rose-300" },
@@ -22,7 +22,6 @@ const ITEMS = [
 
 export function MobileBottomNav({ memoryShelfOpen = false }: { memoryShelfOpen?: boolean }) {
   const pathname = usePathname();
-  const { openModal } = useMemoryModal();
   const { trigger } = useHaptics();
   const isPhone = useIsPhone();
   const shouldReduceMotion = useReducedMotion();
@@ -32,51 +31,7 @@ export function MobileBottomNav({ memoryShelfOpen = false }: { memoryShelfOpen?:
   return (
     <>
       <div className={cn("pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] z-[85] flex px-4 sm:hidden", memoryShelfOpen ? "justify-end pr-5" : "justify-center")}>
-        <motion.button
-          type="button"
-          layout={!shouldReduceMotion}
-          whileTap={{ scale: 0.97 }}
-          transition={
-            shouldReduceMotion
-              ? { duration: 0 }
-              : {
-                  layout: { type: "spring", stiffness: 460, damping: 34, mass: 0.7 },
-                  scale: { duration: 0.16, ease: [0.23, 1, 0.32, 1] },
-                }
-          }
-          onClick={() => {
-            trigger("light");
-            openModal();
-          }}
-          className={cn(
-            "pointer-events-auto relative inline-flex items-center border border-[var(--divider)] bg-[var(--surface-wood)] text-left text-[var(--jar-paper)] shadow-[var(--shadow-2)] transition-[background-color,border-color,box-shadow] hover:bg-[color-mix(in_srgb,var(--surface-wood)_88%,white)] focus-ring-premium",
-            memoryShelfOpen ? "h-12 w-12 justify-center rounded-full p-1.5" : "min-h-12 gap-2 rounded-[var(--radius-small)] px-4 py-2.5",
-          )}
-          aria-label="Drop a Memory"
-          title="Drop a Memory"
-        >
-          <motion.span
-            layout={shouldReduceMotion ? false : "position"}
-            className={cn("relative flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-tiny)] border border-white/15 bg-white/10", memoryShelfOpen && "rounded-full")}
-          >
-            <Heart className="h-4.5 w-4.5 fill-[var(--jar-paper)] text-[var(--jar-paper)]" />
-          </motion.span>
-          <AnimatePresence initial={false} mode="popLayout">
-            {!memoryShelfOpen && (
-              <motion.span
-                key="drop-memory-copy"
-                initial={shouldReduceMotion ? false : { opacity: 0, width: 0, x: -8 }}
-                animate={{ opacity: 1, width: "auto", x: 0 }}
-                exit={shouldReduceMotion ? undefined : { opacity: 0, width: 0, x: -8 }}
-                transition={{ duration: shouldReduceMotion ? 0 : 0.2, ease: [0.22, 1, 0.36, 1] }}
-                className="relative flex min-w-0 flex-col overflow-hidden whitespace-nowrap leading-none"
-              >
-                <span className="font-cormorant text-lg">Drop a Memory</span>
-                <span className="text-[11px] text-white/65">Keep this moment</span>
-              </motion.span>
-            )}
-          </AnimatePresence>
-        </motion.button>
+        <GooeyMobileFab460 memoryShelfOpen={memoryShelfOpen} />
       </div>
 
       <nav aria-label="Primary navigation" className="mobile-safe-bottom fixed inset-x-0 bottom-0 z-[80] px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-2 sm:hidden flex justify-center">

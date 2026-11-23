@@ -1,0 +1,198 @@
+/* Lucian UX/UI Prompt #460 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#460 */
+
+.u460 {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+
+  --ux-page: var(--surface-base, #1b1a17);
+  --ux-surface: var(--surface-wood, #24221e);
+  --ux-accent: var(--accent-primary, #b65362);
+  --ux-accent-2: #38bdf8;
+  --ux-accent-soft: var(--accent-soft, rgba(182, 83, 98, 0.16));
+  --ux-accent-ink: #ffffff;
+  --ux-shadow: rgba(0, 0, 0, 0.4);
+  --ux-ease: cubic-bezier(.2, .8, .2, 1);
+  --ux-spring: cubic-bezier(.34, 1.45, .64, 1);
+}
+
+:root[class~="dark"] .u460,
+.dark .u460 {
+  --ux-accent: var(--accent-primary, #d07b82);
+  --ux-accent-soft: var(--accent-soft, rgba(208, 123, 130, 0.2));
+  --ux-shadow: rgba(0, 0, 0, 0.6);
+}
+
+.u460-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.u460-st {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+}
+
+.u460-sh {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 260px;
+  height: 260px;
+  margin-left: -130px;
+  margin-top: -130px;
+  filter: drop-shadow(0 8px 16px var(--ux-shadow));
+  pointer-events: none;
+}
+
+.u460-goo {
+  position: absolute;
+  inset: 0;
+}
+
+.u460-bb {
+  position: absolute;
+  left: 130px;
+  top: 130px;
+  width: 48px;
+  height: 48px;
+  margin: -24px;
+  border-radius: 50%;
+  background: var(--ux-accent);
+  transform: translate(var(--u460-tx, 0px), var(--u460-ty, 0px)) scale(var(--u460-sc, 0.5));
+  transition: transform .5s cubic-bezier(.55, -.35, .4, 1);
+  transition-delay: calc((3 - var(--u460-i, 0)) * 35ms);
+}
+
+.u460-bb.is-fab {
+  width: 56px;
+  height: 56px;
+  margin: -28px;
+  transform: none;
+  transition: transform .3s ease-out;
+}
+
+.u460.is-open .u460-bb:not(.is-fab) {
+  --u460-sc: 1;
+  transition: transform .7s cubic-bezier(.3, 1.45, .45, 1);
+  transition-delay: calc(var(--u460-i, 0) * 45ms);
+}
+
+.u460.is-open .u460-bb.is-hov {
+  --u460-sc: 1.14;
+  transition: transform .45s cubic-bezier(.34, 1.6, .5, 1);
+}
+
+.u460-ic {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.u460-a {
+  position: absolute;
+  left: -24px;
+  top: -24px;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: none;
+  color: var(--ux-accent-ink);
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(var(--u460-tx, 0px), var(--u460-ty, 0px)) scale(.5);
+  transition: transform .5s cubic-bezier(.55, -.35, .4, 1),
+              opacity .14s var(--ux-ease),
+              visibility 0s linear .5s;
+  transition-delay: calc((3 - var(--u460-i, 0)) * 35ms), 0s, 0s;
+  pointer-events: none;
+  cursor: pointer;
+}
+
+.u460.is-open .u460-a {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(var(--u460-tx, 0px), var(--u460-ty, 0px));
+  transition: transform .7s cubic-bezier(.3, 1.45, .45, 1),
+              opacity .25s var(--ux-ease),
+              visibility 0s;
+  transition-delay: calc(var(--u460-i, 0) * 45ms),
+                    calc(var(--u460-i, 0) * 45ms + .16s),
+                    0s;
+  pointer-events: auto;
+}
+
+.u460-a svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform .25s var(--ux-spring);
+}
+
+.u460-a:active svg {
+  transform: scale(0.9);
+}
+
+.u460 .u460-a:focus-visible,
+.u460 .u460-fab:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 4px;
+}
+
+.u460-fab {
+  position: relative;
+  z-index: 10;
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: none;
+  color: var(--ux-accent-ink);
+  cursor: pointer;
+  outline: none;
+  user-select: none;
+}
+
+.u460-fab-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform .55s cubic-bezier(.34, 1.6, .5, 1);
+}
+
+.u460.is-open .u460-fab-icon {
+  transform: rotate(135deg) scale(1.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .u460-bb,
+  .u460-a,
+  .u460-fab-icon {
+    transition: none !important;
+  }
+}
