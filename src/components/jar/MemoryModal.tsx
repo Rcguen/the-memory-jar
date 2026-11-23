@@ -24,14 +24,32 @@ function elapsedMs(startedAt: number): number {
 }
 
 export function MemoryModal() {
-  const { isOpen, closeModal } = useMemoryModal();
+  const { isOpen, closeModal, selectedType: initialType } = useMemoryModal();
   const { clearDraft } = useMemoryDraft();
   const { dropMemory, pausePhysics, resumePhysics } = usePhysics();
+  const [prevIsOpen, setPrevIsOpen] = useState(false);
   const [step, setStep] = useState<ModalStep>("select_type");
   const [selectedType, setSelectedType] = useState<MemoryType | null>(null);
   const saveInFlightRef = useRef(false);
   const isPhone = useIsPhone();
   const shouldReduceMotion = useReducedMotion();
+
+  // Adjust state during render when modal opens or closes
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
+    if (isOpen) {
+      if (initialType) {
+        setSelectedType(initialType);
+        setStep("form");
+      } else {
+        setSelectedType(null);
+        setStep("select_type");
+      }
+    } else {
+      setSelectedType(null);
+      setStep("select_type");
+    }
+  }
 
   // Lock body scroll when modal is open
   useEffect(() => {

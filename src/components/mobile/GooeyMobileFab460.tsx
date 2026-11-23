@@ -2,22 +2,38 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useId, useCallback } from "react";
-import { Camera, Image as ImageIcon, Mic, Mail } from "lucide-react";
+import {
+  HeartHandshake,
+  Mail,
+  Image as ImageIcon,
+  Mic,
+  Video,
+  Plane,
+  Star,
+  Heart,
+  MessageCircleQuestion,
+} from "lucide-react";
 import { useMemoryModal } from "@/providers/memory-modal-provider";
 import { useHaptics } from "@/hooks/useHaptics";
 import { useReducedMotion } from "framer-motion";
+import { MemoryType } from "@/types/memory";
 import { cn } from "@/lib/utils";
 import "./gooey-mobile-fab-460.css";
 
 interface GooeyMobileFab460Props {
-  memoryShelfOpen?: boolean;
   className?: string;
 }
 
-export function GooeyMobileFab460({
-  memoryShelfOpen = false,
-  className,
-}: GooeyMobileFab460Props) {
+interface ActionItem {
+  id: MemoryType;
+  label: string;
+  description: string;
+  icon: React.ElementType;
+  angle: number;
+  radius: number;
+}
+
+export function GooeyMobileFab460({ className }: GooeyMobileFab460Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
@@ -38,36 +54,80 @@ export function GooeyMobileFab460({
   const actionButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const gooTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Radial geometry
-  const radius = 88;
-  const angles = memoryShelfOpen
-    ? [-180, -150, -120, -90]
-    : [-157.5, -112.5, -67.5, -22.5];
-
-  const actions = [
+  // 9 memory types matching the application's memory creation options
+  // Arranged in a 2-tier blossom arc (Outer R=124px, Inner R=74px)
+  const actions: ActionItem[] = [
     {
-      id: "photo",
-      label: "Thêm ảnh",
-      icon: ImageIcon,
-      angle: angles[0],
-    },
-    {
-      id: "camera",
-      label: "Chụp ảnh / Video",
-      icon: Camera,
-      angle: angles[1],
-    },
-    {
-      id: "voice",
-      label: "Ghi âm giọng nói",
-      icon: Mic,
-      angle: angles[2],
+      id: "promise",
+      label: "Promise",
+      description: "A vow to keep forever.",
+      icon: HeartHandshake,
+      angle: -160,
+      radius: 124,
     },
     {
       id: "letter",
-      label: "Viết thư lưu niệm",
+      label: "Letter",
+      description: "Words meant for the soul.",
       icon: Mail,
-      angle: angles[3],
+      angle: -142.5,
+      radius: 74,
+    },
+    {
+      id: "photo",
+      label: "Photo",
+      description: "A captured moment in time.",
+      icon: ImageIcon,
+      angle: -125,
+      radius: 124,
+    },
+    {
+      id: "voice",
+      label: "Voice",
+      description: "The warmth of spoken words.",
+      icon: Mic,
+      angle: -107.5,
+      radius: 74,
+    },
+    {
+      id: "video",
+      label: "Video",
+      description: "Living, breathing memories.",
+      icon: Video,
+      angle: -90,
+      radius: 124,
+    },
+    {
+      id: "travel",
+      label: "Travel",
+      description: "Adventures shared together.",
+      icon: Plane,
+      angle: -72.5,
+      radius: 74,
+    },
+    {
+      id: "wish",
+      label: "Wish",
+      description: "Hopes for the future.",
+      icon: Star,
+      angle: -55,
+      radius: 124,
+    },
+    {
+      id: "gratitude",
+      label: "Gratitude",
+      description: "Thankful for the little things.",
+      icon: Heart,
+      angle: -37.5,
+      radius: 74,
+    },
+    {
+      id: "random_thought",
+      label: "Thought",
+      description: "Just something on my mind.",
+      icon: MessageCircleQuestion,
+      angle: -20,
+      radius: 124,
     },
   ];
 
@@ -117,15 +177,15 @@ export function GooeyMobileFab460({
     squish(next ? 0.86 : 0.9);
   }, [isOpen, trigger, squish]);
 
-  const handleActionClick = (index: number) => {
+  const handleActionClick = (index: number, memoryType: MemoryType) => {
     trigger("medium");
     const blobEl = actionBlobRefs.current[index];
     const act = actions[index];
 
     if (!shouldReduceMotion && blobEl?.animate) {
       const rad = (act.angle * Math.PI) / 180;
-      const tx = (Math.cos(rad) * radius).toFixed(1) + "px";
-      const ty = (Math.sin(rad) * radius).toFixed(1) + "px";
+      const tx = (Math.cos(rad) * act.radius).toFixed(1) + "px";
+      const ty = (Math.sin(rad) * act.radius).toFixed(1) + "px";
       blobEl.animate(
         [
           { transform: `translate(${tx}, ${ty}) scale(1.1)` },
@@ -139,7 +199,7 @@ export function GooeyMobileFab460({
     setTimeout(
       () => {
         setIsOpen(false);
-        openModal();
+        openModal(memoryType);
       },
       shouldReduceMotion ? 0 : 180
     );
@@ -192,6 +252,8 @@ export function GooeyMobileFab460({
     }
   };
 
+  const hoveredAction = hoveredIndex !== null ? actions[hoveredIndex] : null;
+
   return (
     <div
       ref={rootRef}
@@ -221,13 +283,21 @@ export function GooeyMobileFab460({
       </svg>
 
       <div className="u460-st">
+        {/* Tooltip pill label displaying active type name */}
+        <div
+          className={cn("u460-pill", hoveredAction && "is-visible")}
+          aria-live="polite"
+        >
+          {hoveredAction?.label}
+        </div>
+
         {/* Gooey blobs stage */}
         <div className="u460-sh" aria-hidden="true">
           <div ref={gooRef} className="u460-goo">
             {actions.map((act, index) => {
               const rad = (act.angle * Math.PI) / 180;
-              const tx = (Math.cos(rad) * radius).toFixed(1) + "px";
-              const ty = (Math.sin(rad) * radius).toFixed(1) + "px";
+              const tx = (Math.cos(rad) * act.radius).toFixed(1) + "px";
+              const ty = (Math.sin(rad) * act.radius).toFixed(1) + "px";
 
               return (
                 <i
@@ -285,8 +355,8 @@ export function GooeyMobileFab460({
           {actions.map((act, index) => {
             const Icon = act.icon;
             const rad = (act.angle * Math.PI) / 180;
-            const tx = (Math.cos(rad) * radius).toFixed(1) + "px";
-            const ty = (Math.sin(rad) * radius).toFixed(1) + "px";
+            const tx = (Math.cos(rad) * act.radius).toFixed(1) + "px";
+            const ty = (Math.sin(rad) * act.radius).toFixed(1) + "px";
 
             return (
               <button
@@ -296,7 +366,7 @@ export function GooeyMobileFab460({
                 }}
                 type="button"
                 className="u460-a"
-                aria-label={act.label}
+                aria-label={`${act.label}: ${act.description}`}
                 tabIndex={isOpen ? 0 : -1}
                 aria-hidden={!isOpen}
                 style={
@@ -310,7 +380,7 @@ export function GooeyMobileFab460({
                 onPointerLeave={() => setHoveredIndex(null)}
                 onFocus={() => setHoveredIndex(index)}
                 onBlur={() => setHoveredIndex(null)}
-                onClick={() => handleActionClick(index)}
+                onClick={() => handleActionClick(index, act.id)}
               >
                 <Icon className="h-5 w-5" aria-hidden="true" />
               </button>

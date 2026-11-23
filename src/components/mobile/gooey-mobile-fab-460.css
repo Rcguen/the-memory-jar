@@ -13,7 +13,7 @@
   --ux-accent-2: #38bdf8;
   --ux-accent-soft: var(--accent-soft, rgba(182, 83, 98, 0.16));
   --ux-accent-ink: #ffffff;
-  --ux-shadow: rgba(0, 0, 0, 0.4);
+  --ux-shadow: rgba(0, 0, 0, 0.45);
   --ux-ease: cubic-bezier(.2, .8, .2, 1);
   --ux-spring: cubic-bezier(.34, 1.45, .64, 1);
 }
@@ -22,7 +22,7 @@
 .dark .u460 {
   --ux-accent: var(--accent-primary, #d07b82);
   --ux-accent-soft: var(--accent-soft, rgba(208, 123, 130, 0.2));
-  --ux-shadow: rgba(0, 0, 0, 0.6);
+  --ux-shadow: rgba(0, 0, 0, 0.65);
 }
 
 .u460-defs {
@@ -46,11 +46,11 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 260px;
-  height: 260px;
-  margin-left: -130px;
-  margin-top: -130px;
-  filter: drop-shadow(0 8px 16px var(--ux-shadow));
+  width: 320px;
+  height: 320px;
+  margin-left: -160px;
+  margin-top: -160px;
+  filter: drop-shadow(0 8px 18px var(--ux-shadow));
   pointer-events: none;
 }
 
@@ -61,16 +61,16 @@
 
 .u460-bb {
   position: absolute;
-  left: 130px;
-  top: 130px;
-  width: 48px;
-  height: 48px;
-  margin: -24px;
+  left: 160px;
+  top: 160px;
+  width: 44px;
+  height: 44px;
+  margin: -22px;
   border-radius: 50%;
   background: var(--ux-accent);
   transform: translate(var(--u460-tx, 0px), var(--u460-ty, 0px)) scale(var(--u460-sc, 0.5));
   transition: transform .5s cubic-bezier(.55, -.35, .4, 1);
-  transition-delay: calc((3 - var(--u460-i, 0)) * 35ms);
+  transition-delay: calc((8 - var(--u460-i, 0)) * 24ms);
 }
 
 .u460-bb.is-fab {
@@ -84,11 +84,11 @@
 .u460.is-open .u460-bb:not(.is-fab) {
   --u460-sc: 1;
   transition: transform .7s cubic-bezier(.3, 1.45, .45, 1);
-  transition-delay: calc(var(--u460-i, 0) * 45ms);
+  transition-delay: calc(var(--u460-i, 0) * 32ms);
 }
 
 .u460.is-open .u460-bb.is-hov {
-  --u460-sc: 1.14;
+  --u460-sc: 1.15;
   transition: transform .45s cubic-bezier(.34, 1.6, .5, 1);
 }
 
@@ -103,10 +103,10 @@
 
 .u460-a {
   position: absolute;
-  left: -24px;
-  top: -24px;
-  width: 48px;
-  height: 48px;
+  left: -22px;
+  top: -22px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   border: 0;
   border-radius: 50%;
@@ -120,7 +120,7 @@
   transition: transform .5s cubic-bezier(.55, -.35, .4, 1),
               opacity .14s var(--ux-ease),
               visibility 0s linear .5s;
-  transition-delay: calc((3 - var(--u460-i, 0)) * 35ms), 0s, 0s;
+  transition-delay: calc((8 - var(--u460-i, 0)) * 24ms), 0s, 0s;
   pointer-events: none;
   cursor: pointer;
 }
@@ -132,15 +132,15 @@
   transition: transform .7s cubic-bezier(.3, 1.45, .45, 1),
               opacity .25s var(--ux-ease),
               visibility 0s;
-  transition-delay: calc(var(--u460-i, 0) * 45ms),
-                    calc(var(--u460-i, 0) * 45ms + .16s),
+  transition-delay: calc(var(--u460-i, 0) * 32ms),
+                    calc(var(--u460-i, 0) * 32ms + .12s),
                     0s;
   pointer-events: auto;
 }
 
 .u460-a svg {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   fill: none;
   stroke: currentColor;
   stroke-width: 2;
@@ -189,10 +189,40 @@
   transform: rotate(135deg) scale(1.08);
 }
 
+/* Tooltip pill label displaying active memory type */
+.u460-pill {
+  position: absolute;
+  bottom: 66px;
+  left: 50%;
+  transform: translateX(-50%) translateY(6px);
+  padding: 5px 14px;
+  border-radius: 9999px;
+  background: rgba(36, 34, 30, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(8px);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  transition: opacity 0.22s cubic-bezier(.2, .8, .2, 1),
+              transform 0.22s cubic-bezier(.2, .8, .2, 1);
+  z-index: 25;
+}
+
+.u460.is-open .u460-pill.is-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .u460-bb,
   .u460-a,
-  .u460-fab-icon {
+  .u460-fab-icon,
+  .u460-pill {
     transition: none !important;
   }
 }
