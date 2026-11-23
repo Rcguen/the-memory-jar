@@ -1,0 +1,299 @@
+/* Lucian UX/UI Prompt #408 · MIT License (c) 2026 Seokwoooo · https://lucianlabs.dev/uxui-prompt/#408 */
+
+.u408 {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  font-family: inherit;
+  color: var(--ux-ink);
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.01em;
+  -webkit-tap-highlight-color: transparent;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+
+  --ux-page: var(--surface-base, #f6f3ed);
+  --ux-surface: var(--surface-raised, #ffffff);
+  --ux-surface-2: color-mix(in srgb, var(--surface-raised, #ffffff) 65%, var(--surface-paper, #f1e9dc));
+  --ux-surface-3: var(--surface-paper, #f1e9dc);
+  --ux-ink: var(--text-primary, #25211c);
+  --ux-ink-2: var(--text-secondary, #686158);
+  --ux-ink-3: var(--text-tertiary, #91897e);
+  --ux-line: var(--divider, rgba(58, 49, 39, 0.12));
+  --ux-line-2: color-mix(in srgb, var(--divider, rgba(58, 49, 39, 0.12)) 180%, transparent);
+  --ux-accent: var(--accent-primary, #b65362);
+  --ux-accent-2: #38bdf8;
+  --ux-accent-soft: var(--accent-soft, rgba(182, 83, 98, 0.12));
+  --ux-accent-ink: #ffffff;
+  --ux-mint: #10b981;
+  --ux-warn: #f59e0b;
+  --ux-danger: var(--state-danger, #b6495b);
+  --ux-glass: var(--surface-glass, rgba(255, 253, 248, 0.88));
+  --ux-shadow: var(--shadow-1, rgba(40, 30, 80, 0.08));
+  --ux-shadow-strong: var(--shadow-modal, rgba(0, 0, 0, 0.35));
+  --ux-ease: cubic-bezier(.2, .8, .2, 1);
+  --ux-spring: cubic-bezier(.34, 1.45, .64, 1);
+}
+
+:root[class~="dark"] .u408,
+:root[data-theme="dark"] .u408,
+.dark .u408 {
+  --ux-page: var(--surface-base, #1b1a17);
+  --ux-surface: var(--surface-raised, #24221e);
+  --ux-surface-2: color-mix(in srgb, var(--surface-raised, #24221e) 65%, var(--surface-paper, #2c2923));
+  --ux-surface-3: var(--surface-paper, #2c2923);
+  --ux-ink: var(--text-primary, #f7f3ea);
+  --ux-ink-2: var(--text-secondary, #c9c1b5);
+  --ux-ink-3: var(--text-tertiary, #958f86);
+  --ux-line: var(--divider, rgba(255, 248, 236, 0.12));
+  --ux-line-2: color-mix(in srgb, var(--divider, rgba(255, 248, 236, 0.12)) 180%, transparent);
+  --ux-accent: var(--accent-primary, #d07b82);
+  --ux-accent-2: #7dd3fc;
+  --ux-accent-soft: var(--accent-soft, rgba(208, 123, 130, 0.16));
+  --ux-accent-ink: #000000;
+  --ux-mint: #34d399;
+  --ux-warn: #fbbf24;
+  --ux-danger: var(--state-danger, #d46c7e);
+  --ux-shadow: var(--shadow-1, rgba(0, 0, 0, 0.45));
+  --ux-shadow-strong: var(--shadow-modal, rgba(0, 0, 0, 0.65));
+}
+
+.u408-w {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.u408-trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 3px 12px 3px 3px;
+  border-radius: 9999px;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s, transform 0.45s var(--ux-spring);
+  outline: none;
+}
+
+.u408-trigger:hover {
+  background: color-mix(in srgb, var(--ux-surface-2) 60%, transparent);
+}
+
+.u408-trigger:active {
+  transform: scale(0.96);
+  transition-duration: 0.15s;
+}
+
+.u408-trigger:focus-visible {
+  outline: 2px solid var(--ux-accent);
+  outline-offset: 3px;
+}
+
+.u408-av-box {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.u408-av {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 0 0 0 transparent;
+  transition: box-shadow .3s, transform .45s var(--ux-spring);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFE1CC;
+}
+
+.u408-trigger:hover .u408-av {
+  transform: scale(1.05);
+}
+
+.u408-trigger:active .u408-av {
+  transform: scale(0.94);
+  transition-duration: .3s, .1s;
+}
+
+.u408.is-open .u408-av,
+.u408-trigger[aria-expanded="true"] .u408-av {
+  box-shadow: 0 0 0 3px var(--ux-page), 0 0 0 5px var(--ux-accent);
+}
+
+.u408-av-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.u408-av-fallback {
+  font-size: 14px;
+  font-weight: 600;
+  color: #8A4E2B;
+}
+
+.u408-dot {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ux-mint);
+  box-shadow: 0 0 0 2px var(--ux-page);
+  pointer-events: none;
+}
+
+.u408-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ux-ink);
+  letter-spacing: -0.01em;
+}
+
+/* Menu Popover */
+.u408-m {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  width: 232px;
+  padding: 6px;
+  border-radius: 16px;
+  background: var(--ux-surface);
+  box-shadow: inset 0 0 0 1px var(--ux-line), 0 22px 44px -18px var(--ux-shadow-strong), 0 4px 12px -6px var(--ux-shadow);
+  transform-origin: calc(100% - 24px) -10px;
+  transform: scale(0.16);
+  opacity: 0;
+  visibility: hidden;
+  transition: transform .28s var(--ux-ease), opacity .2s, visibility 0s .28s;
+  z-index: 60;
+}
+
+.u408-m::before {
+  content: "";
+  position: absolute;
+  right: 19px;
+  top: -5px;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--ux-surface);
+  box-shadow: -1px -1px 0 0 var(--ux-line);
+  transform: rotate(45deg);
+}
+
+.u408.is-open .u408-m {
+  transform: none;
+  opacity: 1;
+  visibility: visible;
+  transition: transform .55s var(--ux-spring), opacity .15s, visibility 0s;
+}
+
+.u408-m > * {
+  position: relative;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity .15s, transform .35s var(--ux-spring);
+}
+
+.u408.is-open .u408-m > * {
+  opacity: 1;
+  transform: none;
+  transition-delay: calc(70ms + var(--i) * 35ms);
+}
+
+.u408-hd {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px 10px;
+}
+
+.u408-hd b {
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--ux-ink);
+}
+
+.u408-hd span {
+  font-size: 12px;
+  color: var(--ux-ink-3);
+}
+
+.u408-it {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ux-ink);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.u408-it:hover,
+.u408-it:focus-visible {
+  background: var(--ux-surface-2);
+  outline: none;
+}
+
+.u408-it svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  fill: none;
+  stroke: var(--ux-ink-2);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.u408-it.is-out {
+  color: var(--ux-danger);
+}
+
+.u408-it.is-out svg {
+  stroke: var(--ux-danger);
+}
+
+.u408-it.is-out:hover,
+.u408-it.is-out:focus-visible {
+  background: color-mix(in srgb, var(--ux-danger) 12%, transparent);
+}
+
+.u408-hr {
+  height: 1px;
+  margin: 5px 4px;
+  background: var(--ux-line);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .u408,
+  .u408 *,
+  .u408 *::before,
+  .u408 *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    transition-delay: 0ms !important;
+  }
+}

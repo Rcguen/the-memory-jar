@@ -4,22 +4,12 @@ import { useEffect, useState, useTransition } from "react";
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Camera, Compass, LayoutDashboard, LogOut, User, BookOpen, Loader2, RefreshCw, Mail } from "lucide-react";
+import { Camera, Compass, LayoutDashboard, BookOpen, Loader2, RefreshCw, Mail } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { logoutAction } from "@/app/actions/auth";
 import { clearPrivateClientData } from "@/lib/cache-cleanup";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  DropdownMenuGroup,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { AccountMenu408 } from "@/components/home/AccountMenu408";
 
 import { GlassJar } from "@/components/jar/GlassJar";
 import { CouplePresenceAvatars } from "@/components/jar/CouplePresenceAvatars";
@@ -29,7 +19,6 @@ import { DropMemoryButton } from "@/components/jar/DropMemoryButton";
 import { WritingDesk } from "@/components/jar/WritingDesk";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
-import { PwaInstallMenuItem } from "@/components/ui/PwaInstallMenuItem";
 import { usePhysics } from "@/providers/physics-provider";
 import { useMemoryModal } from "@/providers/memory-modal-provider";
 import { useMemoryViewer } from "@/providers/memory-viewer-provider";
@@ -168,7 +157,6 @@ export function HomeClientExperience() {
   const { loadMemory } = usePhysics();
   const { isOpen: isMemoryModalOpen } = useMemoryModal();
   const { viewingMemoryId } = useMemoryViewer();
-  const router = useRouter();
   const [memoryCount, setMemoryCount] = useState<number | null>(null);
   const [jarLoadState, setJarLoadState] = useState<JarLoadState>("pending");
   const [jarLoadAttempt, setJarLoadAttempt] = useState(0);
@@ -342,48 +330,17 @@ export function HomeClientExperience() {
         {profile && (
           <div className="pointer-events-auto ml-auto flex items-center gap-2 rounded-full border border-[var(--divider)] bg-[var(--surface-wood)]/50 px-1.5 py-1 shadow-[var(--shadow-2)] backdrop-blur-xl sm:gap-3 sm:bg-transparent sm:px-0 sm:py-0 sm:shadow-none sm:border-transparent">
           <NotificationBell />
-          <DropdownMenu>
-            <DropdownMenuTrigger className="relative h-10 flex items-center gap-2 rounded-full hover:bg-[var(--surface-raised)]/20 active:scale-[0.96] transition-[transform,background-color,border-color,box-shadow] pr-4 pl-1 outline-none focus-ring-premium">
-              <Avatar className="h-8 w-8">
-                {avatarUrl && <AvatarImage src={avatarUrl} alt={profile.display_name} />}
-                <AvatarFallback className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400">
-                  {profile.display_name.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
-              <span className="font-inter text-sm font-medium hidden sm:inline-block text-[var(--text-primary)]">
-                {profile.display_name}
-              </span>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end">
-              <DropdownMenuGroup>
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{profile.display_name}</p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      @{profile.username}
-                    </p>
-                  </div>
-                </DropdownMenuLabel>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="cursor-pointer"
-                onClick={() => router.push("/profile")}
-              >
-                <User className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-              </DropdownMenuItem>
-              <PwaInstallMenuItem />
-              <DropdownMenuItem 
-                className="cursor-pointer text-rose-600 dark:text-rose-400 focus:text-rose-600 dark:focus:text-rose-400" 
-                onClick={() => startTransition(async () => { await clearPrivateClientData(); await logoutAction(); })}
-                disabled={isPending}
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>{isPending ? "Logging out..." : "Log out"}</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <AccountMenu408
+            profile={profile}
+            avatarUrl={avatarUrl}
+            isLoggingOut={isPending}
+            onLogout={() => {
+              startTransition(async () => {
+                await clearPrivateClientData();
+                await logoutAction();
+              });
+            }}
+          />
           </div>
         )}
         </div>
