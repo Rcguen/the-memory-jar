@@ -4,7 +4,64 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { z } from "zod";
+
+// Rate limiting store (in-memory)
+type RateLimitRecord = {
+  count: number;
+  resetAt: number;
+};
+
+const loginAttempts = new Map<string, RateLimitRecord>();
+const resetAttempts = new Map<string, RateLimitRecord>();
+
+function checkRateLimit(
+  store: Map<string, RateLimitRecord>,
+  key: string,
+  maxAttempts: number,
+  windowMs: number
+): { allowed: boolean; retryAfterSeconds: number } {
+  const now = Date.now();
+  const record = store.get(key);
+
+  if (store.size > 1000) {
+    for (const [k, v] of store.entries()) {
+      if (now > v.resetAt) {
+        store.delete(k);
+      }
+    }
+  }
+
+  if (!record || now > record.resetAt) {
+    store.set(key, { count: 1, resetAt: now + windowMs });
+    return { allowed: true, retryAfterSeconds: 0 };
+  }
+
+  if (record.count >= maxAttempts) {
+    const retryAfterSeconds = Math.ceil((record.resetAt - now) / 1000);
+    return { allowed: false, retryAfterSeconds };
+  }
+
+  record.count += 1;
+  return { allowed: true, retryAfterSeconds: 0 };
+}
+
+function clearRateLimit(store: Map<string, RateLimitRecord>, key: string) {
+  store.delete(key);
+}
+
+async function getClientIdentifier(fallbackName: string): Promise<string> {
+  try {
+    const headerList = await headers();
+    const forwardedFor = headerList.get("x-forwarded-for");
+    const realIp = headerList.get("x-real-ip");
+    const ip = forwardedFor ? forwardedFor.split(",")[0].trim() : realIp || "unknown";
+    return `${ip}:${fallbackName.toLowerCase().trim()}`;
+  } catch {
+    return `unknown:${fallbackName.toLowerCase().trim()}`;
+  }
+}
 
 class ServerAuthConfigurationError extends Error {
   constructor() {
@@ -62,6 +119,15 @@ export async function loginAction(
   }
 
   const { username, password } = parseResult.data;
+  const clientId = await getClientIdentifier(username);
+
+  // 5 failed attempts per 15 minutes
+  const limit = checkRateLimit(loginAttempts, clientId, 5, 15 * 60 * 1000);
+  if (!limit.allowed) {
+    return {
+      error: `Too many login attempts. Please wait ${Math.ceil(limit.retryAfterSeconds / 60)} minute(s) before trying again.`,
+    };
+  }
 
   try {
     // 1. Lookup username on the server using service role
@@ -81,6 +147,9 @@ export async function loginAction(
     if (error) {
       return { error: "The jar doesn't recognize that name or key." };
     }
+
+    // Clear rate limit on successful authentication
+    clearRateLimit(loginAttempts, clientId);
   } catch (error) {
     if (error instanceof ServerAuthConfigurationError) {
       console.error("[auth] Missing server authentication configuration.");
@@ -111,12 +180,25 @@ export async function resetPasswordRequestAction(
   prevState: ActionState,
   formData: FormData
 ): Promise<ActionState> {
-  const username = formData.get("username")?.toString();
+  const username = formData.get("username")?.toString()?.trim();
   if (!username) return { error: "Please enter your name." };
+
+  const clientId = await getClientIdentifier(username);
+  // Rate limit: 3 requests per 10 minutes
+  const limit = checkRateLimit(resetAttempts, clientId, 3, 10 * 60 * 1000);
+  if (!limit.allowed) {
+    return {
+      error: `Too many requests. Please wait ${Math.ceil(limit.retryAfterSeconds / 60)} minute(s) before trying again.`,
+    };
+  }
 
   try {
     const email = await lookupEmailOnServer(username);
-    if (!email) return { error: "The jar doesn't recognize this name." };
+    if (!email) {
+      // Prevent username enumeration: do not reveal whether username exists
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      return { success: true };
+    }
 
     const supabase = await createClient();
     // Using localhost or window.location.origin in production
@@ -127,6 +209,7 @@ export async function resetPasswordRequestAction(
     });
 
     if (error) {
+      console.error("[auth] resetPasswordForEmail error:", error.message);
       return { error: "Could not send the reset link. Please try again." };
     }
 
@@ -207,7 +290,8 @@ export async function updatePasswordAction(
   });
 
   if (updateError) {
-    return { error: updateError.message || "Failed to update password." };
+    console.error("[auth] Update password failed:", updateError.message);
+    return { error: "Failed to update password. It may be too weak or the link has expired." };
   }
 
   redirect("/");

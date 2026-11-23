@@ -41,17 +41,33 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isLoginPage = request.nextUrl.pathname.startsWith("/login");
+  const pathname = request.nextUrl.pathname;
+  const isLoginPage = pathname === "/login" || pathname.startsWith("/login/");
+  const isResetPasswordPage = pathname === "/reset-password" || pathname.startsWith("/reset-password/");
+  const isUpdatePasswordPage = pathname === "/update-password" || pathname.startsWith("/update-password/");
+  const isOfflinePage = pathname === "/~offline";
+  const isApiRoute = pathname.startsWith("/api/");
 
-  // If user is not authenticated and is not on the login page, redirect to login
-  if (!user && !isLoginPage) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
+  const isPublicPage = isLoginPage || isResetPasswordPage || isUpdatePasswordPage || isOfflinePage;
+
+  // If user is not authenticated:
+  if (!user) {
+    if (isApiRoute) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    if (!isPublicPage) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
   }
 
-  // If user is authenticated and is on the login page, redirect to home
-  if (user && isLoginPage) {
+  // If user is authenticated and is on login or reset-password page, redirect to home
+  if (user && (isLoginPage || isResetPasswordPage)) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
@@ -71,6 +87,6 @@ export const config = {
      * - sw.js (PWA Service Worker)
      * Feel free to modify this pattern to include more paths.
      */
-    "/((?!_next/static|_next/image|favicon.ico|manifest\\.webmanifest$|sw\\.js$|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon\\.ico|manifest\\.webmanifest$|sw\\.js$|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mp4|ico)$).*)",
   ],
 };
