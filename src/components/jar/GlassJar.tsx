@@ -112,13 +112,20 @@ export function GlassJar({
         containerRef.current = node;
         setContainerRef(node);
       }}
-      className={`relative mx-auto h-[min(20rem,45dvh)] aspect-[15.5/21]   cursor-pointer perspective-[1000px] z-20 transition-all duration-700 ease-in-out   sm:h-[min(24rem,50vh)] md:h-[min(26rem,38vh)] lg:h-[min(28rem,40vh)] ${isZoomed ? "scale-[1.05] drop-shadow-2xl" : ""}`}
+      className={`relative mx-auto h-[min(20rem,45dvh)] aspect-[15.5/21] cursor-pointer perspective-[1000px] z-20 transition-[filter] duration-300 sm:h-[min(24rem,50vh)] md:h-[min(26rem,38vh)] lg:h-[min(28rem,40vh)] ${isZoomed ? "drop-shadow-2xl" : ""}`}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
       onClick={handleJarClick}
-      initial={{ opacity: 0, scale: 0.9 }}
+      initial={{ opacity: 0, scale: 0.94 }}
       animate={{ opacity: 1, scale: isZoomed ? 1.05 : 1 }}
-      transition={{ duration: 1, ease: "easeOut" }}
+      transition={
+        reduceMotion
+          ? { duration: 0 }
+          : {
+              scale: { type: "spring", stiffness: 280, damping: 26 },
+              opacity: { duration: 0.45, ease: [0.22, 1, 0.36, 1] },
+            }
+      }
     >
       {hiddenWhisper && (
         <motion.div 

@@ -394,9 +394,9 @@ export function HomeClientExperience() {
         
         {/* Title / Mood Text */}
         <motion.div
-          initial={{ opacity: 0, y: -10 }}
+          initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, ease: "easeOut" }}
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
           className="mb-2 w-full text-center sm:mb-4 lg:mb-2"
         >
           <h1 className="font-cormorant text-[2rem] leading-none tracking-[0.12em] text-[var(--text-primary)] opacity-90 sm:text-3xl sm:tracking-[0.16em] md:text-4xl">

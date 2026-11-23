@@ -47,34 +47,30 @@ function getCloseMotion(type: MemoryType) {
       return {
         opacity: 0,
         y: -26,
-        scale: 0.65,
-        rotateZ: 12,
-        filter: "blur(16px) brightness(1.25)",
+        scale: 0.85,
+        rotateZ: 8,
       };
     case "voice":
     case "video":
       return {
         opacity: 0,
-        y: 36,
-        scale: 0.76,
-        rotateX: -24,
-        filter: "blur(9px)",
+        y: 28,
+        scale: 0.88,
+        rotateX: -16,
       };
     case "travel":
       return {
         opacity: 0,
-        x: -56,
-        y: 24,
-        scale: 0.74,
-        rotateZ: -8,
-        filter: "blur(8px)",
+        x: -36,
+        y: 20,
+        scale: 0.88,
+        rotateZ: -6,
       };
     default:
       return {
         opacity: 0,
-        y: 34,
-        scale: 0.78,
-        filter: "blur(10px)",
+        y: 24,
+        scale: 0.9,
       };
   }
 }
@@ -235,16 +231,15 @@ export function MemoryViewer() {
             custom={navigateDirection}
             variants={{
               initial: (direction: "next" | "prev" | null) => ({
-                x: direction === "next" ? 500 : direction === "prev" ? -500 : 0,
+                x: direction === "next" ? 400 : direction === "prev" ? -400 : 0,
                 opacity: direction ? 0 : 1,
                 rotate: 0,
-                scale: direction ? 0.8 : 1,
-                filter: "blur(0px)",
+                scale: direction ? 0.92 : 1,
               }),
-              animate: { x: 0, y: 0, opacity: 1, rotate: 0, rotateX: 0, rotateZ: 0, scale: 1, filter: "blur(0px)" },
+              animate: { x: 0, y: 0, opacity: 1, rotate: 0, rotateX: 0, rotateZ: 0, scale: 1 },
               exit: (direction: "next" | "prev" | null) => ({
-                x: direction === "next" ? -500 : direction === "prev" ? 500 : 0,
-                ...(direction ? { opacity: 0, scale: 0.8, filter: "blur(3px)" } : getCloseMotion(activeMemoryState.type)),
+                x: direction === "next" ? -400 : direction === "prev" ? 400 : 0,
+                ...(direction ? { opacity: 0, scale: 0.92 } : getCloseMotion(activeMemoryState.type)),
               }),
             }}
             initial="initial"

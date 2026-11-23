@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useHomeMemories } from "@/hooks/useMemoryData";
 import { useRelationshipContext } from "@/hooks/useRelationshipContext";
 import { useMemoryViewer } from "@/providers/memory-viewer-provider";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { Mail, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EmojiText } from "@/components/ui/EmojiText";
@@ -47,16 +47,20 @@ export function TodaysLetter({ className }: { className?: string }) {
     return letters[index];
   }, [memories, relationshipContext?.relationshipTimezone, nowTimestamp]);
 
+  const shouldReduceMotion = useReducedMotion();
+
   if (!letter) return null;
 
   return (
     <motion.button
-      initial={{ opacity: 0, y: 10 }}
+      initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: 0.1 }}
+      whileHover={shouldReduceMotion ? {} : { y: -2, scale: 1.008 }}
+      whileTap={shouldReduceMotion ? {} : { scale: 0.985 }}
+      transition={{ type: "spring", stiffness: 400, damping: 25 }}
       onClick={() => openViewer(letter.id)}
       className={cn(
-        "group relative flex w-full flex-col justify-between overflow-hidden rounded-[1.35rem] border border-[#d2c9b6]/30 bg-[#FDFBF7] p-4 shadow-[2px_3px_10px_rgba(0,0,0,0.15)] text-left transition-all hover:shadow-[4px_6px_15px_rgba(0,0,0,0.1)] hover:-translate-y-0.5",
+        "group relative flex w-full flex-col justify-between overflow-hidden rounded-[1.35rem] border border-[#d2c9b6]/30 bg-[#FDFBF7] p-4 text-left shadow-[2px_3px_10px_rgba(0,0,0,0.15)] transition-[border-color,box-shadow] duration-200 hover:shadow-[4px_6px_15px_rgba(0,0,0,0.1)]",
         "after:absolute after:inset-0 after:rounded-[1.35rem] after:shadow-[inset_0_0_20px_rgba(0,0,0,0.03)]",
         className
       )}

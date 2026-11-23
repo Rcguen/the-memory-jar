@@ -183,19 +183,28 @@ export function TimelineView() {
 
               <div className="flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {MEMORY_FILTER_OPTIONS.map((option) => (
-                  <button
+                  <motion.button
                     key={option.id}
                     type="button"
+                    whileTap={{ scale: 0.95 }}
+                    transition={{ type: "spring", stiffness: 450, damping: 25 }}
                     onClick={() => setFilter(option.id)}
                     className={cn(
-                      "shrink-0 rounded-full px-3 py-1.5 text-sm transition-colors",
+                      "relative shrink-0 rounded-full px-3 py-1.5 text-sm transition-colors",
                       filter === option.id
-                        ? "bg-emerald-500 text-white"
+                        ? "text-white"
                         : "bg-white/8 text-zinc-300 hover:bg-white/12 hover:text-zinc-100"
                     )}
                   >
-                    {option.label}
-                  </button>
+                    {filter === option.id && (
+                      <motion.div
+                        layoutId="timelineFilterActivePill"
+                        transition={{ type: "spring", stiffness: 450, damping: 30 }}
+                        className="absolute inset-0 rounded-full bg-emerald-500 shadow-sm"
+                      />
+                    )}
+                    <span className="relative z-10">{option.label}</span>
+                  </motion.button>
                 ))}
               </div>
             </div>
@@ -252,9 +261,12 @@ export function TimelineView() {
                               <motion.button
                                 key={memory.id}
                                 type="button"
+                                whileHover={{ y: -1 }}
+                                whileTap={{ scale: 0.985 }}
+                                transition={{ type: "spring", stiffness: 450, damping: 28 }}
                                 aria-label={`Open ${memory.type} memory: ${memory.title || "Untitled memory"}, ${fullVisibleDate}`}
                                 onClick={() => openViewer(memory.id)}
-                                className="group flex w-full items-start gap-3 rounded-[1rem] border border-white/10 bg-white/70 p-3 text-left transition-colors hover:bg-white/90 active:bg-white/60 dark:bg-zinc-950/50 dark:hover:bg-zinc-900/58 sm:gap-4 sm:p-4"
+                                className="group flex w-full items-start gap-3 rounded-[1rem] border border-white/10 bg-white/70 p-3 text-left transition-[border-color,background-color,box-shadow] hover:bg-white/90 hover:shadow-md dark:bg-zinc-950/50 dark:hover:bg-zinc-900/58 sm:gap-4 sm:p-4"
                               >
                                 <span className={cn("mt-1.5 block h-2.5 w-2.5 shrink-0 rounded-full shadow-sm", memoryAccent(memory))} />
                                 <div className="min-w-0 flex-1">

@@ -89,17 +89,27 @@ export function MobileBottomNav({ memoryShelfOpen = false }: { memoryShelfOpen?:
               <MotionLink
                 key={item.href}
                 href={item.href}
-                whileTap={{ scale: 0.97 }}
-                transition={{ duration: 0.14, ease: [0.23, 1, 0.32, 1] }}
+                whileTap={shouldReduceMotion ? {} : { scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 450, damping: 25 }}
                 onClick={() => trigger("light")}
                 className={cn(
-                  "flex min-h-[50px] flex-col items-center justify-center rounded-[0.9rem] px-1 py-1.5 text-center transition-[transform,background-color,color,box-shadow] duration-[180ms] ease-[cubic-bezier(0.23,1,0.32,1)] focus-ring-premium motion-reduce:transform-none motion-reduce:transition-none",
-                  active ? "bg-white/12 text-[var(--jar-paper)]" : "text-white/60 hover:bg-white/6 hover:text-[var(--jar-paper)] active:scale-[0.97]",
+                  "relative flex min-h-[50px] flex-col items-center justify-center rounded-[0.9rem] px-1 py-1.5 text-center transition-colors duration-150 focus-ring-premium",
+                  active ? "text-[var(--jar-paper)]" : "text-white/60 hover:bg-white/6 hover:text-[var(--jar-paper)]",
                 )}
                 aria-current={active ? "page" : undefined}
               >
-                <Icon className={cn("h-4.5 w-4.5", active ? item.accent : "text-[var(--text-secondary)]")} />
-                <span className="mt-1 text-[9px] font-medium tracking-[0.01em]">{item.label}</span>
+                {active && !shouldReduceMotion && (
+                  <motion.div
+                    layoutId="mobileNavActivePill"
+                    transition={{ type: "spring", stiffness: 480, damping: 32 }}
+                    className="absolute inset-0 rounded-[0.9rem] bg-white/12 shadow-sm"
+                  />
+                )}
+                {active && shouldReduceMotion && (
+                  <div className="absolute inset-0 rounded-[0.9rem] bg-white/12 shadow-sm" />
+                )}
+                <Icon className={cn("relative z-10 h-4.5 w-4.5", active ? item.accent : "text-[var(--text-secondary)]")} />
+                <span className="relative z-10 mt-1 text-[9px] font-medium tracking-[0.01em]">{item.label}</span>
               </MotionLink>
             );
           })}
