@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react';
+import { useAuth } from '@/providers/auth-provider';
+import { isLettersAuthorized } from '@/lib/permissions';
 import "./animated-cards.css";
 
 type Letter = { id: string; title: string; label: string; color: string; accent: string; stamp: string; stampFile: string; text: string; paragraphs?: string[]; hideSignature?: boolean };
@@ -93,6 +96,15 @@ function EnvelopeFace({ letter, back = false }: { letter: Letter; back?: boolean
 }
 
 export function AnimatedLettersExperience() {
+  const { profile, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading && !isLettersAuthorized(profile)) {
+      router.replace("/");
+    }
+  }, [isLoading, profile, router]);
+
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]); const progress = useRef(0); const targetProgress = useRef<number | null>(null); const velocity = useRef(0); const mouse = useRef({ x: 0, y: 0, tx: 0, ty: 0 }); const frame = useRef(0);
   const [size, setSize] = useState({ w: 335, h: 212 });
   const [activeIndex, setActiveIndex] = useState(0);
@@ -163,6 +175,10 @@ export function AnimatedLettersExperience() {
     if (Math.abs(delta) < 0.5 && targetProgress.current === null) { if (closeTimer.current !== null) window.clearTimeout(closeTimer.current); setIsReadingClosing(false); setReading(letter); }
     else targetProgress.current = current + delta;
   };
+
+  if (isLoading || !isLettersAuthorized(profile)) {
+    return null;
+  }
 
   return (
     <main className="carousel-page">

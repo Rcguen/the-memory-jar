@@ -43,6 +43,7 @@ import { DeskCat } from "@/components/home/DeskCat";
 import { AmbientManager } from "@/components/home/AmbientManager";
 import { JarWeather } from "@/components/home/JarWeather";
 import { MemoryWhisper } from "@/components/home/MemoryWhisper";
+import { isLettersAuthorized } from "@/lib/permissions";
 import { MemoryOfTheDay } from "@/components/home/MemoryOfTheDay";
 import { TodaysLetter } from "@/components/home/TodaysLetter";
 import { LivingMemoryShelf } from "@/components/home/LivingMemoryShelf";
@@ -309,14 +310,16 @@ export function HomeClientExperience() {
               <BookOpen className="h-4 w-4 text-amber-200" />
               Memory Book
             </MotionLink>
-            <MotionLink
-              href="/animated-cards"
-              className="nav-link-premium focus-ring-premium"
-              aria-label="Open Letters in motion"
-            >
-              <Mail className="h-4 w-4 text-violet-300" />
-              Letters in motion
-            </MotionLink>
+            {isLettersAuthorized(profile) && (
+              <MotionLink
+                href="/animated-cards"
+                className="nav-link-premium focus-ring-premium"
+                aria-label="Open Letters in motion"
+              >
+                <Mail className="h-4 w-4 text-violet-300" />
+                Letters in motion
+              </MotionLink>
+            )}
             <motion.a
               href="https://photobooth-nine-lyart.vercel.app/"
               whileTap={{ scale: 0.97 }}

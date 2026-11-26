@@ -14,6 +14,8 @@ import {
   Sparkles,
   LayoutDashboard,
 } from "lucide-react";
+import { useAuth } from "@/providers/auth-provider";
+import { isLettersAuthorized } from "@/lib/permissions";
 
 const NAV_ITEMS = [
   { href: "/", label: "Hũ Kỷ Niệm", icon: Heart },
@@ -25,6 +27,10 @@ const NAV_ITEMS = [
 ];
 
 export default function NotFound() {
+  const { profile } = useAuth();
+  const navItems = isLettersAuthorized(profile)
+    ? NAV_ITEMS
+    : NAV_ITEMS.filter((item) => item.href !== "/animated-cards");
   const [scaleY, setScaleY] = useState(1);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const textRef = useRef<HTMLDivElement>(null);
@@ -246,7 +252,7 @@ export default function NotFound() {
 
             {/* Menu Items with Staggered Animation */}
             <nav className="mt-1 flex flex-col gap-2.5 px-6" aria-label="Danh sách điểm đến">
-              {NAV_ITEMS.map((item, i) => (
+              {navItems.map((item, i) => (
                 <Link
                   key={item.href}
                   href={item.href}

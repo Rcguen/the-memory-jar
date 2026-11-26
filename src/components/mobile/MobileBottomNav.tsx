@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 const MotionLink = motion.create(Link);
 import { useHaptics } from "@/hooks/useHaptics";
 import { useIsPhone } from "@/hooks/useIsPhone";
+import { useAuth } from "@/providers/auth-provider";
+import { isLettersAuthorized } from "@/lib/permissions";
 import { GooeyMobileFab460 } from "./GooeyMobileFab460";
 
 const ITEMS = [
@@ -23,9 +25,15 @@ const ITEMS = [
 export function MobileBottomNav({ memoryShelfOpen }: { memoryShelfOpen?: boolean }) {
   void memoryShelfOpen;
   const pathname = usePathname();
+  const { profile } = useAuth();
   const { trigger } = useHaptics();
   const isPhone = useIsPhone();
   const shouldReduceMotion = useReducedMotion();
+
+  const canViewLetters = isLettersAuthorized(profile);
+  const navItems = canViewLetters
+    ? ITEMS
+    : ITEMS.filter((item) => item.href !== "/animated-cards");
 
   if (!isPhone) return null;
 
@@ -37,8 +45,8 @@ export function MobileBottomNav({ memoryShelfOpen }: { memoryShelfOpen?: boolean
 
       <nav aria-label="Primary navigation" className="mobile-safe-bottom fixed inset-x-0 bottom-0 z-[80] px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-2 sm:hidden flex justify-center">
         <div className="w-full max-w-md rounded-[var(--radius-medium)] border border-[var(--divider)] bg-[var(--surface-wood)] p-1.5 shadow-[var(--shadow-3)]">
-          <div className="grid grid-cols-7 gap-1">
-          {ITEMS.map((item) => {
+          <div className={cn("grid gap-1", canViewLetters ? "grid-cols-7" : "grid-cols-6")}>
+          {navItems.map((item) => {
             const Icon = item.icon;
             const active = pathname === item.href;
             return (
