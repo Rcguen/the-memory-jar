@@ -1,11 +1,13 @@
 export const LETTERS_IN_MOTION_ALLOWED_EMAILS = [
   "ritchiguen10@gmail.com",
   "floreskristine484@gmail.com",
+  "phu.nt2710@gmail.com",
 ] as const;
 
 export const LETTERS_IN_MOTION_ALLOWED_USERNAMES = [
   "ritchi_test",
   "kristine",
+  "phu",
 ] as const;
 
 export function isLettersAuthorized(
@@ -28,7 +30,12 @@ export function isLettersAuthorized(
   }
 
   const id = userOrProfile.id;
-  if (id && (id.startsWith("00e50810") || id.startsWith("99ee5a07"))) {
+  if (
+    id &&
+    (id.startsWith("00e50810") ||
+      id.startsWith("99ee5a07") ||
+      id.startsWith("d800d931"))
+  ) {
     return true;
   }
 
