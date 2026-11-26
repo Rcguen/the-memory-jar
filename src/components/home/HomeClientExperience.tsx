@@ -360,14 +360,14 @@ export function HomeClientExperience() {
       </header>
 
       {/* 4. Main Content Area */}
-      <div className={`home-center-column relative z-10 flex w-full max-w-[23rem] flex-col items-center px-3 pb-4 pt-20 sm:max-w-2xl sm:px-4 sm:pb-6 sm:pt-20 lg:pt-12 xl:pt-4 xl:pb-4 shrink-0 ${isMusicOpen ? "home-center-column--music-open" : ""}`}>
+      <div className={`home-center-column relative z-10 flex w-full max-w-[23rem] flex-col items-center px-3 pb-4 pt-[calc(env(safe-area-inset-top)+5.25rem)] sm:max-w-2xl sm:px-4 sm:pb-6 sm:pt-24 lg:pt-20 xl:pt-20 2xl:pt-24 xl:pb-6 shrink-0 ${isMusicOpen ? "home-center-column--music-open" : ""}`}>
         
         {/* Title / Mood Text */}
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-2 w-full text-center sm:mb-4 lg:mb-2"
+          className="mb-3 w-full text-center sm:mb-5 lg:mb-4"
         >
           <h1 className="font-cormorant text-[2rem] leading-none tracking-[0.12em] text-[var(--text-primary)] opacity-90 sm:text-3xl sm:tracking-[0.16em] md:text-4xl">
             The Memory Jar
@@ -392,7 +392,7 @@ export function HomeClientExperience() {
 
         {/* The Physical Glass Jar */}
         {jarLoadState === "success" && memoryCount !== null ? (
-          <div className="home-jar-stage">
+          <div className="home-jar-stage mt-3 sm:mt-5">
             {isMusicOpen && <MusicExperience paused={!ambientMotion.isActive} onClose={() => setIsMusicOpen(false)} />}
             <div className="relative z-20">
               <ErrorBoundary fallbackMessage="The Jar engine crashed. Physics might be temporarily disabled.">
@@ -410,7 +410,7 @@ export function HomeClientExperience() {
         {relationship?.startDate && (
           <RelationshipCounter 
             startDate={new Date(relationship.startDate)} 
-            className="-mt-4 sm:-mt-6 md:-mt-8 lg:-mt-10 mb-2 sm:mb-4" 
+            className="-mt-2 sm:-mt-3 md:-mt-4 lg:-mt-4 mb-3 sm:mb-5" 
           />
         )}
 
@@ -422,7 +422,7 @@ export function HomeClientExperience() {
         </ErrorBoundary>
 
         {/* Call to Action */}
-        <div className="hidden sm:block mt-0 relative z-10">
+        <div className="hidden sm:block mt-3 sm:mt-5 relative z-10">
           <DropMemoryButton />
         </div>
 
