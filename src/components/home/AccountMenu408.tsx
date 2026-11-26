@@ -5,6 +5,7 @@ import React, { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { pwaStore } from "@/lib/pwa-store";
+import { isAdminAuthorized } from "@/lib/permissions";
 import "./account-menu-408.css";
 
 interface DeferredInstallPrompt extends Event {
@@ -33,8 +34,10 @@ function isChromiumBrowser() {
 
 export interface AccountMenu408Props {
   profile: {
+    id?: string;
     display_name: string;
     username: string;
+    email?: string | null;
     avatar?: string | null;
   };
   avatarUrl?: string | null;
@@ -163,6 +166,11 @@ export function AccountMenu408({
     router.push("/profile");
   };
 
+  const handleAdmin = () => {
+    close(false);
+    router.push("/admin");
+  };
+
   const handleSettings = () => {
     close(true);
     router.push("/profile");
@@ -273,6 +281,22 @@ export function AccountMenu408({
               </svg>
               <span>Profile</span>
             </button>
+
+            {isAdminAuthorized(profile) && (
+              <button
+                type="button"
+                className="u408-it"
+                role="menuitem"
+                tabIndex={-1}
+                style={{ "--i": 1.5 } as React.CSSProperties}
+                onClick={handleAdmin}
+              >
+                <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M9 1.5l6 2.5v4.5c0 4.2-2.8 7.3-6 8-3.2-.7-6-3.8-6-8V4l6-2.5z" />
+                </svg>
+                <span>Admin Console</span>
+              </button>
+            )}
 
             <button
               type="button"

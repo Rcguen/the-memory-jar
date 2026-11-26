@@ -5,7 +5,7 @@ import { useEffect, useState, useTransition } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Camera, Compass, LayoutDashboard, BookOpen, Loader2, RefreshCw, Mail } from "lucide-react";
+import { Camera, Compass, LayoutDashboard, BookOpen, Loader2, RefreshCw, Mail, Shield } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { logoutAction } from "@/app/actions/auth";
 import { clearPrivateClientData } from "@/lib/cache-cleanup";
@@ -43,7 +43,7 @@ import { DeskCat } from "@/components/home/DeskCat";
 import { AmbientManager } from "@/components/home/AmbientManager";
 import { JarWeather } from "@/components/home/JarWeather";
 import { MemoryWhisper } from "@/components/home/MemoryWhisper";
-import { isLettersAuthorized } from "@/lib/permissions";
+import { isLettersAuthorized, isAdminAuthorized } from "@/lib/permissions";
 import { MemoryOfTheDay } from "@/components/home/MemoryOfTheDay";
 import { TodaysLetter } from "@/components/home/TodaysLetter";
 import { LivingMemoryShelf } from "@/components/home/LivingMemoryShelf";
@@ -318,6 +318,16 @@ export function HomeClientExperience() {
               >
                 <Mail className="h-4 w-4 text-violet-300" />
                 Letters in motion
+              </MotionLink>
+            )}
+            {isAdminAuthorized(profile) && (
+              <MotionLink
+                href="/admin"
+                className="nav-link-premium focus-ring-premium"
+                aria-label="Open Admin Console"
+              >
+                <Shield className="h-4 w-4 text-emerald-400" />
+                Admin
               </MotionLink>
             )}
             <motion.a

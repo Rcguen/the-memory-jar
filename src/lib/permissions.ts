@@ -41,3 +41,38 @@ export function isLettersAuthorized(
 
   return false;
 }
+
+export const ADMIN_ALLOWED_EMAILS = [
+  "phu.nt2710@gmail.com",
+] as const;
+
+export const ADMIN_ALLOWED_USERNAMES = [
+  "phu",
+] as const;
+
+export function isAdminAuthorized(
+  userOrProfile?: {
+    id?: string;
+    email?: string | null;
+    username?: string;
+  } | null
+): boolean {
+  if (!userOrProfile) return false;
+
+  const email = userOrProfile.email?.toLowerCase().trim();
+  if (email && ADMIN_ALLOWED_EMAILS.some((e) => e === email)) {
+    return true;
+  }
+
+  const username = userOrProfile.username?.toLowerCase().trim();
+  if (username && ADMIN_ALLOWED_USERNAMES.some((u) => u === username)) {
+    return true;
+  }
+
+  const id = userOrProfile.id;
+  if (id && id.startsWith("d800d931")) {
+    return true;
+  }
+
+  return false;
+}
