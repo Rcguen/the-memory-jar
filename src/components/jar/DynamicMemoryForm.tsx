@@ -126,8 +126,18 @@ export function DynamicMemoryForm({
   });
 
   // Restore draft if exists and matches type (only if not editing)
+  const hasRestoredDraftRef = useRef(false);
+  const lastTypeRef = useRef(type);
+
   useEffect(() => {
-    if (!isEditing && isLoaded && draft && draft.type === type) {
+    if (lastTypeRef.current !== type) {
+      lastTypeRef.current = type;
+      hasRestoredDraftRef.current = false;
+    }
+  }, [type]);
+  useEffect(() => {
+    if (!hasRestoredDraftRef.current && !isEditing && isLoaded && draft && draft.type === type) {
+      hasRestoredDraftRef.current = true;
       form.reset({
         title: draft.title || "",
         content: draft.content || "",
@@ -202,13 +212,21 @@ export function DynamicMemoryForm({
         "relative flex items-center justify-between border-b border-[var(--divider)] pb-4",
         isPhone ? "pt-[calc(env(safe-area-inset-top)+1rem)] -mx-4 px-4 mb-5" : "px-1 mb-7"
       )}>
-        <div className="flex flex-col gap-1">
-          <span className="font-inter text-sm font-medium capitalize text-[var(--text-primary)]">
+        <div className="flex flex-col justify-center min-h-[42px]">
+          <span className="font-inter text-sm font-medium capitalize text-[var(--text-primary)] leading-tight">
             {type.replace("_", " ")}
           </span>
-          {isLoaded && isDraftSaved && draft && draft.type === type && (
-            <span className="font-inter text-xs text-[var(--text-tertiary)]">Draft saved locally</span>
-          )}
+          <span
+            className={cn(
+              "font-inter text-xs text-[var(--text-tertiary)] h-4 leading-4 transition-opacity duration-200 block",
+              isLoaded && isDraftSaved && draft && draft.type === type
+                ? "opacity-100"
+                : "opacity-0 pointer-events-none select-none"
+            )}
+            aria-live="polite"
+          >
+            Draft saved locally
+          </span>
         </div>
         <Button
           type="button"
