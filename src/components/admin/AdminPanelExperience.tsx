@@ -262,7 +262,7 @@ export function AdminPanelExperience() {
         }
       }
 
-      const userMemoriesCount = memories.filter((m) => m.user_id === p.id).length;
+      const userMemoriesCount = memories.filter((m) => m.created_by === p.id).length;
 
       return {
         ...p,
@@ -1267,7 +1267,7 @@ export function AdminPanelExperience() {
                       </tr>
                     ) : (
                       filteredMemories.map((m) => {
-                        const author = profiles.find((p) => p.id === m.user_id);
+                        const author = profiles.find((p) => p.id === m.created_by);
                         const isDeleted = !!m.deleted_at;
 
                         return (
@@ -1663,7 +1663,7 @@ export function AdminPanelExperience() {
                 <div className="flex justify-between py-1.5 border-b border-[var(--divider)]/50">
                   <span className="text-[var(--text-tertiary)]">Keepsakes Created:</span>
                   <span className="text-emerald-400 font-semibold">
-                    {memories.filter((m) => m.user_id === selectedUser.id).length}
+                    {memories.filter((m) => m.created_by === selectedUser.id).length}
                   </span>
                 </div>
               </div>
@@ -1735,7 +1735,7 @@ export function AdminPanelExperience() {
                 <div>Created: {formatDateTime(selectedMemory.created_at)}</div>
                 <div>Status: {selectedMemory.deleted_at ? "In Trash" : selectedMemory.status}</div>
                 <div>Vault: {selectedMemory.relationship_id.slice(0, 8)}...</div>
-                <div>Author ID: {selectedMemory.user_id.slice(0, 8)}...</div>
+                <div>Author ID: {selectedMemory.created_by.slice(0, 8)}...</div>
               </div>
 
               {/* Actions */}
