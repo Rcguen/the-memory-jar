@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Shield,
@@ -13,301 +12,523 @@ import {
   ArrowLeft,
   Eye,
   RefreshCw,
-  FileText,
   Heart,
   X,
   Terminal,
   Cpu,
+  HardDrive,
+  Key,
+  AlertTriangle,
+  CheckCircle2,
+  Copy,
+  Check,
+  Trash2,
+  RotateCcw,
+  Lock,
+  Sparkles,
+  ChevronRight,
+  Smartphone,
+  Server,
+  Camera,
+  Mic,
+  Video,
 } from "lucide-react";
 import { useAuth } from "@/providers/auth-provider";
 import { isAdminAuthorized } from "@/lib/permissions";
-import { createClient } from "@/lib/supabase/client";
+import {
+  getAdminDashboardTelemetry,
+  adminSendPasswordReset,
+  adminToggleMemorySoftDelete,
+  adminPurgeDeletedMemories,
+  type AdminDashboardPayload,
+  type AdminTelemetryProfile,
+  type AdminTelemetryRelationship,
+  type AdminTelemetryMemory,
+} from "@/app/actions/admin";
 
-type TabKey = "overview" | "memories" | "users" | "activity" | "system";
+type TabKey = "overview" | "users" | "couples" | "memories" | "storage" | "audit";
 
-interface AdminMemory {
-  id: string;
-  relationship_id: string;
-  created_by: string;
-  title: string | null;
-  content: string | null;
-  type: string;
-  status: string;
-  capsule_style: string | null;
-  theme: string | null;
-  decorations: string[] | null;
-  paper_style: string | null;
-  mood_id: string | null;
-  soundtrack: Record<string, unknown> | null;
-  is_collaborative: boolean;
-  is_favorite: boolean;
-  is_pinned: boolean;
-  unlock_at: string | null;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
+function prettyBytes(bytes: number): string {
+  if (!bytes || bytes <= 0) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
 }
 
-interface AdminProfile {
-  id: string;
-  username: string;
-  display_name: string;
-  email: string | null;
-  avatar: string | null;
-  timezone: string | null;
-  created_at: string;
+function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return "—";
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  } catch {
+    return dateStr;
+  }
 }
 
-interface AdminRelationship {
-  id: string;
-  start_date: string;
-  timezone: string;
-  anniversary_type: string;
-  created_at: string;
-}
-
-interface AdminAttachment {
-  id: string;
-  memory_id: string;
-  file_type: string;
-  file_size: number | null;
-  created_at: string;
-}
-
-interface AdminActivityLog {
-  id: string;
-  relationship_id: string;
-  user_id: string;
-  action: string;
-  target_type: string;
-  created_at: string;
-  metadata: Record<string, unknown> | null;
+function formatDateTime(dateStr: string | null | undefined): string {
+  if (!dateStr) return "—";
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return dateStr;
+  }
 }
 
 export function AdminPanelExperience() {
-  const { profile, isLoading: isAuthLoading } = useAuth();
-  const router = useRouter();
-
+  const { profile } = useAuth();
+  const [telemetry, setTelemetry] = useState<AdminDashboardPayload | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
-  const [isLoadingData, setIsLoadingData] = useState(true);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
-  // Data states
-  const [memories, setMemories] = useState<AdminMemory[]>([]);
-  const [profiles, setProfiles] = useState<AdminProfile[]>([]);
-  const [relationship, setRelationship] = useState<AdminRelationship | null>(null);
-  const [attachments, setAttachments] = useState<AdminAttachment[]>([]);
-  const [activityLogs, setActivityLogs] = useState<AdminActivityLog[]>([]);
+  // Filters & Search
+  const [userSearch, setUserSearch] = useState("");
+  const [userRoleFilter, setUserRoleFilter] = useState<"all" | "coupled" | "uncoupled" | "admin">("all");
 
-  // Filters & search
-  const [searchQuery, setSearchQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [selectedMemory, setSelectedMemory] = useState<AdminMemory | null>(null);
+  const [relationshipSearch, setRelationshipSearch] = useState("");
 
-  // Client guard
-  useEffect(() => {
-    if (!isAuthLoading && !isAdminAuthorized(profile)) {
-      router.replace("/");
-    }
-  }, [isAuthLoading, profile, router]);
+  const [memorySearch, setMemorySearch] = useState("");
+  const [memoryArchetypeFilter, setMemoryArchetypeFilter] = useState("all");
+  const [memoryStatusFilter, setMemoryStatusFilter] = useState<"all" | "active" | "sealed" | "deleted">("all");
+  const [memoryCoupleFilter, setMemoryCoupleFilter] = useState("all");
 
-  // Load telemetry data
-  const loadData = useCallback(async () => {
-    setIsLoadingData(true);
-    const supabase = createClient();
+  const [storageSearch, setStorageSearch] = useState("");
 
-    try {
-      // 1. Fetch memories
-      const { data: memData } = await supabase
-        .from("memories")
-        .select("*")
-        .order("created_at", { ascending: false });
-      if (memData) setMemories(memData as AdminMemory[]);
+  // Inspect Modals
+  const [selectedUser, setSelectedUser] = useState<AdminTelemetryProfile | null>(null);
+  const [selectedMemory, setSelectedMemory] = useState<AdminTelemetryMemory | null>(null);
+  const [showPurgeModal, setShowPurgeModal] = useState(false);
 
-      // 2. Fetch profiles
-      const { data: profData } = await supabase
-        .from("profiles")
-        .select("id, username, display_name, email, avatar, timezone, created_at")
-        .order("created_at", { ascending: true });
-      if (profData) setProfiles(profData as AdminProfile[]);
+  // Show toast helper
+  const showToast = useCallback((message: string, type: "success" | "error" | "info" = "success") => {
+    setToast({ message, type });
+    window.setTimeout(() => setToast(null), 3800);
+  }, []);
 
-      // 3. Fetch relationships
-      const { data: relData } = await supabase
-        .from("relationships")
-        .select("id, start_date, timezone, anniversary_type, created_at")
-        .limit(1)
-        .maybeSingle();
-      if (relData) setRelationship(relData as AdminRelationship);
-
-      // 4. Fetch attachments
-      const { data: attData } = await supabase
-        .from("memory_attachments")
-        .select("id, memory_id, file_type, file_size, created_at");
-      if (attData) setAttachments(attData as AdminAttachment[]);
-
-      // 5. Fetch activity logs
-      const { data: actData } = await supabase
-        .from("activity_logs")
-        .select("id, relationship_id, user_id, action, target_type, created_at, metadata")
-        .order("created_at", { ascending: false })
-        .limit(50);
-      if (actData) setActivityLogs(actData as AdminActivityLog[]);
-
-      setLastRefreshed(new Date());
-    } catch (err) {
-      console.error("Admin telemetry error:", err);
-    } finally {
-      setIsLoadingData(false);
+  // Copy to clipboard helper
+  const handleCopy = useCallback((text: string, id: string) => {
+    if (navigator?.clipboard?.writeText) {
+      void navigator.clipboard.writeText(text);
+      setCopiedId(id);
+      window.setTimeout(() => setCopiedId(null), 1800);
     }
   }, []);
 
+  // Refresh telemetry from Server Action (bypassing RLS with service_role)
+  const refreshTelemetry = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await getAdminDashboardTelemetry();
+      setTelemetry(data);
+      setLastRefreshed(new Date());
+    } catch (err) {
+      console.error("[AdminPanel] Telemetry fetch failed:", err);
+      showToast("Failed to load cross-tenant telemetry. Verify service role permissions.", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [showToast]);
+
   useEffect(() => {
     if (!isAdminAuthorized(profile)) return;
-    let isCancelled = false;
+    let isMounted = true;
 
     async function initialFetch() {
-      const supabase = createClient();
       try {
-        const [memRes, profRes, relRes, attRes, actRes] = await Promise.all([
-          supabase.from("memories").select("*").order("created_at", { ascending: false }),
-          supabase.from("profiles").select("id, username, display_name, email, avatar, timezone, created_at").order("created_at", { ascending: true }),
-          supabase.from("relationships").select("id, start_date, timezone, anniversary_type, created_at").limit(1).maybeSingle(),
-          supabase.from("memory_attachments").select("id, memory_id, file_type, file_size, created_at"),
-          supabase.from("activity_logs").select("id, relationship_id, user_id, action, target_type, created_at, metadata").order("created_at", { ascending: false }).limit(50),
-        ]);
-
-        if (!isCancelled) {
-          if (memRes.data) setMemories(memRes.data as AdminMemory[]);
-          if (profRes.data) setProfiles(profRes.data as AdminProfile[]);
-          if (relRes.data) setRelationship(relRes.data as AdminRelationship);
-          if (attRes.data) setAttachments(attRes.data as AdminAttachment[]);
-          if (actRes.data) setActivityLogs(actRes.data as AdminActivityLog[]);
-          setIsLoadingData(false);
+        const data = await getAdminDashboardTelemetry();
+        if (isMounted) {
+          setTelemetry(data);
           setLastRefreshed(new Date());
+          setIsLoading(false);
         }
       } catch (err) {
-        if (!isCancelled) {
-          console.error("Admin telemetry fetch error:", err);
-          setIsLoadingData(false);
+        console.error("[AdminPanel] Telemetry fetch failed:", err);
+        if (isMounted) {
+          showToast("Failed to load cross-tenant telemetry. Verify service role permissions.", "error");
+          setIsLoading(false);
         }
       }
     }
 
     void initialFetch();
-
     return () => {
-      isCancelled = true;
+      isMounted = false;
     };
-  }, [profile]);
+  }, [profile, showToast]);
 
-  // Metrics calculations
+  // Derived telemetry records
+  const profiles = useMemo(() => telemetry?.profiles ?? [], [telemetry]);
+  const relationships = useMemo(() => telemetry?.relationships ?? [], [telemetry]);
+  const relationshipMembers = useMemo(() => telemetry?.relationshipMembers ?? [], [telemetry]);
+  const memories = useMemo(() => telemetry?.memories ?? [], [telemetry]);
+  const attachments = useMemo(() => telemetry?.attachments ?? [], [telemetry]);
+  const activityLogs = useMemo(() => telemetry?.activityLogs ?? [], [telemetry]);
+  const authUsers = useMemo(() => telemetry?.authUsers ?? [], [telemetry]);
+  const pushCount = telemetry?.pushSubscriptionsCount ?? 0;
+
+  // Overview metrics
   const totalMemories = memories.length;
   const activeMemories = memories.filter((m) => !m.deleted_at).length;
   const deletedMemories = memories.filter((m) => !!m.deleted_at).length;
   const sealedCapsules = memories.filter((m) => m.status === "sealed").length;
-  const totalAttachments = attachments.length;
-
-  const startDate = relationship?.start_date;
-  const daysTogether = useMemo(() => {
-    if (!startDate) return null;
-    const startMs = new Date(startDate).getTime();
-    if (isNaN(startMs)) return null;
-    return Math.max(0, Math.floor((lastRefreshed.getTime() - startMs) / (1000 * 60 * 60 * 24)));
-  }, [startDate, lastRefreshed]);
 
   const totalAttachmentBytes = useMemo(() => {
-    return attachments.reduce((acc, curr) => acc + (curr.file_size || 0), 0);
+    return attachments.reduce((sum, a) => sum + (a.file_size || 0), 0);
   }, [attachments]);
 
-  const prettyBytes = (bytes: number) => {
-    if (bytes === 0) return "0 KB";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
-  };
+  const mediaTypeBreakdown = useMemo(() => {
+    let imagesBytes = 0;
+    let videoBytes = 0;
+    let audioBytes = 0;
+    let otherBytes = 0;
+    let imageCount = 0;
+    let videoCount = 0;
+    let audioCount = 0;
 
-  // Group memories by type for telemetry chart
+    attachments.forEach((a) => {
+      const size = a.file_size || 0;
+      const type = (a.file_type || "").toLowerCase();
+      if (type.startsWith("image")) {
+        imagesBytes += size;
+        imageCount++;
+      } else if (type.startsWith("video")) {
+        videoBytes += size;
+        videoCount++;
+      } else if (type.startsWith("audio")) {
+        audioBytes += size;
+        audioCount++;
+      } else {
+        otherBytes += size;
+      }
+    });
+
+    return {
+      imagesBytes,
+      videoBytes,
+      audioBytes,
+      otherBytes,
+      imageCount,
+      videoCount,
+      audioCount,
+    };
+  }, [attachments]);
+
+  // Archetype distribution
   const typeDistribution = useMemo(() => {
     const counts: Record<string, number> = {};
-    for (const m of memories) {
-      counts[m.type] = (counts[m.type] || 0) + 1;
-    }
-    return Object.entries(counts).sort((a, b) => b[1] - a[1]);
-  }, [memories]);
+    memories.forEach((m) => {
+      const key = m.type || "thought";
+      counts[key] = (counts[key] || 0) + 1;
+    });
+    return Object.entries(counts)
+      .map(([type, count]) => ({
+        type,
+        count,
+        percentage: totalMemories > 0 ? Math.round((count / totalMemories) * 100) : 0,
+      }))
+      .sort((a, b) => b.count - a.count);
+  }, [memories, totalMemories]);
+
+  // Map each user to their partner & couple info
+  const usersWithRelationship = useMemo(() => {
+    return profiles.map((p) => {
+      const authUser = authUsers.find((u) => u.id === p.id);
+      const isUserAdmin = isAdminAuthorized({ id: p.id, email: p.email, username: p.username });
+
+      // Find relationship
+      let partnerProfile: AdminTelemetryProfile | null = null;
+      let relRecord: AdminTelemetryRelationship | null = null;
+
+      if (p.active_relationship_id) {
+        relRecord = relationships.find((r) => r.id === p.active_relationship_id) ?? null;
+        const pairMembers = relationshipMembers.filter((m) => m.relationship_id === p.active_relationship_id);
+        const partnerMember = pairMembers.find((m) => m.profile_id !== p.id);
+        if (partnerMember) {
+          partnerProfile = profiles.find((prof) => prof.id === partnerMember.profile_id) ?? null;
+        }
+      }
+
+      const userMemoriesCount = memories.filter((m) => m.user_id === p.id).length;
+
+      return {
+        ...p,
+        authUser,
+        isAdmin: isUserAdmin,
+        partner: partnerProfile,
+        relationship: relRecord,
+        memoriesCount: userMemoriesCount,
+      };
+    });
+  }, [profiles, authUsers, relationships, relationshipMembers, memories]);
+
+  // Filtered users list
+  const filteredUsers = useMemo(() => {
+    return usersWithRelationship.filter((u) => {
+      const q = userSearch.toLowerCase().trim();
+      const matchSearch =
+        !q ||
+        u.display_name.toLowerCase().includes(q) ||
+        u.username.toLowerCase().includes(q) ||
+        (u.email && u.email.toLowerCase().includes(q)) ||
+        u.id.toLowerCase().includes(q);
+
+      let matchRole = true;
+      if (userRoleFilter === "admin") matchRole = u.isAdmin;
+      else if (userRoleFilter === "coupled") matchRole = !!u.partner;
+      else if (userRoleFilter === "uncoupled") matchRole = !u.partner;
+
+      return matchSearch && matchRole;
+    });
+  }, [usersWithRelationship, userSearch, userRoleFilter]);
+
+  // Relationships enriched
+  const enrichedRelationships = useMemo(() => {
+    return relationships.map((r) => {
+      const members = relationshipMembers.filter((m) => m.relationship_id === r.id);
+      const memberProfiles = members
+        .map((m) => profiles.find((p) => p.id === m.profile_id))
+        .filter(Boolean) as AdminTelemetryProfile[];
+
+      const relMemories = memories.filter((m) => m.relationship_id === r.id);
+      const relAttachments = attachments.filter((a) =>
+        relMemories.some((m) => m.id === a.memory_id)
+      );
+
+      const daysTogether = (() => {
+        if (!r.start_date) return null;
+        const startMs = new Date(r.start_date).getTime();
+        if (isNaN(startMs)) return null;
+        return Math.max(0, Math.floor((lastRefreshed.getTime() - startMs) / (1000 * 60 * 60 * 24)));
+      })();
+
+      return {
+        ...r,
+        members: memberProfiles,
+        memoriesCount: relMemories.length,
+        attachmentsCount: relAttachments.length,
+        daysTogether,
+      };
+    });
+  }, [relationships, relationshipMembers, profiles, memories, attachments, lastRefreshed]);
+
+  const filteredRelationships = useMemo(() => {
+    const q = relationshipSearch.toLowerCase().trim();
+    if (!q) return enrichedRelationships;
+    return enrichedRelationships.filter((r) => {
+      const matchId = r.id.toLowerCase().includes(q);
+      const matchNames = r.members.some(
+        (m) =>
+          m.display_name.toLowerCase().includes(q) ||
+          m.username.toLowerCase().includes(q) ||
+          m.email?.toLowerCase().includes(q)
+      );
+      return matchId || matchNames;
+    });
+  }, [enrichedRelationships, relationshipSearch]);
 
   // Filtered memories list
   const filteredMemories = useMemo(() => {
     return memories.filter((m) => {
+      const q = memorySearch.toLowerCase().trim();
       const matchSearch =
-        !searchQuery ||
-        (m.title && m.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (m.content && m.content.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        m.id.toLowerCase().includes(searchQuery.toLowerCase());
+        !q ||
+        (m.title && m.title.toLowerCase().includes(q)) ||
+        (m.content && m.content.toLowerCase().includes(q)) ||
+        m.id.toLowerCase().includes(q);
 
-      const matchType = typeFilter === "all" || m.type === typeFilter;
-      const matchStatus =
-        statusFilter === "all" ||
-        (statusFilter === "deleted" ? !!m.deleted_at : m.status === statusFilter);
+      const matchType =
+        memoryArchetypeFilter === "all" ||
+        m.type.toLowerCase() === memoryArchetypeFilter.toLowerCase();
 
-      return matchSearch && matchType && matchStatus;
+      let matchStatus = true;
+      if (memoryStatusFilter === "active") matchStatus = !m.deleted_at && m.status !== "sealed";
+      else if (memoryStatusFilter === "sealed") matchStatus = m.status === "sealed";
+      else if (memoryStatusFilter === "deleted") matchStatus = !!m.deleted_at;
+
+      const matchCouple =
+        memoryCoupleFilter === "all" || m.relationship_id === memoryCoupleFilter;
+
+      return matchSearch && matchType && matchStatus && matchCouple;
     });
-  }, [memories, searchQuery, typeFilter, statusFilter]);
+  }, [memories, memorySearch, memoryArchetypeFilter, memoryStatusFilter, memoryCoupleFilter]);
 
-  if (isAuthLoading || !isAdminAuthorized(profile)) {
+  // Filtered storage attachments
+  const filteredAttachments = useMemo(() => {
+    const q = storageSearch.toLowerCase().trim();
+    if (!q) return attachments;
+    return attachments.filter((a) => {
+      return (
+        a.id.toLowerCase().includes(q) ||
+        a.file_type.toLowerCase().includes(q) ||
+        a.file_path.toLowerCase().includes(q) ||
+        a.memory_id.toLowerCase().includes(q)
+      );
+    });
+  }, [attachments, storageSearch]);
+
+  // Action handlers
+  const handlePasswordReset = async (email: string) => {
+    if (!email) return;
+    setActionLoadingId(`pwd-${email}`);
+    try {
+      const res = await adminSendPasswordReset(email);
+      if (res.success) {
+        showToast(res.message, "success");
+      } else {
+        showToast(res.message, "error");
+      }
+    } catch {
+      showToast("Error triggering password reset.", "error");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleToggleMemoryTrash = async (memoryId: string, shouldTrash: boolean) => {
+    setActionLoadingId(`trash-${memoryId}`);
+    try {
+      const res = await adminToggleMemorySoftDelete(memoryId, shouldTrash);
+      if (res.success) {
+        // Optimistic local state update
+        setTelemetry((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            memories: prev.memories.map((m) =>
+              m.id === memoryId
+                ? { ...m, deleted_at: shouldTrash ? new Date().toISOString() : null }
+                : m
+            ),
+          };
+        });
+        showToast(res.message, "success");
+        if (selectedMemory && selectedMemory.id === memoryId) {
+          setSelectedMemory((prev) =>
+            prev ? { ...prev, deleted_at: shouldTrash ? new Date().toISOString() : null } : null
+          );
+        }
+      } else {
+        showToast(res.message, "error");
+      }
+    } catch {
+      showToast("Error updating memory status.", "error");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handlePurgeTrashConfirm = async () => {
+    setShowPurgeModal(false);
+    setActionLoadingId("purge-all");
+    try {
+      const res = await adminPurgeDeletedMemories();
+      if (res.success) {
+        setTelemetry((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            memories: prev.memories.filter((m) => !m.deleted_at),
+          };
+        });
+        showToast(res.message, "success");
+      } else {
+        showToast(res.message, "error");
+      }
+    } catch {
+      showToast("Error executing trash purge.", "error");
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  if (!isAdminAuthorized(profile)) {
     return null;
   }
 
   return (
-    <div className="min-h-screen bg-[var(--surface-base)] text-[var(--text-primary)] font-sans">
-      {/* Top Quiet Navigation Bar */}
-      <header className="sticky top-0 z-40 border-b border-[var(--divider)] bg-[var(--surface-wood)]/85 backdrop-blur-md">
+    <div className="min-h-screen bg-[var(--surface-base)] text-[var(--text-primary)] font-sans antialiased selection:bg-emerald-500/20">
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            className="fixed top-5 right-5 z-50 flex items-center gap-2.5 rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)]/95 px-4 py-3 shadow-[var(--shadow-3)] backdrop-blur-xl"
+          >
+            {toast.type === "success" && <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />}
+            {toast.type === "error" && <AlertTriangle className="h-4 w-4 text-rose-400 shrink-0" />}
+            {toast.type === "info" && <Sparkles className="h-4 w-4 text-sky-400 shrink-0" />}
+            <span className="text-xs font-medium text-[var(--text-primary)]">{toast.message}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Top Navbar */}
+      <header className="sticky top-0 z-40 border-b border-[var(--divider)] bg-[var(--surface-wood)]/85 backdrop-blur-xl">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-3">
             <Link
               href="/"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--divider)] bg-[var(--surface-raised)] text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] active:scale-[0.97]"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--divider)] bg-[var(--surface-raised)] text-[var(--text-secondary)] transition-all hover:bg-[var(--surface-paper)] hover:text-[var(--text-primary)] active:scale-[0.96]"
               aria-label="Return to Jar"
             >
               <ArrowLeft className="h-4 w-4" />
             </Link>
-            <div className="flex items-center gap-2">
-              <span className="flex h-6 items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 text-xs font-medium text-emerald-400">
-                <Shield className="h-3 w-3" />
-                Admin Console
+
+            <div className="flex items-center gap-2.5">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-400">
+                <Shield className="h-3.5 w-3.5" />
+                Super Admin Console
               </span>
-              <span className="text-xs text-[var(--text-tertiary)] hidden sm:inline">
-                {profile?.display_name} (@{profile?.username})
+              <span className="hidden items-center gap-1.5 font-mono text-xs text-[var(--text-tertiary)] md:inline-flex">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                RLS Bypass Enabled
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <button
-              onClick={() => void loadData()}
-              disabled={isLoadingData}
-              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-[var(--divider)] bg-[var(--surface-raised)] px-2.5 text-xs text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] active:scale-[0.97] disabled:opacity-50"
+              onClick={() => void refreshTelemetry()}
+              disabled={isLoading}
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-[var(--divider)] bg-[var(--surface-raised)] px-3 text-xs font-medium text-[var(--text-secondary)] transition-all hover:bg-[var(--surface-paper)] hover:text-[var(--text-primary)] active:scale-[0.97] disabled:opacity-50"
             >
-              <RefreshCw className={`h-3 w-3 ${isLoadingData ? "animate-spin" : ""}`} />
-              <span className="hidden sm:inline">Refresh</span>
+              <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin text-emerald-400" : ""}`} />
+              <span className="hidden sm:inline">Sync Data</span>
             </button>
-            <span className="text-[11px] font-mono text-[var(--text-tertiary)] hidden md:inline">
-              Sync: {lastRefreshed.toLocaleTimeString()}
+
+            <span className="hidden font-mono text-[11px] text-[var(--text-tertiary)] lg:inline">
+              Updated: {lastRefreshed.toLocaleTimeString()}
             </span>
           </div>
         </div>
 
-        {/* Tab Navigation (Nested Radii, 4px scale) */}
+        {/* Tab Navigation Pill Bar */}
         <div className="mx-auto flex max-w-7xl overflow-x-auto px-4 pb-2 pt-1 sm:px-6 panel-scroll">
-          <nav className="inline-flex rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)]/60 p-1 text-xs">
+          <nav className="inline-flex rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)]/70 p-1 text-xs">
             {(
               [
-                { key: "overview", label: "Overview", icon: Cpu },
-                { key: "memories", label: `Memories (${totalMemories})`, icon: Database },
-                { key: "users", label: `Users (${profiles.length})`, icon: Users },
-                { key: "activity", label: `Audit trail (${activityLogs.length})`, icon: Activity },
-                { key: "system", label: "Security & limits", icon: Terminal },
+                { key: "overview", label: "Overview", icon: Cpu, count: null },
+                { key: "users", label: "Users", icon: Users, count: profiles.length },
+                { key: "couples", label: "Couples", icon: Heart, count: relationships.length },
+                { key: "memories", label: "Keepsakes", icon: Database, count: totalMemories },
+                { key: "storage", label: "Storage", icon: HardDrive, count: attachments.length },
+                { key: "audit", label: "Audit & Logs", icon: Activity, count: activityLogs.length },
               ] as const
             ).map((tab) => {
               const Icon = tab.icon;
@@ -324,6 +545,17 @@ export function AdminPanelExperience() {
                 >
                   <Icon className="h-3.5 w-3.5" />
                   <span>{tab.label}</span>
+                  {tab.count !== null && (
+                    <span
+                      className={`ml-1 rounded px-1.5 py-0.2 font-mono text-[10px] ${
+                        isActive
+                          ? "bg-emerald-500/15 text-emerald-300"
+                          : "bg-[var(--surface-wood)] text-[var(--text-tertiary)]"
+                      }`}
+                    >
+                      {tab.count}
+                    </span>
+                  )}
                 </button>
               );
             })}
@@ -331,388 +563,493 @@ export function AdminPanelExperience() {
         </div>
       </header>
 
-      {/* Main Container */}
+      {/* Main Content Area */}
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 page-safe-bottom">
+        {/* ============================================================ */}
         {/* TAB 1: OVERVIEW */}
+        {/* ============================================================ */}
         {activeTab === "overview" && (
           <div className="space-y-6">
-            {/* Top Stat Row: 4 Real Numbers, No Gimmicks, Tabular Nums */}
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <div className="rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] p-4">
-                <span className="text-xs text-[var(--text-tertiary)]">Total keepsakes</span>
-                <div className="mt-1 flex items-baseline gap-2">
+            {/* Top Stat Row: 5 High-Utility Metric Cards */}
+            <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-5">
+              {/* Card 1 */}
+              <div className="rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] p-4 transition-colors hover:border-emerald-500/25">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-[var(--text-tertiary)]">Global Keepsakes</span>
+                  <Database className="h-3.5 w-3.5 text-emerald-400" />
+                </div>
+                <div className="mt-2 flex items-baseline gap-2">
                   <span className="font-mono text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
                     {totalMemories}
                   </span>
-                  <span className="text-xs text-emerald-500 font-mono">
-                    {activeMemories} active
-                  </span>
+                  <span className="font-mono text-xs text-emerald-400">{activeMemories} active</span>
                 </div>
                 <span className="mt-2 block text-[11px] text-[var(--text-caption)]">
-                  {deletedMemories > 0 ? `${deletedMemories} in trash` : "0 deleted"}
+                  {deletedMemories > 0 ? `${deletedMemories} in trash` : "0 in trash"}
                 </span>
               </div>
 
-              <div className="rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] p-4">
-                <span className="text-xs text-[var(--text-tertiary)]">Stored attachments</span>
-                <div className="mt-1 flex items-baseline gap-2">
+              {/* Card 2 */}
+              <div className="rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] p-4 transition-colors hover:border-sky-500/25">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-[var(--text-tertiary)]">Storage Footprint</span>
+                  <HardDrive className="h-3.5 w-3.5 text-sky-400" />
+                </div>
+                <div className="mt-2 flex items-baseline gap-2">
                   <span className="font-mono text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
-                    {totalAttachments}
-                  </span>
-                  <span className="text-xs text-[var(--text-tertiary)] font-mono">
                     {prettyBytes(totalAttachmentBytes)}
                   </span>
+                  <span className="font-mono text-xs text-sky-400">{attachments.length} files</span>
                 </div>
                 <span className="mt-2 block text-[11px] text-[var(--text-caption)]">
-                  Images, audio & video
+                  Bucket: memories
                 </span>
               </div>
 
-              <div className="rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] p-4">
-                <span className="text-xs text-[var(--text-tertiary)]">Sealed capsules</span>
-                <div className="mt-1 flex items-baseline gap-2">
+              {/* Card 3 */}
+              <div className="rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] p-4 transition-colors hover:border-amber-500/25">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-[var(--text-tertiary)]">Registered Users</span>
+                  <Users className="h-3.5 w-3.5 text-amber-400" />
+                </div>
+                <div className="mt-2 flex items-baseline gap-2">
                   <span className="font-mono text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
-                    {sealedCapsules}
+                    {profiles.length}
                   </span>
-                  <span className="text-xs text-amber-500 font-mono">
-                    {memories.filter((m) => m.unlock_at).length} total
+                  <span className="font-mono text-xs text-amber-400">
+                    {usersWithRelationship.filter((u) => !!u.partner).length} coupled
                   </span>
                 </div>
                 <span className="mt-2 block text-[11px] text-[var(--text-caption)]">
-                  Awaiting scheduled dates
+                  Across all relationships
                 </span>
               </div>
 
-              <div className="rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] p-4">
-                <span className="text-xs text-[var(--text-tertiary)]">Relationship days</span>
-                <div className="mt-1 flex items-baseline gap-2">
+              {/* Card 4 */}
+              <div className="rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] p-4 transition-colors hover:border-rose-500/25">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-[var(--text-tertiary)]">Coupled Pairs</span>
+                  <Heart className="h-3.5 w-3.5 text-rose-400" />
+                </div>
+                <div className="mt-2 flex items-baseline gap-2">
                   <span className="font-mono text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
-                    {daysTogether !== null ? daysTogether : "—"}
+                    {relationships.length}
                   </span>
-                  <span className="text-xs text-[var(--text-tertiary)]">days</span>
+                  <span className="font-mono text-xs text-rose-400">multi-tenant</span>
                 </div>
                 <span className="mt-2 block text-[11px] text-[var(--text-caption)]">
-                  {relationship?.anniversary_type === "monthly" ? "Monthly cadence" : "Yearly cadence"}
+                  {sealedCapsules} sealed capsules
+                </span>
+              </div>
+
+              {/* Card 5 */}
+              <div className="rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] p-4 transition-colors hover:border-violet-500/25 col-span-2 sm:col-span-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-[var(--text-tertiary)]">Push Subscriptions</span>
+                  <Smartphone className="h-3.5 w-3.5 text-violet-400" />
+                </div>
+                <div className="mt-2 flex items-baseline gap-2">
+                  <span className="font-mono text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
+                    {pushCount}
+                  </span>
+                  <span className="font-mono text-xs text-emerald-400">VAPID active</span>
+                </div>
+                <span className="mt-2 block text-[11px] text-[var(--text-caption)]">
+                  Devices receiving alerts
                 </span>
               </div>
             </div>
 
-            {/* One Bright Element: Unslop Craft Distribution Telemetry */}
-            <div className="rounded-2xl border border-[var(--divider)] bg-[var(--surface-raised)] p-5">
-              <div className="flex items-center justify-between border-b border-[var(--divider)] pb-4">
+            {/* Keepsake Archetype Distribution Bar */}
+            <div className="rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] p-5">
+              <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-sm font-semibold text-[var(--text-primary)]">
-                    Keepsake distribution by type
+                    Keepsake distribution by archetype
                   </h2>
-                  <p className="text-xs text-[var(--text-tertiary)]">
-                    Proportion of memory archetypes stored in database
+                  <p className="mt-0.5 text-xs text-[var(--text-tertiary)]">
+                    Relative proportion of memories created across all relationship vaults
                   </p>
                 </div>
-                <span className="font-mono text-xs text-[var(--text-caption)]">
-                  {totalMemories} records
-                </span>
+                <span className="font-mono text-xs text-[var(--text-tertiary)]">{totalMemories} records</span>
               </div>
 
-              {/* Graphical Stacked Distribution Bar */}
-              <div className="mt-4">
-                <div className="flex h-5 w-full overflow-hidden rounded-md bg-[var(--surface-paper)]">
-                  {typeDistribution.map(([type, count]) => {
-                    const pct = totalMemories > 0 ? (count / totalMemories) * 100 : 0;
-                    return (
-                      <div
-                        key={type}
-                        style={{ width: `${pct}%` }}
-                        className="group relative h-full transition-opacity hover:opacity-85"
-                        title={`${type}: ${count} (${pct.toFixed(1)}%)`}
-                      >
-                        <div
-                          className={`h-full border-r border-[var(--surface-base)] ${
-                            type === "photo"
-                              ? "bg-amber-600/70"
-                              : type === "letter"
-                              ? "bg-emerald-600/70"
-                              : type === "promise"
-                              ? "bg-rose-600/70"
-                              : type === "voice"
-                              ? "bg-blue-600/70"
-                              : type === "video"
-                              ? "bg-purple-600/70"
-                              : type === "travel"
-                              ? "bg-teal-600/70"
-                              : type === "wish"
-                              ? "bg-yellow-600/70"
-                              : type === "gratitude"
-                              ? "bg-pink-600/70"
-                              : "bg-zinc-600/70"
-                          }`}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
+              {/* Multi-segment colored bar */}
+              <div className="mt-4 flex h-3.5 w-full overflow-hidden rounded-full bg-[var(--surface-paper)]">
+                {typeDistribution.map((item, idx) => {
+                  const colors = [
+                    "bg-amber-400",
+                    "bg-emerald-500",
+                    "bg-sky-400",
+                    "bg-rose-400",
+                    "bg-violet-400",
+                    "bg-amber-300",
+                    "bg-pink-400",
+                    "bg-indigo-400",
+                    "bg-teal-400",
+                    "bg-orange-400",
+                  ];
+                  const color = colors[idx % colors.length];
+                  return (
+                    <div
+                      key={item.type}
+                      style={{ width: `${item.percentage}%` }}
+                      title={`${item.type}: ${item.count} (${item.percentage}%)`}
+                      className={`${color} transition-all duration-300`}
+                    />
+                  );
+                })}
+              </div>
 
-                {/* Legend Chips */}
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {typeDistribution.map(([type, count]) => {
-                    const pct = totalMemories > 0 ? ((count / totalMemories) * 100).toFixed(0) : 0;
-                    return (
-                      <div
-                        key={type}
-                        className="inline-flex items-center gap-1.5 rounded-md border border-[var(--divider)] bg-[var(--surface-paper)]/70 px-2.5 py-1 text-xs"
-                      >
-                        <span
-                          className={`h-2 w-2 rounded-full ${
-                            type === "photo"
-                              ? "bg-amber-500"
-                              : type === "letter"
-                              ? "bg-emerald-500"
-                              : type === "promise"
-                              ? "bg-rose-500"
-                              : type === "voice"
-                              ? "bg-blue-500"
-                              : type === "video"
-                              ? "bg-purple-500"
-                              : type === "travel"
-                              ? "bg-teal-500"
-                              : type === "wish"
-                              ? "bg-yellow-500"
-                              : type === "gratitude"
-                              ? "bg-pink-500"
-                              : "bg-zinc-500"
-                          }`}
-                        />
-                        <span className="capitalize text-[var(--text-secondary)]">{type}</span>
-                        <span className="font-mono text-[var(--text-tertiary)]">
-                          {count} ({pct}%)
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
+              {/* Legend Grid */}
+              <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs">
+                {typeDistribution.map((item, idx) => {
+                  const dots = [
+                    "bg-amber-400",
+                    "bg-emerald-500",
+                    "bg-sky-400",
+                    "bg-rose-400",
+                    "bg-violet-400",
+                    "bg-amber-300",
+                    "bg-pink-400",
+                    "bg-indigo-400",
+                    "bg-teal-400",
+                    "bg-orange-400",
+                  ];
+                  return (
+                    <div key={item.type} className="flex items-center gap-1.5 font-mono">
+                      <span className={`h-2 w-2 rounded-full ${dots[idx % dots.length]}`} />
+                      <span className="capitalize text-[var(--text-secondary)]">{item.type}</span>
+                      <span className="text-[var(--text-tertiary)]">
+                        {item.count} ({item.percentage}%)
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
-            {/* Quick Overview Columns */}
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              {/* Member Accounts List */}
-              <div className="rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] p-4">
+            {/* Two Column Grid: Couples Matrix + Recent Audit Trail */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              {/* Left Column: Coupled Relationships Snapshot */}
+              <div className="rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] p-5">
                 <div className="flex items-center justify-between border-b border-[var(--divider)] pb-3">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
-                    Coupled accounts
-                  </h3>
-                  <span className="font-mono text-xs text-[var(--text-caption)]">
-                    {profiles.length} registered
-                  </span>
-                </div>
-                <div className="mt-3 divide-y divide-[var(--divider)]">
-                  {profiles.map((p) => {
-                    const isCurrent = p.id === profile?.id;
-                    const isAdm = p.email === "phu.nt2710@gmail.com" || p.username === "phu";
-                    return (
-                      <div key={p.id} className="flex items-center justify-between py-2.5">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--surface-paper)] text-xs font-semibold text-[var(--text-primary)]">
-                            {p.display_name.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-sm font-medium text-[var(--text-primary)]">
-                                {p.display_name}
-                              </span>
-                              {isAdm && (
-                                <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-400">
-                                  Admin
-                                </span>
-                              )}
-                              {isCurrent && (
-                                <span className="rounded bg-zinc-500/15 px-1.5 py-0.5 text-[10px] text-[var(--text-tertiary)]">
-                                  You
-                                </span>
-                              )}
-                            </div>
-                            <span className="block font-mono text-xs text-[var(--text-tertiary)]">
-                              @{p.username} · {p.email || "No email"}
-                            </span>
-                          </div>
-                        </div>
-                        <span className="text-[11px] text-[var(--text-caption)] font-mono">
-                          {p.timezone || "UTC"}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Recent Activity Mini Feed */}
-              <div className="rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] p-4">
-                <div className="flex items-center justify-between border-b border-[var(--divider)] pb-3">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
-                    Latest event logs
-                  </h3>
+                  <div className="flex items-center gap-2">
+                    <Heart className="h-4 w-4 text-rose-400" />
+                    <h3 className="text-sm font-semibold text-[var(--text-primary)]">
+                      Coupled Accounts ({relationships.length})
+                    </h3>
+                  </div>
                   <button
-                    onClick={() => setActiveTab("activity")}
-                    className="text-xs text-[var(--accent-primary)] hover:underline"
+                    onClick={() => setActiveTab("couples")}
+                    className="text-xs font-medium text-emerald-400 hover:underline"
                   >
                     View all
                   </button>
                 </div>
-                <div className="mt-3 space-y-2.5">
-                  {activityLogs.slice(0, 5).map((log) => (
-                    <div
-                      key={log.id}
-                      className="flex items-start justify-between rounded-lg border border-[var(--divider)]/50 bg-[var(--surface-paper)]/40 p-2.5 text-xs"
-                    >
-                      <div>
-                        <span className="font-mono font-medium text-[var(--text-primary)]">
-                          {log.action}
-                        </span>
-                        <span className="ml-1.5 text-[var(--text-tertiary)]">
-                          on {log.target_type}
-                        </span>
-                      </div>
-                      <span className="font-mono text-[11px] text-[var(--text-caption)]">
-                        {new Date(log.created_at).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
-                    </div>
-                  ))}
-                  {activityLogs.length === 0 && (
-                    <p className="py-4 text-center text-xs text-[var(--text-tertiary)]">
-                      No activity logs recorded yet.
+
+                <div className="mt-3 divide-y divide-[var(--divider)]">
+                  {enrichedRelationships.length === 0 ? (
+                    <p className="py-6 text-center text-xs text-[var(--text-tertiary)]">
+                      No relationships found in database.
                     </p>
+                  ) : (
+                    enrichedRelationships.slice(0, 4).map((rel) => (
+                      <div key={rel.id} className="py-3 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="flex -space-x-2">
+                            {rel.members.map((m) => (
+                              <div
+                                key={m.id}
+                                className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-[var(--surface-raised)] bg-[var(--surface-paper)] text-xs font-semibold text-[var(--text-primary)]"
+                              >
+                                {m.display_name.charAt(0).toUpperCase()}
+                              </div>
+                            ))}
+                          </div>
+                          <div>
+                            <div className="text-xs font-medium text-[var(--text-primary)]">
+                              {rel.members.map((m) => m.display_name).join(" & ") || "Unnamed Pair"}
+                            </div>
+                            <div className="font-mono text-[11px] text-[var(--text-tertiary)]">
+                              ID: {rel.id.slice(0, 8)}... • {rel.daysTogether !== null ? `${rel.daysTogether} days` : "No start date"}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="text-right">
+                          <span className="font-mono text-xs font-medium text-emerald-400">
+                            {rel.memoriesCount} keepsakes
+                          </span>
+                          <span className="block font-mono text-[10px] text-[var(--text-tertiary)]">
+                            {rel.timezone}
+                          </span>
+                        </div>
+                      </div>
+                    ))
                   )}
                 </div>
+              </div>
+
+              {/* Right Column: Live Event Stream / Audit Trail */}
+              <div className="rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] p-5">
+                <div className="flex items-center justify-between border-b border-[var(--divider)] pb-3">
+                  <div className="flex items-center gap-2">
+                    <Activity className="h-4 w-4 text-sky-400" />
+                    <h3 className="text-sm font-semibold text-[var(--text-primary)]">
+                      Latest Activity Logs ({activityLogs.length})
+                    </h3>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab("audit")}
+                    className="text-xs font-medium text-sky-400 hover:underline"
+                  >
+                    View all
+                  </button>
+                </div>
+
+                <div className="mt-3 divide-y divide-[var(--divider)]">
+                  {activityLogs.length === 0 ? (
+                    <div className="py-8 text-center text-xs text-[var(--text-tertiary)]">
+                      No activity logs recorded yet.
+                    </div>
+                  ) : (
+                    activityLogs.slice(0, 5).map((log) => (
+                      <div key={log.id} className="py-2.5 flex items-center justify-between gap-3 text-xs">
+                        <div className="flex items-center gap-2.5 truncate">
+                          <span className="inline-flex h-5 items-center rounded bg-[var(--surface-paper)] px-1.5 font-mono text-[10px] font-medium text-[var(--text-secondary)]">
+                            {log.action}
+                          </span>
+                          <span className="text-[var(--text-secondary)] truncate">
+                            Target: {log.target_type}
+                          </span>
+                        </div>
+                        <span className="font-mono text-[11px] text-[var(--text-tertiary)] shrink-0">
+                          {formatDateTime(log.created_at)}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Actions Row */}
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] p-4">
+              <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+                <Terminal className="h-4 w-4 text-emerald-400" />
+                <span>Quick Operations</span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => setShowPurgeModal(true)}
+                  disabled={deletedMemories === 0 || actionLoadingId === "purge-all"}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/20 bg-rose-500/10 px-3 py-1.5 text-xs font-medium text-rose-400 transition-all hover:bg-rose-500/20 active:scale-[0.97] disabled:opacity-40"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  <span>Purge Trash ({deletedMemories})</span>
+                </button>
+
+                <button
+                  onClick={() => void refreshTelemetry()}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--divider)] bg-[var(--surface-paper)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-all hover:text-[var(--text-primary)] active:scale-[0.97]"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  <span>Re-sync Telemetry</span>
+                </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* TAB 2: MEMORIES EXPLORER */}
-        {activeTab === "memories" && (
+        {/* ============================================================ */}
+        {/* TAB 2: USERS DIRECTORY */}
+        {/* ============================================================ */}
+        {activeTab === "users" && (
           <div className="space-y-4">
-            {/* Filter & Search Bar */}
-            <div className="flex flex-col gap-3 rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] p-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-[var(--text-tertiary)]" />
+            {/* Search & Filter Header */}
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-tertiary)]" />
                 <input
                   type="text"
-                  placeholder="Search by title, content or UUID..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full rounded-lg border border-[var(--divider)] bg-[var(--surface-paper)] py-2 pl-9 pr-3 text-xs text-[var(--text-primary)] placeholder-[var(--text-tertiary)] focus:outline-none focus:ring-1 focus:ring-[var(--focus-color)]"
+                  placeholder="Search user by display name, username, email or ID..."
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                  className="h-9 w-full rounded-lg border border-[var(--divider)] bg-[var(--surface-raised)] pl-9 pr-3 text-xs text-[var(--text-primary)] placeholder-[var(--text-tertiary)] transition-colors focus:border-emerald-500/50 focus:outline-none"
                 />
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <select
-                  value={typeFilter}
-                  onChange={(e) => setTypeFilter(e.target.value)}
-                  className="rounded-lg border border-[var(--divider)] bg-[var(--surface-paper)] px-2.5 py-1.5 text-xs text-[var(--text-secondary)] focus:outline-none"
-                >
-                  <option value="all">All types</option>
-                  <option value="photo">Photo</option>
-                  <option value="letter">Letter</option>
-                  <option value="promise">Promise</option>
-                  <option value="voice">Voice</option>
-                  <option value="video">Video</option>
-                  <option value="travel">Travel</option>
-                  <option value="wish">Wish</option>
-                  <option value="gratitude">Gratitude</option>
-                  <option value="random_thought">Thought</option>
-                </select>
-
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="rounded-lg border border-[var(--divider)] bg-[var(--surface-paper)] px-2.5 py-1.5 text-xs text-[var(--text-secondary)] focus:outline-none"
-                >
-                  <option value="all">All statuses</option>
-                  <option value="sealed">Sealed</option>
-                  <option value="unlocked">Unlocked</option>
-                  <option value="pending_partner">Pending partner</option>
-                  <option value="draft">Draft</option>
-                  <option value="deleted">In trash</option>
-                </select>
+              <div className="flex items-center gap-2">
+                <div className="inline-flex rounded-lg border border-[var(--divider)] bg-[var(--surface-raised)] p-0.5 text-xs">
+                  {(
+                    [
+                      { key: "all", label: "All Users" },
+                      { key: "coupled", label: "Coupled" },
+                      { key: "uncoupled", label: "Single" },
+                      { key: "admin", label: "Admins" },
+                    ] as const
+                  ).map((f) => (
+                    <button
+                      key={f.key}
+                      onClick={() => setUserRoleFilter(f.key)}
+                      className={`rounded-md px-2.5 py-1 text-xs font-medium transition-all ${
+                        userRoleFilter === f.key
+                          ? "bg-[var(--surface-paper)] text-[var(--text-primary)]"
+                          : "text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
-            {/* Table of Memories */}
-            <div className="overflow-hidden rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] shadow-sm">
+            {/* Users Data Table */}
+            <div className="overflow-hidden rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)]">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="border-b border-[var(--divider)] bg-[var(--surface-paper)] text-[var(--text-tertiary)]">
-                    <tr>
-                      <th className="px-4 py-3 font-medium">Title & Archetype</th>
-                      <th className="px-4 py-3 font-medium">Status</th>
-                      <th className="px-4 py-3 font-medium">Theme</th>
-                      <th className="px-4 py-3 font-medium">Author ID</th>
-                      <th className="px-4 py-3 font-medium">Date</th>
-                      <th className="px-4 py-3 font-medium text-right">Inspect</th>
+                  <thead>
+                    <tr className="border-b border-[var(--divider)] bg-[var(--surface-paper)]/50 text-[11px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">
+                      <th className="px-4 py-3">User & Handle</th>
+                      <th className="px-4 py-3">Email</th>
+                      <th className="px-4 py-3">Coupled With</th>
+                      <th className="px-4 py-3">Timezone</th>
+                      <th className="px-4 py-3">Keepsakes</th>
+                      <th className="px-4 py-3">Role</th>
+                      <th className="px-4 py-3 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[var(--divider)] font-sans">
-                    {filteredMemories.map((m) => (
-                      <tr
-                        key={m.id}
-                        className="transition-colors hover:bg-[var(--surface-paper)]/50"
-                      >
-                        <td className="px-4 py-3">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-[var(--text-primary)]">
-                              {m.title || "Untitled keepsake"}
-                            </span>
-                            <span className="rounded bg-[var(--surface-paper)] px-1.5 py-0.5 text-[10px] capitalize text-[var(--text-tertiary)]">
-                              {m.type}
-                            </span>
-                          </div>
-                          {m.content && (
-                            <p className="mt-0.5 line-clamp-1 text-[11px] text-[var(--text-caption)]">
-                              {m.content}
-                            </p>
-                          )}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span
-                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                              m.deleted_at
-                                ? "bg-red-500/10 text-red-400"
-                                : m.status === "sealed"
-                                ? "bg-amber-500/10 text-amber-400"
-                                : "bg-emerald-500/10 text-emerald-400"
-                            }`}
-                          >
-                            {m.deleted_at ? "Trash" : m.status}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 font-mono text-[11px] text-[var(--text-tertiary)] capitalize">
-                          {m.theme || "Standard"}
-                        </td>
-                        <td className="px-4 py-3 font-mono text-[11px] text-[var(--text-tertiary)]">
-                          {m.created_by.slice(0, 8)}...
-                        </td>
-                        <td className="px-4 py-3 font-mono text-[11px] text-[var(--text-tertiary)]">
-                          {new Date(m.created_at).toLocaleDateString()}
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <button
-                            onClick={() => setSelectedMemory(m)}
-                            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-[var(--divider)] bg-[var(--surface-base)] text-[var(--text-secondary)] transition-colors hover:text-[var(--text-primary)] active:scale-[0.95]"
-                            title="Inspect details"
-                          >
-                            <Eye className="h-3.5 w-3.5" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                    {filteredMemories.length === 0 && (
+                  <tbody className="divide-y divide-[var(--divider)]">
+                    {filteredUsers.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="py-8 text-center text-xs text-[var(--text-tertiary)]">
-                          No keepsakes match the current filters.
+                        <td colSpan={7} className="px-4 py-8 text-center text-xs text-[var(--text-tertiary)]">
+                          No user records match your search query.
                         </td>
                       </tr>
+                    ) : (
+                      filteredUsers.map((u) => {
+                        return (
+                          <tr key={u.id} className="transition-colors hover:bg-[var(--surface-paper)]/40">
+                            {/* User & Handle */}
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-3">
+                                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--surface-paper)] border border-[var(--divider)] text-xs font-semibold text-[var(--text-primary)]">
+                                  {u.display_name.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                  <div className="font-medium text-[var(--text-primary)] flex items-center gap-1.5">
+                                    <span>{u.display_name}</span>
+                                    {u.id === profile?.id && (
+                                      <span className="rounded bg-emerald-500/10 px-1.5 py-0.2 font-mono text-[10px] text-emerald-400">
+                                        You
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="font-mono text-[11px] text-[var(--text-tertiary)]">
+                                    @{u.username}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Email */}
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-mono text-xs text-[var(--text-secondary)]">
+                                  {u.email || "—"}
+                                </span>
+                                {u.email && (
+                                  <button
+                                    onClick={() => handleCopy(u.email!, `email-${u.id}`)}
+                                    className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+                                    title="Copy email"
+                                  >
+                                    {copiedId === `email-${u.id}` ? (
+                                      <Check className="h-3 w-3 text-emerald-400" />
+                                    ) : (
+                                      <Copy className="h-3 w-3" />
+                                    )}
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* Coupled Partner */}
+                            <td className="px-4 py-3">
+                              {u.partner ? (
+                                <div className="flex items-center gap-2">
+                                  <Heart className="h-3.5 w-3.5 text-rose-400 shrink-0" />
+                                  <div>
+                                    <span className="font-medium text-[var(--text-primary)]">
+                                      {u.partner.display_name}
+                                    </span>
+                                    <span className="block font-mono text-[10px] text-[var(--text-tertiary)]">
+                                      @{u.partner.username}
+                                    </span>
+                                  </div>
+                                </div>
+                              ) : (
+                                <span className="rounded bg-[var(--surface-paper)] px-2 py-0.5 font-mono text-[10px] text-[var(--text-tertiary)]">
+                                  Single / Uncoupled
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Timezone */}
+                            <td className="px-4 py-3 font-mono text-[11px] text-[var(--text-secondary)]">
+                              {u.timezone || "UTC"}
+                            </td>
+
+                            {/* Keepsakes Count */}
+                            <td className="px-4 py-3 font-mono text-xs text-emerald-400 font-medium">
+                              {u.memoriesCount}
+                            </td>
+
+                            {/* Role Badge */}
+                            <td className="px-4 py-3">
+                              {u.isAdmin ? (
+                                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-400">
+                                  <Shield className="h-3 w-3" />
+                                  Admin
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center rounded-full border border-[var(--divider)] bg-[var(--surface-paper)] px-2 py-0.5 text-[11px] text-[var(--text-tertiary)]">
+                                  Member
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Actions */}
+                            <td className="px-4 py-3 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  onClick={() => setSelectedUser(u)}
+                                  className="inline-flex h-7 items-center gap-1 rounded-md border border-[var(--divider)] bg-[var(--surface-paper)] px-2 text-[11px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] active:scale-[0.96]"
+                                  title="View full user details"
+                                >
+                                  <Eye className="h-3 w-3" />
+                                  <span>Details</span>
+                                </button>
+
+                                {u.email && (
+                                  <button
+                                    onClick={() => void handlePasswordReset(u.email!)}
+                                    disabled={actionLoadingId === `pwd-${u.email}`}
+                                    className="inline-flex h-7 items-center gap-1 rounded-md border border-[var(--divider)] bg-[var(--surface-paper)] px-2 text-[11px] text-[var(--text-secondary)] hover:text-amber-300 active:scale-[0.96] disabled:opacity-40"
+                                    title="Send password reset email"
+                                  >
+                                    <Key className="h-3 w-3" />
+                                    <span>Reset</span>
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
                     )}
                   </tbody>
                 </table>
@@ -721,309 +1058,754 @@ export function AdminPanelExperience() {
           </div>
         )}
 
-        {/* TAB 3: USERS & RELATIONSHIP */}
-        {activeTab === "users" && (
-          <div className="space-y-6">
-            {/* Relationship Card */}
-            {relationship && (
-              <div className="rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] p-5">
-                <div className="flex items-center justify-between border-b border-[var(--divider)] pb-3">
-                  <div className="flex items-center gap-2">
-                    <Heart className="h-4 w-4 text-rose-500" />
-                    <h2 className="text-sm font-semibold text-[var(--text-primary)]">
-                      Relationship parameters
-                    </h2>
-                  </div>
-                  <span className="font-mono text-xs text-[var(--text-tertiary)]">
-                    ID: {relationship.id}
-                  </span>
-                </div>
-                <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3 text-xs">
-                  <div>
-                    <span className="text-[var(--text-tertiary)]">Start date</span>
-                    <p className="mt-1 font-mono text-sm font-medium text-[var(--text-primary)]">
-                      {relationship.start_date}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-[var(--text-tertiary)]">Timezone</span>
-                    <p className="mt-1 font-mono text-sm font-medium text-[var(--text-primary)]">
-                      {relationship.timezone}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-[var(--text-tertiary)]">Anniversary cadence</span>
-                    <p className="mt-1 font-mono text-sm font-medium text-[var(--text-primary)] capitalize">
-                      {relationship.anniversary_type}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* User Cards Grid */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {profiles.map((p) => (
-                <div
-                  key={p.id}
-                  className="rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] p-5"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--surface-paper)] text-sm font-semibold text-[var(--text-primary)]">
-                        {p.display_name.charAt(0).toUpperCase()}
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-semibold text-[var(--text-primary)]">
-                          {p.display_name}
-                        </h3>
-                        <span className="font-mono text-xs text-[var(--text-tertiary)]">
-                          @{p.username}
-                        </span>
-                      </div>
-                    </div>
-                    {p.username === "phu" && (
-                      <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-xs text-emerald-400">
-                        Admin
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="mt-4 space-y-2 border-t border-[var(--divider)] pt-3 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-[var(--text-tertiary)]">UUID</span>
-                      <span className="font-mono text-[var(--text-secondary)]">{p.id}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[var(--text-tertiary)]">Email</span>
-                      <span className="font-mono text-[var(--text-secondary)]">
-                        {p.email || "None"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[var(--text-tertiary)]">Timezone</span>
-                      <span className="font-mono text-[var(--text-secondary)]">
-                        {p.timezone || "Not set"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-[var(--text-tertiary)]">Joined</span>
-                      <span className="font-mono text-[var(--text-secondary)]">
-                        {new Date(p.created_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* TAB 4: AUDIT TRAIL */}
-        {activeTab === "activity" && (
+        {/* ============================================================ */}
+        {/* TAB 3: COUPLES MATRIX */}
+        {/* ============================================================ */}
+        {activeTab === "couples" && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] p-4">
-              <div>
-                <h2 className="text-sm font-semibold text-[var(--text-primary)]">
-                  Activity & audit log
-                </h2>
-                <p className="text-xs text-[var(--text-tertiary)]">
-                  Recent actions and interactions recorded in the database
-                </p>
+            <div className="flex items-center justify-between">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-tertiary)]" />
+                <input
+                  type="text"
+                  placeholder="Search couples by partner names, username, or relationship ID..."
+                  value={relationshipSearch}
+                  onChange={(e) => setRelationshipSearch(e.target.value)}
+                  className="h-9 w-full rounded-lg border border-[var(--divider)] bg-[var(--surface-raised)] pl-9 pr-3 text-xs text-[var(--text-primary)] placeholder-[var(--text-tertiary)] transition-colors focus:border-rose-500/50 focus:outline-none"
+                />
               </div>
-              <span className="font-mono text-xs text-[var(--text-caption)]">
-                {activityLogs.length} events logged
+              <span className="font-mono text-xs text-[var(--text-tertiary)]">
+                {filteredRelationships.length} relationships recorded
               </span>
             </div>
 
-            <div className="divide-y divide-[var(--divider)] rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] overflow-hidden">
-              {activityLogs.map((log) => (
-                <div
-                  key={log.id}
-                  className="flex flex-col gap-1 p-3.5 text-xs sm:flex-row sm:items-center sm:justify-between hover:bg-[var(--surface-paper)]/40 transition-colors"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <span className="rounded bg-[var(--surface-paper)] px-2 py-0.5 font-mono text-[11px] text-[var(--text-primary)]">
-                      {log.action}
-                    </span>
-                    <span className="text-[var(--text-secondary)]">
-                      Target: <span className="font-mono text-[var(--text-primary)]">{log.target_type}</span>
-                    </span>
-                    <span className="text-[var(--text-tertiary)] font-mono text-[10px]">
-                      (User: {log.user_id.slice(0, 8)}...)
-                    </span>
-                  </div>
-                  <span className="font-mono text-[11px] text-[var(--text-caption)]">
-                    {new Date(log.created_at).toLocaleString()}
-                  </span>
+            {/* Relationship Cards Grid */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {filteredRelationships.length === 0 ? (
+                <div className="col-span-2 rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] p-8 text-center text-xs text-[var(--text-tertiary)]">
+                  No relationship records found.
                 </div>
-              ))}
-              {activityLogs.length === 0 && (
-                <p className="py-8 text-center text-xs text-[var(--text-tertiary)]">
-                  No activity logs found.
-                </p>
+              ) : (
+                filteredRelationships.map((r) => (
+                  <div
+                    key={r.id}
+                    className="rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] p-5 transition-all hover:border-[var(--divider-strong)]"
+                  >
+                    <div className="flex items-center justify-between border-b border-[var(--divider)] pb-3">
+                      <div className="flex items-center gap-2">
+                        <Heart className="h-4 w-4 text-rose-500" />
+                        <span className="font-mono text-xs font-semibold text-[var(--text-primary)]">
+                          Vault: {r.id.slice(0, 8)}...
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => handleCopy(r.id, `rel-${r.id}`)}
+                        className="inline-flex items-center gap-1 font-mono text-[11px] text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
+                      >
+                        {copiedId === `rel-${r.id}` ? (
+                          <Check className="h-3 w-3 text-emerald-400" />
+                        ) : (
+                          <Copy className="h-3 w-3" />
+                        )}
+                        <span>Copy ID</span>
+                      </button>
+                    </div>
+
+                    {/* Member Avatars and Details */}
+                    <div className="mt-4 flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        {r.members.map((m, idx) => (
+                          <div key={m.id} className="flex items-center gap-2">
+                            {idx > 0 && <span className="text-xs text-rose-400/80">&</span>}
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--surface-paper)] border border-[var(--divider)] text-sm font-semibold text-[var(--text-primary)]">
+                              {m.display_name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold text-[var(--text-primary)]">
+                                {m.display_name}
+                              </p>
+                              <p className="font-mono text-[10px] text-[var(--text-tertiary)]">
+                                @{m.username}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Parameters Grid */}
+                    <div className="mt-4 grid grid-cols-3 gap-3 rounded-lg border border-[var(--divider)] bg-[var(--surface-paper)]/50 p-3 text-xs font-mono">
+                      <div>
+                        <span className="text-[10px] text-[var(--text-tertiary)] uppercase block">Start Date</span>
+                        <span className="text-[var(--text-primary)] text-xs font-medium">
+                          {formatDate(r.start_date)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-[var(--text-tertiary)] uppercase block">Days Count</span>
+                        <span className="text-rose-400 text-xs font-medium">
+                          {r.daysTogether !== null ? `${r.daysTogether} days` : "—"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-[var(--text-tertiary)] uppercase block">Timezone</span>
+                        <span className="text-[var(--text-secondary)] text-xs">
+                          {r.timezone}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Footer Actions */}
+                    <div className="mt-4 flex items-center justify-between border-t border-[var(--divider)] pt-3 text-xs">
+                      <span className="font-mono text-emerald-400 text-xs">
+                        {r.memoriesCount} Keepsakes stored
+                      </span>
+                      <button
+                        onClick={() => {
+                          setMemoryCoupleFilter(r.id);
+                          setActiveTab("memories");
+                        }}
+                        className="inline-flex items-center gap-1 font-medium text-emerald-400 hover:underline"
+                      >
+                        <span>Filter memories</span>
+                        <ChevronRight className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
+                ))
               )}
             </div>
           </div>
         )}
 
-        {/* TAB 5: SYSTEM & SECURITY MATRIX */}
-        {activeTab === "system" && (
+        {/* ============================================================ */}
+        {/* TAB 4: KEEPSAKES EXPLORER */}
+        {/* ============================================================ */}
+        {activeTab === "memories" && (
+          <div className="space-y-4">
+            {/* Search & Filters */}
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-tertiary)]" />
+                <input
+                  type="text"
+                  placeholder="Search keepsakes by title, note content or ID..."
+                  value={memorySearch}
+                  onChange={(e) => setMemorySearch(e.target.value)}
+                  className="h-9 w-full rounded-lg border border-[var(--divider)] bg-[var(--surface-raised)] pl-9 pr-3 text-xs text-[var(--text-primary)] placeholder-[var(--text-tertiary)] transition-colors focus:border-emerald-500/50 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Archetype Filter */}
+                <select
+                  value={memoryArchetypeFilter}
+                  onChange={(e) => setMemoryArchetypeFilter(e.target.value)}
+                  className="h-9 rounded-lg border border-[var(--divider)] bg-[var(--surface-raised)] px-2.5 text-xs text-[var(--text-primary)] focus:outline-none"
+                >
+                  <option value="all">All Archetypes</option>
+                  <option value="photo">Photo</option>
+                  <option value="letter">Letter</option>
+                  <option value="voice">Voice</option>
+                  <option value="video">Video</option>
+                  <option value="travel">Travel</option>
+                  <option value="wish">Wish</option>
+                  <option value="gratitude">Gratitude</option>
+                  <option value="promise">Promise</option>
+                  <option value="thought">Thought</option>
+                </select>
+
+                {/* Status Filter */}
+                <select
+                  value={memoryStatusFilter}
+                  onChange={(e) => setMemoryStatusFilter(e.target.value as "all" | "active" | "sealed" | "deleted")}
+                  className="h-9 rounded-lg border border-[var(--divider)] bg-[var(--surface-raised)] px-2.5 text-xs text-[var(--text-primary)] focus:outline-none"
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="active">Active Only</option>
+                  <option value="sealed">Sealed Capsules</option>
+                  <option value="deleted">In Trash</option>
+                </select>
+
+                {/* Couple Filter */}
+                <select
+                  value={memoryCoupleFilter}
+                  onChange={(e) => setMemoryCoupleFilter(e.target.value)}
+                  className="h-9 max-w-[12rem] truncate rounded-lg border border-[var(--divider)] bg-[var(--surface-raised)] px-2.5 text-xs text-[var(--text-primary)] focus:outline-none"
+                >
+                  <option value="all">All Couples</option>
+                  {enrichedRelationships.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.members.map((m) => m.display_name).join(" & ") || r.id.slice(0, 8)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Keepsakes Table */}
+            <div className="overflow-hidden rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)]">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-[var(--divider)] bg-[var(--surface-paper)]/50 text-[11px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">
+                      <th className="px-4 py-3">Type</th>
+                      <th className="px-4 py-3">Title / Excerpt</th>
+                      <th className="px-4 py-3">Author</th>
+                      <th className="px-4 py-3">Relationship Vault</th>
+                      <th className="px-4 py-3">Created Date</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[var(--divider)]">
+                    {filteredMemories.length === 0 ? (
+                      <tr>
+                        <td colSpan={7} className="px-4 py-8 text-center text-xs text-[var(--text-tertiary)]">
+                          No keepsakes match the current filters.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredMemories.map((m) => {
+                        const author = profiles.find((p) => p.id === m.user_id);
+                        const isDeleted = !!m.deleted_at;
+
+                        return (
+                          <tr key={m.id} className="transition-colors hover:bg-[var(--surface-paper)]/40">
+                            {/* Archetype Icon & Name */}
+                            <td className="px-4 py-3">
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--divider)] bg-[var(--surface-paper)] px-2.5 py-1 font-mono text-[11px] font-medium capitalize text-[var(--text-secondary)]">
+                                {m.type}
+                              </span>
+                            </td>
+
+                            {/* Title / Excerpt */}
+                            <td className="px-4 py-3 max-w-xs">
+                              <div className="font-medium text-[var(--text-primary)] truncate">
+                                {m.title || "Untitled Keepsake"}
+                              </div>
+                              <div className="font-mono text-[10px] text-[var(--text-tertiary)] truncate">
+                                ID: {m.id}
+                              </div>
+                            </td>
+
+                            {/* Author */}
+                            <td className="px-4 py-3 font-medium text-[var(--text-secondary)]">
+                              {author ? author.display_name : "Unknown"}
+                            </td>
+
+                            {/* Relationship Vault */}
+                            <td className="px-4 py-3 font-mono text-[11px] text-[var(--text-tertiary)]">
+                              {m.relationship_id.slice(0, 8)}...
+                            </td>
+
+                            {/* Created Date */}
+                            <td className="px-4 py-3 font-mono text-[11px] text-[var(--text-secondary)]">
+                              {formatDateTime(m.created_at)}
+                            </td>
+
+                            {/* Status */}
+                            <td className="px-4 py-3">
+                              {isDeleted ? (
+                                <span className="inline-flex items-center gap-1 rounded bg-rose-500/10 px-1.5 py-0.5 font-mono text-[10px] text-rose-400">
+                                  In Trash
+                                </span>
+                              ) : m.status === "sealed" ? (
+                                <span className="inline-flex items-center gap-1 rounded bg-amber-500/10 px-1.5 py-0.5 font-mono text-[10px] text-amber-300">
+                                  <Lock className="h-2.5 w-2.5" />
+                                  Sealed
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.5 font-mono text-[10px] text-emerald-400">
+                                  Active
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Actions */}
+                            <td className="px-4 py-3 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  onClick={() => setSelectedMemory(m)}
+                                  className="inline-flex h-7 items-center gap-1 rounded-md border border-[var(--divider)] bg-[var(--surface-paper)] px-2 text-[11px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] active:scale-[0.96]"
+                                  title="Inspect content"
+                                >
+                                  <Eye className="h-3 w-3" />
+                                  <span>Preview</span>
+                                </button>
+
+                                {isDeleted ? (
+                                  <button
+                                    onClick={() => void handleToggleMemoryTrash(m.id, false)}
+                                    disabled={actionLoadingId === `trash-${m.id}`}
+                                    className="inline-flex h-7 items-center gap-1 rounded-md border border-emerald-500/20 bg-emerald-500/10 px-2 text-[11px] text-emerald-400 hover:bg-emerald-500/20 active:scale-[0.96] disabled:opacity-40"
+                                    title="Restore from trash"
+                                  >
+                                    <RotateCcw className="h-3 w-3" />
+                                    <span>Restore</span>
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => void handleToggleMemoryTrash(m.id, true)}
+                                    disabled={actionLoadingId === `trash-${m.id}`}
+                                    className="inline-flex h-7 items-center gap-1 rounded-md border border-rose-500/20 bg-rose-500/10 px-2 text-[11px] text-rose-400 hover:bg-rose-500/20 active:scale-[0.96] disabled:opacity-40"
+                                    title="Move to trash"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                    <span>Trash</span>
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================ */}
+        {/* TAB 5: STORAGE HYGIENE */}
+        {/* ============================================================ */}
+        {activeTab === "storage" && (
           <div className="space-y-6">
-            <div className="rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] p-5">
-              <h2 className="text-sm font-semibold text-[var(--text-primary)]">
-                Access control & permissions matrix
-              </h2>
-              <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
-                Role enforcement configured in <code className="font-mono text-[11px]">permissions.ts</code>
-              </p>
-
-              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 text-xs">
-                {/* Admin Role */}
-                <div className="rounded-lg border border-[var(--divider)] bg-[var(--surface-paper)]/70 p-4">
-                  <div className="flex items-center gap-2 text-emerald-400 font-semibold">
-                    <Shield className="h-4 w-4" />
-                    <span>Administrator Console Access</span>
-                  </div>
-                  <p className="mt-1 text-[11px] text-[var(--text-secondary)]">
-                    Full access to telemetry, keepsake inspector, and system metrics.
-                  </p>
-                  <div className="mt-3 space-y-1 font-mono text-[11px]">
-                    <div className="text-emerald-400/90">• phu.nt2710@gmail.com</div>
-                    <div className="text-[var(--text-tertiary)]">• username: phu</div>
-                    <div className="text-[var(--text-tertiary)]">• UUID: d800d931...</div>
-                  </div>
+            {/* Storage Metric Cards */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+              <div className="rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] p-4">
+                <span className="text-xs text-[var(--text-tertiary)]">Total Stored Assets</span>
+                <div className="mt-1 font-mono text-2xl font-semibold text-[var(--text-primary)]">
+                  {prettyBytes(totalAttachmentBytes)}
                 </div>
+                <span className="mt-1 block font-mono text-[11px] text-emerald-400">
+                  {attachments.length} attachment records
+                </span>
+              </div>
 
-                {/* Letters in Motion Role */}
-                <div className="rounded-lg border border-[var(--divider)] bg-[var(--surface-paper)]/70 p-4">
-                  <div className="flex items-center gap-2 text-violet-400 font-semibold">
-                    <FileText className="h-4 w-4" />
-                    <span>Letters in Motion (/animated-cards)</span>
-                  </div>
-                  <p className="mt-1 text-[11px] text-[var(--text-secondary)]">
-                    Exclusive access to interactive 3D anniversary letters.
-                  </p>
-                  <div className="mt-3 space-y-1 font-mono text-[11px]">
-                    <div className="text-[var(--text-secondary)]">• ritchiguen10@gmail.com</div>
-                    <div className="text-[var(--text-secondary)]">• floreskristine484@gmail.com</div>
-                    <div className="text-emerald-400/90">• phu.nt2710@gmail.com</div>
-                  </div>
+              <div className="rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-[var(--text-tertiary)]">Photos & Images</span>
+                  <Camera className="h-3.5 w-3.5 text-sky-400" />
+                </div>
+                <div className="mt-1 font-mono text-2xl font-semibold text-[var(--text-primary)]">
+                  {prettyBytes(mediaTypeBreakdown.imagesBytes)}
+                </div>
+                <span className="mt-1 block font-mono text-[11px] text-sky-400">
+                  {mediaTypeBreakdown.imageCount} images
+                </span>
+              </div>
+
+              <div className="rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-[var(--text-tertiary)]">Audio & Voice Memos</span>
+                  <Mic className="h-3.5 w-3.5 text-amber-400" />
+                </div>
+                <div className="mt-1 font-mono text-2xl font-semibold text-[var(--text-primary)]">
+                  {prettyBytes(mediaTypeBreakdown.audioBytes)}
+                </div>
+                <span className="mt-1 block font-mono text-[11px] text-amber-400">
+                  {mediaTypeBreakdown.audioCount} audio files
+                </span>
+              </div>
+
+              <div className="rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-[var(--text-tertiary)]">Videos</span>
+                  <Video className="h-3.5 w-3.5 text-violet-400" />
+                </div>
+                <div className="mt-1 font-mono text-2xl font-semibold text-[var(--text-primary)]">
+                  {prettyBytes(mediaTypeBreakdown.videoBytes)}
+                </div>
+                <span className="mt-1 block font-mono text-[11px] text-violet-400">
+                  {mediaTypeBreakdown.videoCount} video clips
+                </span>
+              </div>
+            </div>
+
+            {/* Storage Files Table */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="relative flex-1 max-w-md">
+                  <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-tertiary)]" />
+                  <input
+                    type="text"
+                    placeholder="Search attachment files by path or memory ID..."
+                    value={storageSearch}
+                    onChange={(e) => setStorageSearch(e.target.value)}
+                    className="h-9 w-full rounded-lg border border-[var(--divider)] bg-[var(--surface-raised)] pl-9 pr-3 text-xs text-[var(--text-primary)] placeholder-[var(--text-tertiary)] transition-colors focus:border-sky-500/50 focus:outline-none"
+                  />
+                </div>
+                <span className="font-mono text-xs text-[var(--text-tertiary)]">
+                  {filteredAttachments.length} files listed
+                </span>
+              </div>
+
+              <div className="overflow-hidden rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)]">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-[var(--divider)] bg-[var(--surface-paper)]/50 text-[11px] font-semibold text-[var(--text-tertiary)] uppercase tracking-wider">
+                        <th className="px-4 py-3">File Type</th>
+                        <th className="px-4 py-3">File Size</th>
+                        <th className="px-4 py-3">Storage Path</th>
+                        <th className="px-4 py-3">Linked Memory ID</th>
+                        <th className="px-4 py-3">Uploaded Date</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[var(--divider)]">
+                      {filteredAttachments.length === 0 ? (
+                        <tr>
+                          <td colSpan={5} className="px-4 py-8 text-center text-xs text-[var(--text-tertiary)]">
+                            No attachment files recorded yet.
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredAttachments.map((a) => (
+                          <tr key={a.id} className="transition-colors hover:bg-[var(--surface-paper)]/40 font-mono">
+                            <td className="px-4 py-3">
+                              <span className="rounded bg-[var(--surface-paper)] px-2 py-0.5 text-[11px] text-[var(--text-secondary)]">
+                                {a.file_type || "application/octet-stream"}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 font-medium text-sky-400">
+                              {prettyBytes(a.file_size)}
+                            </td>
+                            <td className="px-4 py-3 text-[var(--text-secondary)] max-w-xs truncate">
+                              {a.file_path}
+                            </td>
+                            <td className="px-4 py-3 text-[var(--text-tertiary)]">
+                              {a.memory_id.slice(0, 8)}...
+                            </td>
+                            <td className="px-4 py-3 text-[var(--text-tertiary)]">
+                              {formatDateTime(a.created_at)}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================ */}
+        {/* TAB 6: AUDIT & SYSTEM LOGS */}
+        {/* ============================================================ */}
+        {activeTab === "audit" && (
+          <div className="space-y-6">
+            {/* System Diagnostic Status */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] p-4">
+                <div className="flex items-center gap-2">
+                  <Server className="h-4 w-4 text-emerald-400" />
+                  <span className="text-xs font-semibold text-[var(--text-primary)]">
+                    Database Telemetry
+                  </span>
+                </div>
+                <div className="mt-3 space-y-1 font-mono text-[11px] text-[var(--text-tertiary)]">
+                  <div>Engine: Supabase PostgreSQL 15</div>
+                  <div>Multi-tenant isolation: Active</div>
+                  <div>Admin Service Role: Operational</div>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] p-4">
+                <div className="flex items-center gap-2">
+                  <Smartphone className="h-4 w-4 text-violet-400" />
+                  <span className="text-xs font-semibold text-[var(--text-primary)]">
+                    Web Push Notification
+                  </span>
+                </div>
+                <div className="mt-3 space-y-1 font-mono text-[11px] text-[var(--text-tertiary)]">
+                  <div>Service Worker: active (/sw.js)</div>
+                  <div>Subscribed Devices: {pushCount}</div>
+                  <div>VAPID Keys: Configured</div>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] p-4">
+                <div className="flex items-center gap-2">
+                  <Lock className="h-4 w-4 text-amber-400" />
+                  <span className="text-xs font-semibold text-[var(--text-primary)]">
+                    Security & Permissions
+                  </span>
+                </div>
+                <div className="mt-3 space-y-1 font-mono text-[11px] text-[var(--text-tertiary)]">
+                  <div>Superadmin User: {profile?.email}</div>
+                  <div>Time Capsules: {sealedCapsules} scheduled</div>
+                  <div>Trash Retention: 30-day soft delete</div>
                 </div>
               </div>
             </div>
 
-            {/* Storage Buckets Overview */}
+            {/* Audit Logs Stream */}
             <div className="rounded-xl border border-[var(--divider)] bg-[var(--surface-raised)] p-5">
-              <h2 className="text-sm font-semibold text-[var(--text-primary)]">
-                Storage buckets telemetry
-              </h2>
-              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {[
-                  { name: "memory-images", label: "Images", count: attachments.filter((a) => a.file_type === "image").length },
-                  { name: "memory-voices", label: "Voice clips", count: attachments.filter((a) => a.file_type === "voice").length },
-                  { name: "memory-videos", label: "Videos", count: attachments.filter((a) => a.file_type === "video").length },
-                  { name: "memory-thumbnails", label: "Thumbnails", count: attachments.filter((a) => a.file_type === "thumbnail").length },
-                ].map((b) => (
-                  <div
-                    key={b.name}
-                    className="rounded-lg border border-[var(--divider)] bg-[var(--surface-paper)] p-3 text-xs"
-                  >
-                    <span className="font-mono text-[11px] text-[var(--text-tertiary)] block">
-                      {b.name}
-                    </span>
-                    <span className="text-base font-semibold font-mono text-[var(--text-primary)] mt-1 block">
-                      {b.count} files
-                    </span>
-                    <span className="text-[10px] text-[var(--text-caption)]">{b.label}</span>
-                  </div>
-                ))}
+              <div className="flex items-center justify-between border-b border-[var(--divider)] pb-3">
+                <div className="flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-sky-400" />
+                  <h3 className="text-sm font-semibold text-[var(--text-primary)]">
+                    Live Audit Trail ({activityLogs.length})
+                  </h3>
+                </div>
+                <span className="font-mono text-xs text-[var(--text-tertiary)]">
+                  Past 100 system events
+                </span>
+              </div>
+
+              <div className="mt-4 divide-y divide-[var(--divider)]">
+                {activityLogs.length === 0 ? (
+                  <p className="py-8 text-center text-xs text-[var(--text-tertiary)]">
+                    No activity logs recorded yet.
+                  </p>
+                ) : (
+                  activityLogs.map((log) => {
+                    const actor = profiles.find((p) => p.id === log.user_id);
+                    return (
+                      <div key={log.id} className="py-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className="inline-flex items-center rounded-md border border-[var(--divider)] bg-[var(--surface-paper)] px-2 py-0.5 font-mono text-[11px] text-[var(--text-secondary)]">
+                            {log.action}
+                          </span>
+                          <span className="text-xs font-medium text-[var(--text-primary)]">
+                            {actor?.display_name || "System Actor"}
+                          </span>
+                          <span className="font-mono text-[11px] text-[var(--text-tertiary)]">
+                            Target: {log.target_type}
+                          </span>
+                        </div>
+
+                        <div className="font-mono text-[11px] text-[var(--text-tertiary)]">
+                          {formatDateTime(log.created_at)}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
           </div>
         )}
       </main>
 
-      {/* Keepsake Inspection Drawer (Detail modal) */}
+      {/* ============================================================ */}
+      {/* MODAL: USER DOSSIER DETAILS */}
+      {/* ============================================================ */}
       <AnimatePresence>
-        {selectedMemory && (
+        {selectedUser && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
             <motion.div
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.96 }}
-              transition={{ duration: 0.15, ease: "easeOut" }}
-              className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto rounded-2xl border border-[var(--divider)] bg-[var(--surface-raised)] p-6 shadow-2xl custom-scrollbar"
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="w-full max-w-lg rounded-2xl border border-[var(--divider)] bg-[var(--surface-dialog)] p-6 shadow-2xl"
             >
-              <div className="flex items-start justify-between border-b border-[var(--divider)] pb-4">
-                <div>
-                  <span className="rounded bg-[var(--surface-paper)] px-2 py-0.5 font-mono text-xs capitalize text-[var(--text-tertiary)]">
-                    {selectedMemory.type}
-                  </span>
-                  <h3 className="text-lg font-semibold text-[var(--text-primary)] mt-1">
-                    {selectedMemory.title || "Untitled Keepsake"}
-                  </h3>
+              <div className="flex items-center justify-between border-b border-[var(--divider)] pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--surface-paper)] border border-[var(--divider)] text-base font-semibold text-[var(--text-primary)]">
+                    {selectedUser.display_name.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <h3 className="text-base font-semibold text-[var(--text-primary)]">
+                      {selectedUser.display_name}
+                    </h3>
+                    <p className="font-mono text-xs text-[var(--text-tertiary)]">
+                      @{selectedUser.username}
+                    </p>
+                  </div>
                 </div>
+
                 <button
-                  onClick={() => setSelectedMemory(null)}
-                  className="rounded-lg border border-[var(--divider)] p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] active:scale-[0.95]"
+                  onClick={() => setSelectedUser(null)}
+                  className="rounded-lg p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-paper)] hover:text-[var(--text-primary)]"
                 >
                   <X className="h-4 w-4" />
                 </button>
               </div>
 
-              <div className="mt-4 space-y-4 text-xs">
-                {/* Content text */}
-                {selectedMemory.content && (
-                  <div className="rounded-lg border border-[var(--divider)] bg-[var(--surface-paper)] p-3.5">
-                    <span className="text-[11px] text-[var(--text-tertiary)] uppercase tracking-wider block mb-1">
-                      Text Content
-                    </span>
-                    <p className="whitespace-pre-wrap text-[var(--text-primary)] leading-relaxed">
-                      {selectedMemory.content}
-                    </p>
-                  </div>
-                )}
-
-                {/* Metadata Grid */}
-                <div className="grid grid-cols-2 gap-3 font-mono text-[11px]">
-                  <div className="rounded-lg border border-[var(--divider)] bg-[var(--surface-paper)]/50 p-2.5">
-                    <span className="text-[var(--text-tertiary)] block">ID</span>
-                    <span className="text-[var(--text-primary)]">{selectedMemory.id}</span>
-                  </div>
-                  <div className="rounded-lg border border-[var(--divider)] bg-[var(--surface-paper)]/50 p-2.5">
-                    <span className="text-[var(--text-tertiary)] block">Author</span>
-                    <span className="text-[var(--text-primary)]">{selectedMemory.created_by}</span>
-                  </div>
-                  <div className="rounded-lg border border-[var(--divider)] bg-[var(--surface-paper)]/50 p-2.5">
-                    <span className="text-[var(--text-tertiary)] block">Status</span>
-                    <span className="text-[var(--text-primary)]">{selectedMemory.status}</span>
-                  </div>
-                  <div className="rounded-lg border border-[var(--divider)] bg-[var(--surface-paper)]/50 p-2.5">
-                    <span className="text-[var(--text-tertiary)] block">Created</span>
-                    <span className="text-[var(--text-primary)]">
-                      {new Date(selectedMemory.created_at).toLocaleString()}
-                    </span>
-                  </div>
-                  {selectedMemory.unlock_at && (
-                    <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-2.5 col-span-2">
-                      <span className="text-amber-400 block">Capsule Unlock Date</span>
-                      <span className="text-amber-300 font-semibold">
-                        {new Date(selectedMemory.unlock_at).toLocaleString()}
-                      </span>
-                    </div>
-                  )}
+              {/* Dossier fields */}
+              <div className="mt-5 space-y-3 text-xs font-mono">
+                <div className="flex justify-between py-1.5 border-b border-[var(--divider)]/50">
+                  <span className="text-[var(--text-tertiary)]">User UUID:</span>
+                  <span className="text-[var(--text-primary)] truncate max-w-[16rem]">
+                    {selectedUser.id}
+                  </span>
                 </div>
 
-                {/* Raw JSON Payload */}
-                <details className="rounded-lg border border-[var(--divider)] bg-[var(--surface-paper)]/30 p-3">
-                  <summary className="cursor-pointer text-[11px] font-medium text-[var(--text-secondary)]">
-                    Raw JSON payload
-                  </summary>
-                  <pre className="mt-2 overflow-x-auto p-2 bg-black/40 rounded text-[10px] font-mono text-zinc-300">
-                    {JSON.stringify(selectedMemory, null, 2)}
-                  </pre>
-                </details>
+                <div className="flex justify-between py-1.5 border-b border-[var(--divider)]/50">
+                  <span className="text-[var(--text-tertiary)]">Email:</span>
+                  <span className="text-[var(--text-primary)]">{selectedUser.email || "—"}</span>
+                </div>
+
+                <div className="flex justify-between py-1.5 border-b border-[var(--divider)]/50">
+                  <span className="text-[var(--text-tertiary)]">Timezone:</span>
+                  <span className="text-[var(--text-secondary)]">{selectedUser.timezone}</span>
+                </div>
+
+                <div className="flex justify-between py-1.5 border-b border-[var(--divider)]/50">
+                  <span className="text-[var(--text-tertiary)]">Active Vault ID:</span>
+                  <span className="text-[var(--text-secondary)]">
+                    {selectedUser.active_relationship_id || "None (Single)"}
+                  </span>
+                </div>
+
+                <div className="flex justify-between py-1.5 border-b border-[var(--divider)]/50">
+                  <span className="text-[var(--text-tertiary)]">Joined Date:</span>
+                  <span className="text-[var(--text-secondary)]">
+                    {formatDate(selectedUser.created_at)}
+                  </span>
+                </div>
+
+                <div className="flex justify-between py-1.5 border-b border-[var(--divider)]/50">
+                  <span className="text-[var(--text-tertiary)]">Keepsakes Created:</span>
+                  <span className="text-emerald-400 font-semibold">
+                    {memories.filter((m) => m.user_id === selectedUser.id).length}
+                  </span>
+                </div>
+              </div>
+
+              {/* Modal footer actions */}
+              <div className="mt-6 flex items-center justify-end gap-2 border-t border-[var(--divider)] pt-4">
+                {selectedUser.email && (
+                  <button
+                    onClick={() => {
+                      void handlePasswordReset(selectedUser.email!);
+                      setSelectedUser(null);
+                    }}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--divider)] bg-[var(--surface-paper)] px-3 py-2 text-xs font-medium text-[var(--text-primary)] hover:border-amber-500/50"
+                  >
+                    <Key className="h-3.5 w-3.5 text-amber-400" />
+                    <span>Send Password Reset</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={() => setSelectedUser(null)}
+                  className="rounded-lg bg-[var(--surface-raised)] px-4 py-2 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ============================================================ */}
+      {/* MODAL: KEEPSAKE PREVIEW */}
+      {/* ============================================================ */}
+      <AnimatePresence>
+        {selectedMemory && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="w-full max-w-lg rounded-2xl border border-[var(--divider)] bg-[var(--surface-dialog)] p-6 shadow-2xl"
+            >
+              <div className="flex items-center justify-between border-b border-[var(--divider)] pb-4">
+                <div>
+                  <span className="inline-flex rounded bg-emerald-500/10 px-2 py-0.5 font-mono text-[10px] uppercase text-emerald-400">
+                    {selectedMemory.type}
+                  </span>
+                  <h3 className="mt-1 text-base font-semibold text-[var(--text-primary)]">
+                    {selectedMemory.title || "Untitled Keepsake"}
+                  </h3>
+                </div>
+
+                <button
+                  onClick={() => setSelectedMemory(null)}
+                  className="rounded-lg p-1.5 text-[var(--text-tertiary)] hover:bg-[var(--surface-paper)] hover:text-[var(--text-primary)]"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Memory content preview */}
+              <div className="mt-4 max-h-60 overflow-y-auto rounded-lg border border-[var(--divider)] bg-[var(--surface-paper)] p-4 text-xs text-[var(--text-secondary)] whitespace-pre-wrap leading-relaxed panel-scroll">
+                {selectedMemory.content || "No text content recorded for this keepsake."}
+              </div>
+
+              {/* Metadata */}
+              <div className="mt-4 grid grid-cols-2 gap-2 text-xs font-mono text-[var(--text-tertiary)]">
+                <div>Created: {formatDateTime(selectedMemory.created_at)}</div>
+                <div>Status: {selectedMemory.deleted_at ? "In Trash" : selectedMemory.status}</div>
+                <div>Vault: {selectedMemory.relationship_id.slice(0, 8)}...</div>
+                <div>Author ID: {selectedMemory.user_id.slice(0, 8)}...</div>
+              </div>
+
+              {/* Actions */}
+              <div className="mt-6 flex items-center justify-between border-t border-[var(--divider)] pt-4">
+                {selectedMemory.deleted_at ? (
+                  <button
+                    onClick={() => void handleToggleMemoryTrash(selectedMemory.id, false)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-400 hover:bg-emerald-500/20"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    <span>Restore Keepsake</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => void handleToggleMemoryTrash(selectedMemory.id, true)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/20 bg-rose-500/10 px-3 py-1.5 text-xs font-medium text-rose-400 hover:bg-rose-500/20"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span>Move to Trash</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={() => setSelectedMemory(null)}
+                  className="rounded-lg bg-[var(--surface-raised)] px-4 py-2 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                >
+                  Close
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ============================================================ */}
+      {/* MODAL: PURGE TRASH CONFIRMATION */}
+      {/* ============================================================ */}
+      <AnimatePresence>
+        {showPurgeModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-md rounded-2xl border border-[var(--divider)] bg-[var(--surface-dialog)] p-6 shadow-2xl"
+            >
+              <div className="flex items-center gap-3 text-rose-400">
+                <AlertTriangle className="h-5 w-5" />
+                <h3 className="text-base font-semibold text-[var(--text-primary)]">
+                  Permanently Purge Trash?
+                </h3>
+              </div>
+
+              <p className="mt-3 text-xs text-[var(--text-secondary)] leading-relaxed">
+                This will permanently delete all <strong className="text-[var(--text-primary)] font-mono">{deletedMemories} soft-deleted keepsakes</strong> currently in the database trash. This action is irreversible.
+              </p>
+
+              <div className="mt-6 flex items-center justify-end gap-2.5">
+                <button
+                  onClick={() => setShowPurgeModal(false)}
+                  className="rounded-lg border border-[var(--divider)] bg-[var(--surface-paper)] px-3 py-2 text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => void handlePurgeTrashConfirm()}
+                  className="rounded-lg bg-rose-600 px-4 py-2 text-xs font-medium text-white shadow-sm hover:bg-rose-500 active:scale-[0.97]"
+                >
+                  Confirm & Purge Permanently
+                </button>
               </div>
             </motion.div>
           </div>
