@@ -68,8 +68,8 @@ export function RelationshipAmbientBackdrop({
       {period === "morning" && (
         <motion.div
           aria-hidden="true"
-          className="absolute left-1/2 top-[-5.5rem] h-64 w-64 -translate-x-1/2 rounded-full bg-amber-100/18 dark:bg-amber-300/[0.06] sm:-top-24 sm:h-72 sm:w-72"
-          animate={shouldAnimate ? { scale: [1, 1.04, 1], opacity: [0.5, 0.72, 0.5] } : { scale: 1, opacity: 0.6 }}
+          className="pointer-events-none absolute left-1/2 top-[-7rem] h-80 w-80 -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(252,211,77,0.14)_0%,rgba(245,158,11,0.05)_45%,transparent_72%)] blur-3xl sm:-top-32 sm:h-[26rem] sm:w-[26rem] dark:bg-[radial-gradient(ellipse_at_center,rgba(245,158,11,0.10)_0%,rgba(217,119,6,0.03)_50%,transparent_75%)]"
+          animate={shouldAnimate ? { scale: [1, 1.05, 1], opacity: [0.65, 0.9, 0.65] } : { scale: 1, opacity: 0.75 }}
           transition={shouldAnimate ? { duration: 9, repeat: Infinity, ease: "easeInOut" } : { duration: 0.2 }}
         />
       )}
